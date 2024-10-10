@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.text_logo {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-style: italic;
+    font-size: 24px; /* Larger font size for logo */
+    font-weight: normal; /* Make the text bold */
+    color: #0ad3c2; /* Dark color, adjust as needed */
+    text-transform: uppercase; /* Make the text uppercase */
+    letter-spacing: 0px; /* Increase spacing between letters */
+    text-shadow: 2px 2px 5px #0c4e49; /* Add a subtle shadow for depth */
+    display: inline-block; /* Make sure it behaves like a logo */
+}
