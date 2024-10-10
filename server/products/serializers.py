@@ -68,6 +68,11 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'base_price', 'stock_quantity', 'has_variants',
                   'images', 'category']
 
+    def validate_category(self, value):
+        if not value or value is '':
+            raise serializers.ValidationError("Category is required.")
+        return value
+
 
 class ProductListSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField(read_only=True)
@@ -86,14 +91,6 @@ class ProductListSerializer(serializers.ModelSerializer):
             return image.image.url
         return None
 
-    def get_banner_image(self, obj):
-        # Get the main image if it exists, otherwise return the first image
-
-        if not image:
-            image = obj.images.first()
-        if image:
-            return image.image.url  # Return the URL of the image
-        return None
 
 
 
