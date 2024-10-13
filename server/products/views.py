@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -99,12 +100,15 @@ class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def product_details_view(request, pk):
     if request.method == 'GET':
-        product = Product.objects.get(pk=pk)
-        product_serializer = ProductDetailsSerializer(product)
-        return Response(product_serializer.data, status=status.HTTP_200_OK)
+        try:
+            product = Product.objects.get(pk=pk)
+            product_serializer = ProductDetailsSerializer(product)
+            return Response(product_serializer.data, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
     elif request.method == 'POST':
         serializer = SKUSerializer(data=request.data)

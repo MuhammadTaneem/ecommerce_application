@@ -50,13 +50,13 @@ export default function ProductListComponent() {
             {loading ? (
                 <p>Loading...</p>
             ) : products.length > 0 ? (
-                <div className="product-list pt-5 grid grid-cols-4 gap-4 text-blue-600">
+                <div className="product-list pt-5 grid grid-cols-4 text-blue-600">
                     {products.map((product: ProductListType, index: number) => (
                         <div key={index}
-                             className="product-card max-w-sm bg-white shadow-lg rounded-lg overflow-hidden">
+                             className="product-card max-w-sm bg-white shadow-lg rounded-lg overflow-hidden m-3">
 
                             {product.image ? (
-                                <img className="w-full h-48" src={product.image}
+                                <img className="w-full h-64" src={product.image}
                                      alt={product.name}/>
                             ) : (
                                 <img className="w-full h-48 object-cover" src="/src/assets/placeholder.png"

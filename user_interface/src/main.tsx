@@ -10,8 +10,9 @@ import HomepageComponent from "./components/Homepage/homepage.tsx";
 import AboutComponent from "./components/About/about.tsx";
 import {Provider} from 'react-redux'
 import {store} from "./core/store.ts";
-import SidebarComponent from "./components/layout/sidebar.tsx";
+// import SidebarComponent from "./components/layout/sidebar.tsx";
 import ProductListComponent from "./components/products.tsx";
+import ProductDetailsComponent from "./components/product/product_details.tsx";
 
 
 const router = createBrowserRouter(
@@ -21,12 +22,13 @@ const router = createBrowserRouter(
                 <Route path='/' element={<Navigate to='/products' replace/>}/>
                 <Route path='/home' element={<HomepageComponent/>}></Route>
                 <Route path='/products/:fragment?' element={<ProductListComponent/>}></Route>
+                <Route path='/product/:id' element={<ProductDetailsComponent/>}></Route>
                 <Route path='/about' element={<AboutComponent/>}></Route>
             </Route>
-            <Route path="/admin" element={<SidebarComponent/>}>
-                <Route path="/admin/dashboard" element={<HomepageComponent/>}/>
-                {/*<Route path="/admin/users" element={<AdminUsersComponent />} />*/}
-            </Route>
+            {/*<Route path="/admin" element={<SidebarComponent/>}>*/}
+            {/*    <Route path="/admin/dashboard" element={<HomepageComponent/>}/>*/}
+            {/*    /!*<Route path="/admin/users" element={<AdminUsersComponent />} />*!/*/}
+            {/*</Route>*/}
 
         </>
     )

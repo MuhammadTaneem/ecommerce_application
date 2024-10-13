@@ -1,9 +1,11 @@
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Link} from 'react-router-dom';
 import {MagnifyingGlassIcon, ShoppingCartIcon, MoonIcon, UserIcon} from '@heroicons/react/24/solid'
+import {Bars3Icon} from '@heroicons/react/24/solid';
+import {NavbarComponentProps} from "./layout.tsx";
 
 
-export default function NavbarComponent() {
+export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLargeScreen}: NavbarComponentProps) {
     const [darkTheme, setDarkTheme] = useState(true)
 
     useEffect(() => {
@@ -14,6 +16,7 @@ export default function NavbarComponent() {
     function themeToggle() {
         setDarkTheme(!darkTheme)
     }
+
 
 
     const [query, setQuery] = useState('');
@@ -41,6 +44,14 @@ export default function NavbarComponent() {
                     <Link key="logo" to="/" className="company_logo px-5">
                         <p className="text_logo"> HORROR</p>
                     </Link>
+
+                    {!isLargeScreen && (<button
+                         className="flex items-center justify-center w-10 h-10  hover:bg-gray-700 rounded-full transition"
+                         onClick={onToggleSidebar}
+                         aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                     >
+                        <Bars3Icon className="w-5 h-5 text-gray-300"/>
+                    </button>)}
 
 
                     {/*{navItemsList.map((item, i) => (*/}
