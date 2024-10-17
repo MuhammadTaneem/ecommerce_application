@@ -12,8 +12,8 @@ class VariantAttribute(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
+        # if not self.slug:
+        self.slug = slugify(self.name)
         super(VariantAttribute, self).save(*args, **kwargs)
 
 
@@ -52,11 +52,12 @@ class Category(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField(null=True,blank=True)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     stock_quantity = models.PositiveIntegerField(null=True, blank=True)
     has_variants = models.BooleanField(default=False)
     category = models.ForeignKey(Category, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
+    key_features = models.JSONField(default=dict, blank=True)
+    description = models.JSONField(default=dict, blank=True)
 
     def is_in_stock(self):
         if self.has_variants:
@@ -106,11 +107,9 @@ class ProductImage(models.Model):
     #     return ''
 
 
-
-
 class SKU(models.Model):
     product = models.ForeignKey('Product', related_name='skus', on_delete=models.CASCADE)
-    sku_code = models.CharField(max_length=255, unique=True)
+    sku_code = models.CharField(max_length=255, unique=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField(default=0)
     variants = models.ManyToManyField(VariantValue)
@@ -124,3 +123,14 @@ class SKU(models.Model):
         for variant in self.variants.all():
             variants_dict[variant.attribute.name] = variant.value
         return variants_dict
+
+    # def save(self, *args, **kwargs):
+    #     if not self.sku_code:
+    #         self.sku_code = self.generate_sku_code()
+    #     super().save(*args, **kwargs)
+    #
+    # def generate_sku_code(self):
+    #     # Create SKU code based on the product name and variant values
+    #     variant_values = [f"{variant.attribute.name}:{variant.value}" for variant in self.variants.all()]
+    #     variant_string = "-".join(variant_values)
+    #     return f"{self.product.name}-{variant_string}"  # You can customize this format as needed

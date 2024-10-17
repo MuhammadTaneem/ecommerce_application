@@ -1,31 +1,36 @@
 type VariantDict = {
-    [key: string]: string; // Key-value pairs for variant types like Color, Size, etc.
+    [key: string]: string;
 };
 
 type SKU = {
     id: number;
     product: number;
     sku_code: string;
-    price: string; // Assuming price is a string representing a decimal value
+    price: string;
     stock_quantity: number | null;
-    variants_dict: VariantDict; // A dictionary for variant attributes
-    variants: number[]; // Array of variant IDs
+    variants_dict: VariantDict;
+    variants: number[];
 };
 
 export type ProductType = {
     id: number;
     name: string;
-    description: string;
     base_price: string;
     stock_quantity: number | null;
     has_variants: boolean;
-    images: ImageType[]; // Array for image URLs or paths
+    images: ProductImageType[];
     category: number;
-    skus: SKU[]; // Array of SKUs
+    skus: SKU[];
+    key_features: {
+        [key: string]: string;
+    };
+    description: {
+        [key: string]: string;
+    };
 };
 
 
-export type  ImageType = {
+export type  ProductImageType = {
     id: number;
     product: number;
     image: string;

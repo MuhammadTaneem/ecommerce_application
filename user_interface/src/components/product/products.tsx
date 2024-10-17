@@ -1,8 +1,8 @@
-import {useAppDispatch} from "../core/store";
-import {ProductListType} from "../features/product_type";
+import {useAppDispatch} from "../../core/store.ts";
+import {ProductListType} from "../../features/product_type.ts";
 import {useEffect, useState} from "react";
-import axiosInstance from "../utilites/api";
-import {addProduct} from "../features/productSlice";
+import axiosInstance from "../../utilites/api.ts";
+import {addProduct} from "../../features/productSlice.ts";
 import {useLocation} from "react-router-dom";
 import {ShoppingCartIcon} from "@heroicons/react/24/solid";
 

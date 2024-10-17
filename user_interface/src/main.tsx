@@ -11,7 +11,7 @@ import AboutComponent from "./components/About/about.tsx";
 import {Provider} from 'react-redux'
 import {store} from "./core/store.ts";
 // import SidebarComponent from "./components/layout/sidebar.tsx";
-import ProductListComponent from "./components/products.tsx";
+import ProductListComponent from "./components/product/products.tsx";
 import ProductDetailsComponent from "./components/product/product_details.tsx";
 
 

@@ -105,7 +105,7 @@ def product_details_view(request, pk):
     if request.method == 'GET':
         try:
             product = Product.objects.get(pk=pk)
-            product_serializer = ProductDetailsSerializer(product)
+            product_serializer = ProductDetailsSerializer(product, context={'request': request})
             return Response(product_serializer.data, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
             return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)

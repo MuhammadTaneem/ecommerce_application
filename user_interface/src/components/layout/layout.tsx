@@ -32,10 +32,8 @@ export default function LayoutComponent() {
                                                  isLargeScreen={isLargeScreen}
             /> : <h2>Please log in.</h2>}
             <div className="main-container flex">
-                {isSidebarOpen && <SidebarComponent  isLargeScreen={isLargeScreen} />} {/* Conditionally render Sidebar */}
-                <div className="content-area">
-                    <Outlet />
-                </div>
+                {isSidebarOpen && <SidebarComponent  isLargeScreen={isLargeScreen} />}
+                < Outlet />
             </div>
             <FooterComponent />
         </>

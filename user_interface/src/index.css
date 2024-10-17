@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 .text_logo {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-style: italic;
@@ -12,4 +13,19 @@
     letter-spacing: 0px; /* Increase spacing between letters */
     text-shadow: 2px 2px 5px #0c4e49; /* Add a subtle shadow for depth */
     display: inline-block; /* Make sure it behaves like a logo */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* For Firefox */
+.hide-scrollbar {
+    scrollbar-width: none;
+}
+
+/* General fallback */
+.hide-scrollbar {
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+    overflow: hidden;
 }

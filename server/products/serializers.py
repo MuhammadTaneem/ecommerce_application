@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from django.conf import settings
-
+import  pdb
 
 class VariantAttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,6 +59,15 @@ class SKUSerializer(serializers.ModelSerializer):
             variants_list.append(variant.attribute.name)
         return data
 
+    def create(self, validated_data):
+        # Pop variants from validated_data
+        variants_data = validated_data.pop('variants', [])
+        pdb.set_trace()  # Set a breakpoint here
+
+    def update(self, instance, validated_data):
+        variants_data = validated_data.pop('variants', [])
+        pdb.set_trace()
+
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -66,7 +75,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'base_price', 'stock_quantity', 'has_variants',
-                  'images', 'category']
+                  'images', 'category', 'key_features']
 
     def validate_category(self, value):
         if not value or value is '':
@@ -92,13 +101,16 @@ class ProductListSerializer(serializers.ModelSerializer):
         return None
 
 
-
-
 class ProductDetailsSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     skus = SKUSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'base_price', 'stock_quantity', 'has_variants',
-                  'images', 'category', 'skus']
+        fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants',
+                  'category', 'key_features', 'description', 'images', 'skus']
+
+    def validate_category(self, value):
+        if not value or value is '':
+            raise serializers.ValidationError("Category is required.")
+        return value
