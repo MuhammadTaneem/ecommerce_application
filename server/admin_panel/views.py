@@ -5,8 +5,7 @@ from django.db import transaction
 
 from products.models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from products.serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, \
-    ProductSerializer, \
-    ProductImageSerializer, SKUSerializer, ProductDetailsSerializer
+    ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer
 
 
 class VariantAttributeListCreateView(generics.ListCreateAPIView):

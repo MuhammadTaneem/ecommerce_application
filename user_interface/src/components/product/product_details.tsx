@@ -1,4 +1,4 @@
-import { ProductImageType, ProductType } from "../../features/product_type.ts";
+import {ProductImageType, ProductType, SkyType} from "../../features/product_type.ts";
 import axiosInstance from "../../utilites/api.ts";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -9,6 +9,12 @@ export default function ProductDetailsComponent() {
     const { id } = useParams();
     const [selectedImage, setSelectedImage] = useState<ProductImageType>();
     const scrollRef = useRef<HTMLDivElement | null>(null);
+    const [availableVariantsDict, setAvailableVariantsDict] = useState<{ [key: string]: { value: string, available: boolean }[] }>({});
+    const [selectedVariants, setSelectedVariants] = useState<{[key: string]: string}>({});
+
+    // const [variantsDict, setVariantsDict] = useState<VariantsDictType>();
+
+
 
     // Function to handle scroll by image width (based on image width)
     const scrollLeft = () => {
@@ -23,22 +29,6 @@ export default function ProductDetailsComponent() {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [id]);
-
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const response = await axiosInstance.get(`/products/product/${id}`);
-            setProduct(response.data);
-            setSelectedImage(response.data.images[0]);
-        } catch (error) {
-            console.error("Error fetching products:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     // Determine if scrolling is needed
     const shouldShowScrollButtons = () => {
@@ -49,6 +39,79 @@ export default function ProductDetailsComponent() {
         }
         return false;
     };
+
+    useEffect(() => {
+        fetchData();
+    }, [id]);
+
+    useEffect(() => {
+        if (product) {
+            variants_availability();
+        }
+    }, [product]);
+
+
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const response = await axiosInstance.get(`/products/product/${id}`);
+            setProduct(response.data);
+            setSelectedImage(response.data.images[0]);
+            // console.log(response.data);
+            // variants_availability();
+            // console.log(availableVariantsDict);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        } finally {
+            setLoading(false);
+
+        }
+    };
+
+    const variants_availability   = (clicked_variant?: { key: string; value: string }) => {
+        if (clicked_variant) {
+            setSelectedVariants(prevSelectedVariants => ({
+                ...prevSelectedVariants,[clicked_variant.key]: clicked_variant.value
+            }));
+        }
+
+        const variantDict: { [key: string]: { value: string, available: boolean }[] } = {};
+        if(product){
+            console.log(product);
+        }
+        else {
+            console.log("product none");
+        }
+        product?.skus.forEach((sku: SkyType) => {
+            Object.entries(sku.variants_dict).forEach(([variantKey, variantValue]) => {
+
+                if (!variantDict[variantKey]) {
+                    variantDict[variantKey] = [];
+                }
+                else{
+                    variantDict[variantKey].push({ value: variantValue, available: true })
+                }
+            });
+        });
+        setAvailableVariantsDict(variantDict);
+        console.log(availableVariantsDict);
+    }
+
+
+
+
+
+    // available_variants_dict
+    // type
+    // available_variants_dict- variants_key-[variants_value & available]
+
+
+
+
+
+
+
 
     return (
         <div className="w-full mt-16">
@@ -118,6 +181,11 @@ export default function ProductDetailsComponent() {
                                 </ul>
                             </div>
                         </div>
+
+                        {/*skus*/}
+                        <div className="mt-4">
+
+                        </div>
                     </div>
 
                     <div className="product_description_container">
@@ -138,3 +206,4 @@ export default function ProductDetailsComponent() {
         </div>
     );
 }
+
