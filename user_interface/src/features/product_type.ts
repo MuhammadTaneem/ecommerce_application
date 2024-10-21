@@ -1,8 +1,8 @@
-type VariantDict = {
+export  type VariantDict = {
     [key: string]: string;
 };
 
-export type SkyType = {
+export type SkuType = {
     id: number;
     product: number;
     sku_code: string;
@@ -20,7 +20,7 @@ export type ProductType = {
     has_variants: boolean;
     images: ProductImageType[];
     category: number;
-    skus: SkyType[];
+    skus: SkuType[];
     key_features: {
         [key: string]: string;
     };

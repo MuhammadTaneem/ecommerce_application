@@ -1,56 +1,21 @@
-import {ProductImageType, ProductType, SkyType} from "../../features/product_type.ts";
+import { ProductImageType, ProductType, SkuType, VariantDict } from "../../features/product_type.ts";
 import axiosInstance from "../../utilites/api.ts";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 
 export default function ProductDetailsComponent() {
-    const [product, setProduct] = useState<ProductType>();
-    const [loading, setLoading] = useState<boolean>(false);
     const { id } = useParams();
-    const [selectedImage, setSelectedImage] = useState<ProductImageType>();
+    const [product, setProduct] = useState<ProductType | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [selectedImage, setSelectedImage] = useState<ProductImageType | null>(null);
+    const [selectedVariants, setSelectedVariants] = useState<VariantDict>({});
+    const [matchingSku, setMatchingSku] = useState<SkuType | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null); // State for error message
     const scrollRef = useRef<HTMLDivElement | null>(null);
-    const [availableVariantsDict, setAvailableVariantsDict] = useState<{ [key: string]: { value: string, available: boolean }[] }>({});
-    const [selectedVariants, setSelectedVariants] = useState<{[key: string]: string}>({});
-
-    // const [variantsDict, setVariantsDict] = useState<VariantsDictType>();
-
-
-
-    // Function to handle scroll by image width (based on image width)
-    const scrollLeft = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollBy({ left: -128, behavior: 'smooth' });
-        }
-    };
-
-    const scrollRight = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollBy({ left: 128, behavior: 'smooth' });
-        }
-    };
-
-
-    // Determine if scrolling is needed
-    const shouldShowScrollButtons = () => {
-        if (scrollRef.current) {
-            const scrollWidth = scrollRef.current.scrollWidth;
-            const clientWidth = scrollRef.current.clientWidth;
-            return scrollWidth > clientWidth; // Show buttons if content is wider than the container
-        }
-        return false;
-    };
 
     useEffect(() => {
         fetchData();
     }, [id]);
-
-    useEffect(() => {
-        if (product) {
-            variants_availability();
-        }
-    }, [product]);
-
-
 
     const fetchData = async () => {
         setLoading(true);
@@ -58,60 +23,67 @@ export default function ProductDetailsComponent() {
             const response = await axiosInstance.get(`/products/product/${id}`);
             setProduct(response.data);
             setSelectedImage(response.data.images[0]);
-            // console.log(response.data);
-            // variants_availability();
-            // console.log(availableVariantsDict);
         } catch (error) {
-            console.error("Error fetching products:", error);
+            console.error("Error fetching product:", error);
         } finally {
             setLoading(false);
-
         }
     };
 
-    const variants_availability   = (clicked_variant?: { key: string; value: string }) => {
-        if (clicked_variant) {
-            setSelectedVariants(prevSelectedVariants => ({
-                ...prevSelectedVariants,[clicked_variant.key]: clicked_variant.value
-            }));
+    const scrollLeft = () => {
+        scrollRef.current?.scrollBy({ left: -128, behavior: "smooth" });
+    };
+
+    const scrollRight = () => {
+        scrollRef.current?.scrollBy({ left: 128, behavior: "smooth" });
+    };
+
+    const shouldShowScrollButtons = useMemo(() => {
+        if (scrollRef.current) {
+            const scrollWidth = scrollRef.current.scrollWidth;
+            const clientWidth = scrollRef.current.clientWidth;
+            return scrollWidth > clientWidth;
         }
+        return false;
+    }, [selectedImage, product]);
 
-        const variantDict: { [key: string]: { value: string, available: boolean }[] } = {};
-        if(product){
-            console.log(product);
+    // Get unique variant options for a specific attribute
+    const getUniqueOptions = (attribute: string) => {
+        if (!product?.skus) return [];
+        return [
+            ...new Set(
+                product.skus
+                    .map((sku) => sku.variants_dict[attribute])
+                    .filter((value) => value && value.trim() !== "")
+            ),
+        ];
+    };
+
+    // Handle variant change
+    const handleVariantChange = (attribute: string, value: string) => {
+        const updatedVariants = { ...selectedVariants, [attribute]: value };
+        setSelectedVariants(updatedVariants);
+
+        // Check for matching SKU only if all variant attributes have values
+        if (Object.keys(updatedVariants).length === Object.keys(product.skus[0]?.variants_dict || {}).length) {
+            const sku = product?.skus.find((sku) =>
+                Object.entries(updatedVariants).every(
+                    ([key, val]) => sku.variants_dict[key] === val
+                )
+            );
+
+            if (sku) {
+                setMatchingSku(sku);
+                setErrorMessage(null); // Clear any previous error message
+            } else {
+                setMatchingSku(null);
+                setErrorMessage("Unable to find product with the selected variants."); // Set error message
+            }
+        } else {
+            setMatchingSku(null); // Reset matching SKU if not all variants are selected
+            setErrorMessage(null); // Clear error message when variants are not fully selected
         }
-        else {
-            console.log("product none");
-        }
-        product?.skus.forEach((sku: SkyType) => {
-            Object.entries(sku.variants_dict).forEach(([variantKey, variantValue]) => {
-
-                if (!variantDict[variantKey]) {
-                    variantDict[variantKey] = [];
-                }
-                else{
-                    variantDict[variantKey].push({ value: variantValue, available: true })
-                }
-            });
-        });
-        setAvailableVariantsDict(variantDict);
-        console.log(availableVariantsDict);
-    }
-
-
-
-
-
-    // available_variants_dict
-    // type
-    // available_variants_dict- variants_key-[variants_value & available]
-
-
-
-
-
-
-
+    };
 
     return (
         <div className="w-full mt-16">
@@ -131,7 +103,7 @@ export default function ProductDetailsComponent() {
                             <div className="relative container mx-auto p-4 ">
                                 <div className="image_list">
                                     {/* Left Scroll Button */}
-                                    {shouldShowScrollButtons() && (
+                                    {shouldShowScrollButtons && (
                                         <button
                                             onClick={scrollLeft}
                                             className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-400 bg-opacity-70 text-white rounded p-3 hover:bg-opacity-100 focus:outline-none"
@@ -154,7 +126,7 @@ export default function ProductDetailsComponent() {
                                         ))}
                                     </div>
                                     {/* Right Scroll Button */}
-                                    {shouldShowScrollButtons() && (
+                                    {shouldShowScrollButtons && (
                                         <button
                                             onClick={scrollRight}
                                             className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-400 bg-opacity-70 text-white rounded p-3 hover:bg-opacity-100 focus:outline-none"
@@ -165,36 +137,99 @@ export default function ProductDetailsComponent() {
                                 </div>
                             </div>
                         </div>
+
                         {/* Key point container */}
                         <div className="mt-16">
                             <h1 className="text-2xl md:text-4xl text-gray-800">{product.name}</h1>
-                            <p className="text-xl md:text-2xl text-gray-600 mt-2">{product.base_price} $</p>
+                            <p className="text-xl md:text-2xl text-gray-600 mt-2">
+                                {matchingSku ? matchingSku.price : product.base_price} $
+                            </p>
                             <div className="mt-6 p-4 ">
-                                <h3 className="text-lg md:text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Key Features:</h3>
+                                <h3 className="text-lg md:text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                                    Key Features:
+                                </h3>
                                 <ul className="list-disc pl-5 space-y-2 mt-3 text-base md:text-lg text-gray-700">
-                                    {Object.entries(product.key_features).map(([key, value], index) => (
-                                        <li key={index} className="flex items-start">
-                                            <span className="font-semibold capitalize text-gray-900 mr-2">{key}:</span>
-                                            <span className="flex-1">{value}</span>
-                                        </li>
-                                    ))}
+                                    {Object.entries(product.key_features).map(
+                                        ([key, value], index) => (
+                                            <li key={index} className="flex items-start">
+                                                <span className="font-semibold capitalize text-gray-900 mr-2">
+                                                    {key}:
+                                                </span>
+                                                <span className="flex-1">{value}</span>
+                                            </li>
+                                        )
+                                    )}
                                 </ul>
                             </div>
                         </div>
 
-                        {/*skus*/}
+                        {/* Variant Selection */}
                         <div className="mt-4">
+                            <h3 className="text-lg font-semibold">Select Variants:</h3>
+                            {product.has_variants &&
+                                Object.keys(product.skus[0]?.variants_dict || {}).map(
+                                    (attribute) => (
+                                        <div key={attribute} className="mr-4 mt-4">
+                                            <label className="block font-semibold text-gray-700 mb-2">
+                                                {attribute}
+                                            </label>
+                                            <div className="flex space-x-2">
+                                                {getUniqueOptions(attribute).map(
+                                                    (value, index) => (
+                                                        <button
+                                                            key={`${attribute}-${value}-${index}`}
+                                                            className={`px-4 py-2 rounded ${
+                                                                selectedVariants[attribute] ===
+                                                                value
+                                                                    ? "bg-blue-500 text-white"
+                                                                    : "bg-gray-200 text-gray-700"
+                                                            }`}
+                                                            onClick={() =>
+                                                                handleVariantChange(
+                                                                    attribute,
+                                                                    value
+                                                                )
+                                                            }
+                                                        >
+                                                            {value}
+                                                        </button>
+                                                    )
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                )}
 
+                            {errorMessage && ( // Show error message if no matching SKU
+                                <p className="text-red-500 mt-2">{errorMessage}</p>
+                            )}
+
+                            {matchingSku && (
+                                <div className="mt-4">
+                                    <p>SKU: {matchingSku.sku_code}</p>
+                                    <p>Price: {matchingSku.price} $</p>
+                                    <p>
+                                        Stock:{" "}
+                                        {matchingSku.stock_quantity
+                                            ? matchingSku.stock_quantity
+                                            : "Out of Stock"}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div className="product_description_container">
                         <div className="my-6 bg-gray-50 p-4 rounded-lg shadow-none">
-                            <h3 className="text-lg md:text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Description:</h3>
+                            <h3 className="text-lg md:text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                                Description:
+                            </h3>
                             <ul className="list-disc pl-5 space-y-2 mt-3 text-base md:text-lg text-gray-700">
                                 {Object.entries(product.description).map(([key, value], index) => (
                                     <li key={index} className="flex items-start">
-                                        <span className="font-semibold capitalize text-gray-900 mr-2">{key}:</span>
+                                        <span className="font-semibold capitalize text-gray-900 mr-2">
+                                            {key}:
+                                        </span>
                                         <span className="flex-1">{value}</span>
                                     </li>
                                 ))}
@@ -206,4 +241,3 @@ export default function ProductDetailsComponent() {
         </div>
     );
 }
-
