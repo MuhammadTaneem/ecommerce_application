@@ -35,7 +35,6 @@ ALLOWED_HOSTS = [
     'localhost:5173',
 ]
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -46,9 +45,18 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'rest_framework',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
+    'dj_rest_auth.registration',
     'corsheaders',
     'products',
-    'tauth'
+
 ]
 
 MIDDLEWARE = [
@@ -138,9 +146,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'tauth.TauthUser'
+# AUTH_USER_MODEL = 'auth.User'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     # 'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -151,24 +158,48 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
     'http://localhost:5173',
     'https://your-domain.com',
 ]
 
-TAUTH = {
-    'login_field': 'email',
-    'algorithm': 'HS256',
-    'access_token_life_time': timedelta(minutes=120),
-    'active_token_life_time': timedelta(minutes=10),
-    'reset_token_life_time': timedelta(minutes=10),
-    'is_active_required': False,
-    'account_disabled_message': 'User account is disabled',
-    'login_url': 'http://localhost:4200/login/',
-    'active_user_url': 'http://localhost:4200/active/?token=',
-    'reset_password_url': 'http://localhost:4200/reset/?token=',
-    'password_min_length': 6,
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': 'your_google_client_id',
+            'secret': 'your_google_client_secret',
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    },
+    'facebook': {
+        'APP': {
+            'client_id': 'your_facebook_app_id',
+            'secret': 'your_facebook_app_secret',
+            'key': ''
+        },
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'VERIFIED_EMAIL': True,
+    }
+}
+
+REST_AUTH = {
+    'USER_DETAILS_SERIALIZER': 'users.serializers.CustomUserDetailsSerializer',
 }
 
 # SMTP Email Backend
