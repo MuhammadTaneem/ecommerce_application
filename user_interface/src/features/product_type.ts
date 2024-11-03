@@ -6,7 +6,7 @@ export type SkuType = {
     id: number;
     product: number;
     sku_code: string;
-    price: string;
+    price: number;
     stock_quantity: number | null;
     variants_dict: VariantDict;
     variants: number[];
@@ -15,7 +15,9 @@ export type SkuType = {
 export type ProductType = {
     id: number;
     name: string;
-    base_price: string;
+    base_price: number;
+    short_description: string;
+    discount_price: number;
     stock_quantity: number | null;
     has_variants: boolean;
     images: ProductImageType[];
@@ -25,6 +27,9 @@ export type ProductType = {
         [key: string]: string;
     };
     description: {
+        [key: string]: string;
+    };
+    additional_info: {
         [key: string]: string;
     };
 };

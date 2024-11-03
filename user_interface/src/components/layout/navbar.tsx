@@ -45,21 +45,7 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
                         <p className="text_logo"> HORROR</p>
                     </Link>
 
-                    {!isLargeScreen && (<button
-                         className="flex items-center justify-center w-10 h-10  hover:bg-gray-700 rounded-full transition"
-                         onClick={onToggleSidebar}
-                         aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
-                     >
-                        <Bars3Icon className="w-5 h-5 text-gray-300"/>
-                    </button>)}
 
-
-                    {/*{navItemsList.map((item, i) => (*/}
-                    {/*    <Link key={i} to={item.link} className="hover:bg-gray-200 dark:hover:bg-gray-700 p-2">*/}
-                    {/*        {item.name}*/}
-                    {/*    </Link>*/}
-
-                    {/*))}*/}
 
 
 
@@ -115,6 +101,30 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
 
 
                 </span>
+            </div>
+            <div className="secound_row px-5 flex justify-start">
+                <button
+                    className="flex items-center justify-center w-10 h-10  hover:bg-gray-700 rounded-full transition"
+                    onClick={onToggleSidebar}
+                    aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                >
+                    <Bars3Icon className="w-5 h-5 text-gray-300"/>
+                </button>
+                <button
+                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    Offer
+                </button>
+
+                <button
+                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    Free Delivery
+                </button>
+
+                <button
+                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    Popular Products
+                </button>
+
             </div>
 
 

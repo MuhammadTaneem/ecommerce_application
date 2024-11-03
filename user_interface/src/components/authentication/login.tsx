@@ -1,10 +1,59 @@
-export default function LoginComponent() {
+import { GoogleLogin } from '@react-oauth/google';
+import FacebookLogin from 'react-facebook-login-lite';
+import axios from 'axios';
+
+const SocialLogin = () => {
+    const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            const res = await axios.post('http://localhost:8000/api/auth/google/', {
+                token: credentialResponse.credential
+            });
+
+            // Store the token
+            localStorage.setItem('token', res.data.key);
+            // You might want to use a proper state management solution like Redux or Context
+            console.log('Google login successful');
+
+        } catch (error) {
+            console.error('Google login error:', error);
+        }
+    };
+
+    const handleGoogleError = () => {
+        console.error('Google login failed');
+    };
+
+    const handleFacebookResponse = async (response) => {
+        if (response.status === 'connected') {
+            try {
+                const res = await axios.post('http://localhost:8000/api/auth/facebook/', {
+                    access_token: response.authResponse.accessToken,
+                });
+
+                localStorage.setItem('token', res.data.key);
+                console.log('Facebook login successful');
+
+            } catch (error) {
+                console.error('Facebook login error:', error);
+            }
+        }
+    };
+
     return (
-        <>
-            <h3>Login Form</h3>
-            <img
-                src="https://img.freepik.com/free-vector/golden-elegant-corporative-logo-template_23-2148214854.jpg?w=740&t=st=1720512115~exp=1720512715~hmac=fa9b485566ddc3bbedacf0f045f7031a27c21500dc586e120b0a30b5e4d4d8fc"
-                alt="COmpany Logo"/>
-        </>
-    )
-}
+        <div className="flex flex-col gap-4 items-center">
+            <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+            />
+
+            <FacebookLogin
+                appId="your-facebook-app-id"
+                onResponse={handleFacebookResponse}
+                className="fb-login-button"
+            />
+        </div>
+    );
+};
+
+export default SocialLogin;

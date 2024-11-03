@@ -5,11 +5,11 @@ import {useAppDispatch, useAppSelector} from "../../core/store.ts";
 import {ChevronRightIcon, ChevronDownIcon, XMarkIcon, Bars3Icon} from '@heroicons/react/24/solid'
 import {CategoryType} from "../../features/categories_type.ts";
 import {useNavigate} from "react-router-dom";
+import {NavbarComponentProps} from "./layout.tsx";
 
 
-export default function SidebarComponent({isLargeScreen }:{ isLargeScreen: boolean }) {
+export default function SidebarComponent({onToggleSidebar, isSidebarOpen, isLargeScreen}: NavbarComponentProps) {
     const categories: CategoryType[] = useAppSelector(state => state.categories.categories)
-    const [isSidebarContent, setIsSidebarContent] = useState(true);
 
     const dispatch = useAppDispatch();
     useEffect(() => {
@@ -25,21 +25,16 @@ export default function SidebarComponent({isLargeScreen }:{ isLargeScreen: boole
         fetchData();
     }, []);
 
-    function toggleSidebarContent(){
-        setIsSidebarContent(!isSidebarContent);
-    }
-
-
 
     return (<>
         <div className="sidebar p-4  bg-gray-100 dark:bg-gray-100 w-auto">
             <div className="button-line mb-4 grid justify-items-end">
-                {isLargeScreen &&<button
+                {<button
                     className="flex items-center justify-center w-10 h-10  text-gray-900 hover:bg-gray-600 hover:text-gray-300 rounded-full transition"
-                    onClick={toggleSidebarContent}
-                    aria-label={isSidebarContent ? "Close Sidebar" : "Open Sidebar"}
+                    onClick={onToggleSidebar}
+                    aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
                 >
-                    {isSidebarContent ? (
+                    {isSidebarOpen ? (
                         <XMarkIcon className="w-5 h-5 "/>
                     ) : (
                         <Bars3Icon className="w-5 h-5"/>
@@ -47,11 +42,11 @@ export default function SidebarComponent({isLargeScreen }:{ isLargeScreen: boole
                 </button>}
             </div>
 
-            {isSidebarContent && (
-                categories.map((category) => (
+
+            {categories.map((category) => (
                     <CategoryDropdown key={category.id} category={category}/>
-                ))
-            )}
+                ))}
+
         </div>
     </>)
 }

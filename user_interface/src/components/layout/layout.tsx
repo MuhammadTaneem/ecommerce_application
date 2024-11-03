@@ -16,7 +16,7 @@ export interface NavbarComponentProps {
 
 export default function LayoutComponent() {
     const isLargeScreen = useMediaQuery({ query: "(min-width: 1200px)" });
-    const [isSidebarOpen, setIsSidebarOpen] = useState(isLargeScreen); // State to manage sidebar visibility
+    const [isSidebarOpen, setIsSidebarOpen] = useState(isLargeScreen);
 
     // Function to toggle sidebar
     const toggleSidebar = () => {
@@ -32,7 +32,9 @@ export default function LayoutComponent() {
                                                  isLargeScreen={isLargeScreen}
             /> : <h2>Please log in.</h2>}
             <div className="main-container flex">
-                {isSidebarOpen && <SidebarComponent  isLargeScreen={isLargeScreen} />}
+                {isSidebarOpen && <SidebarComponent  onToggleSidebar={toggleSidebar}
+                                                     isSidebarOpen={isSidebarOpen}
+                                                     isLargeScreen={isLargeScreen} />}
                 < Outlet />
             </div>
             <FooterComponent />

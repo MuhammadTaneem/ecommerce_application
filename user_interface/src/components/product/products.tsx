@@ -3,13 +3,13 @@ import {ProductListType} from "../../features/product_type.ts";
 import {useEffect, useState} from "react";
 import axiosInstance from "../../utilites/api.ts";
 import {addProduct} from "../../features/productSlice.ts";
-import {useLocation} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {ShoppingCartIcon} from "@heroicons/react/24/solid";
 
 export default function ProductListComponent() {
     const dispatch = useAppDispatch();
     const location = useLocation();
-
+    const navigate = useNavigate();
     const [products, setProducts] = useState<ProductListType[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [searchCategory, setSearchCategory] = useState<string>(get_params());
@@ -53,6 +53,9 @@ export default function ProductListComponent() {
                 <div className="product-list pt-5 grid grid-cols-4 text-blue-600">
                     {products.map((product: ProductListType, index: number) => (
                         <div key={index}
+                             onClick={()=>{
+                                 navigate(`/product/${product.id}`);
+                             }}
                              className="product-card max-w-sm bg-white shadow-lg rounded-lg overflow-hidden m-3">
 
                             {product.image ? (
