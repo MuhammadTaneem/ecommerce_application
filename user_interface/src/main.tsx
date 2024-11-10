@@ -13,6 +13,7 @@ import {store} from "./core/store.ts";
 // import SidebarComponent from "./components/layout/sidebar.tsx";
 import ProductListComponent from "./components/product/products.tsx";
 import ProductDetailsComponent from "./components/product/product_details.tsx";
+import Login from "./components/authentication/login.tsx";
 
 
 const router = createBrowserRouter(
@@ -20,6 +21,7 @@ const router = createBrowserRouter(
         <>
             <Route path='/' element={<LayoutComponent/>}>
                 <Route path='/' element={<Navigate to='/products' replace/>}/>
+                <Route path='/login' element={<Login/>}></Route>
                 <Route path='/home' element={<HomepageComponent/>}></Route>
                 <Route path='/products/:fragment?' element={<ProductListComponent/>}></Route>
                 <Route path='/product/:id' element={<ProductDetailsComponent/>}></Route>

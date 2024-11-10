@@ -38,22 +38,30 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django.contrib.sites',  # Required for allauth
+
+    # Rest Framework
     'rest_framework',
     'rest_framework.authtoken',
-    'dj_rest_auth',
-    'django.contrib.sites',
+
+    # AllAuth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+
+    # Social Providers
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.facebook',
+
+    'dj_rest_auth',
     'dj_rest_auth.registration',
+
     'corsheaders',
     'products',
 
@@ -68,6 +76,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Add this line
+    "allauth.account.middleware.AccountMiddleware",  # Required for allauth
 ]
 
 ROOT_URLCONF = "server.urls"
@@ -148,35 +158,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # AUTH_USER_MODEL = 'auth.User'
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    # 'DEFAULT_AUTHENTICATION_CLASSES': (
-    #     'tauth.authentication.TAuthJWTAuthentication',
-    # ),
-}
+# Additional REST Framework settings
+# AllAuth settings
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_UNIQUE_EMAIL = True
 
-CORS_ORIGIN_ALLOW_ALL = False
-CORS_ALLOW_CREDENTIALS = True
-
-
+# Authentication backends
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:4200',
-    'http://localhost:5173',
-    'https://your-domain.com',
-]
-
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'APP': {
-            'client_id': 'your_google_client_id',
-            'secret': 'your_google_client_secret',
-            'key': ''
-        },
         'SCOPE': [
             'profile',
             'email',
@@ -186,21 +182,41 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     },
     'facebook': {
-        'APP': {
-            'client_id': 'your_facebook_app_id',
-            'secret': 'your_facebook_app_secret',
-            'key': ''
-        },
         'METHOD': 'oauth2',
-        'SCOPE': ['email', 'public_profile'],
-        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
-        'VERIFIED_EMAIL': True,
+        'SCOPE': ['email'],
+        'FIELDS': [
+            'id',
+            'email',
+            'name',
+            'first_name',
+            'last_name',
+            'verified',
+            'locale',
+            'timezone',
+            'link',
+            'gender',
+            'updated_time',
+        ],
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v7.0',
     }
 }
 
-REST_AUTH = {
-    'USER_DETAILS_SERIALIZER': 'users.serializers.CustomUserDetailsSerializer',
-}
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:4200',
+    'http://localhost:5173',
+    'https://your-domain.com',
+]
+
+# static & media
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+STATIC_URL = 'static/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # SMTP Email Backend
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -210,25 +226,3 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'famouswebdeveloper@gmail.com'  # Your email address
 # EMAIL_HOST_PASSWORD = '********'  # Your email password
 EMAIL_HOST_PASSWORD = 'zzdjlscpwsggtrdl'  # Your email password
-
-# Production Env Settings
-# INSTALLED_APPS += ('storages',)
-
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-# STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
-# STATIC_URL = '/static/'
-#
-# # Extra places for collectstatic to find static files.
-STATIC_URL = 'static/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# STATICFILES_DIRS = (
-#     os.path.join(BASE_DIR, 'static'),
-# )
-
-
-# Simplified static file serving.
-# https://warehouse.python.org/project/whitenoise/
-
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

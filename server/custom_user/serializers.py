@@ -1,8 +1,17 @@
+# serializers.py
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from .models import User
 
-class CustomUserDetailsSerializer(serializers.ModelSerializer):
+
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = get_user_model()
+        model = User
         fields = ('id', 'email', 'first_name', 'last_name')
-        read_only_fields = ('email',)
+
+
+class EmailRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('email', 'password', 'first_name', 'last_name')
