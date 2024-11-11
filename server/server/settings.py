@@ -36,6 +36,7 @@ ALLOWED_HOSTS = [
 ]
 
 # Application definition
+# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -44,23 +45,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',  # Required for allauth
+    'django.contrib.sites',
 
-    # Rest Framework
     'rest_framework',
     'rest_framework.authtoken',
 
-    # AllAuth
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
 
-    # Social Providers
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
-
-    'dj_rest_auth',
-    'dj_rest_auth.registration',
 
     'corsheaders',
     'products',
@@ -76,8 +71,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Add this line
-    "allauth.account.middleware.AccountMiddleware",  # Required for allauth
+    "allauth.account.middleware.AccountMiddleware",
+
 ]
 
 ROOT_URLCONF = "server.urls"
@@ -118,23 +113,6 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
-]
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
@@ -156,51 +134,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-
-# AUTH_USER_MODEL = 'auth.User'
-# Additional REST Framework settings
-# AllAuth settings
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_UNIQUE_EMAIL = True
-
-# Authentication backends
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        }
-    },
-    'facebook': {
-        'METHOD': 'oauth2',
-        'SCOPE': ['email'],
-        'FIELDS': [
-            'id',
-            'email',
-            'name',
-            'first_name',
-            'last_name',
-            'verified',
-            'locale',
-            'timezone',
-            'link',
-            'gender',
-            'updated_time',
-        ],
-        'VERIFIED_EMAIL': False,
-        'VERSION': 'v7.0',
-    }
-}
 
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
@@ -226,3 +159,53 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'famouswebdeveloper@gmail.com'  # Your email address
 # EMAIL_HOST_PASSWORD = '********'  # Your email password
 EMAIL_HOST_PASSWORD = 'zzdjlscpwsggtrdl'  # Your email password
+
+
+# ====================================authentication
+
+SITE_ID = 1
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'jwt-auth',
+}
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Rest Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'EMAIL_AUTHENTICATION': True,  # Use email for Google login
+        'APP': {
+            'client_id': '276749228751-v1uc9saefeu7n82m438n7iu4c47m7eck.apps.googleusercontent.com',     # Replace with your actual client ID
+            'secret': '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',        # Replace with your actual client secret
+            'key': ''
+        }
+    }
+}
+SITE_ID = 1
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+
+
+# URLs to redirect after login/logout
+LOGIN_URL = 'http://localhost:5173/login'
+LOGIN_REDIRECT_URL = 'http://localhost:5173'
+LOGOUT_URL = 'http://localhost:5173/logout'
+LOGOUT_REDIRECT_URL = 'http://localhost:5173'

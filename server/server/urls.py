@@ -26,6 +26,6 @@ urlpatterns = [
                   path('api/products/', include('products.urls')),
                   path('api/admin/', include('admin_panel.urls')),
                   path('auth/', include('dj_rest_auth.urls')),
-                  path('auth/registration/', include('dj_rest_auth.registration.urls')),
                   path('accounts/', include('allauth.urls')),
+                  path('api/auth/google/', include('allauth.socialaccount.urls')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
