@@ -50,14 +50,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
 
-    'dj_rest_auth',
-    'dj_rest_auth.registration',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
+    'tauth',
+    'custom_users',
 
-
-    'corsheaders',
     'products',
 
 ]
@@ -71,7 +66,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
 
 ]
 
@@ -138,11 +132,33 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = [
+AUTH_USER_MODEL = 'custom_users.CustomUser'
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'tauth.authentication.TAuthJWTAuthentication',
+    ),
+}
+
+CORS_ORIGIN_WHITELIST = (
+    'http://localhost:8000',
     'http://localhost:4200',
-    'http://localhost:5173',
-    'https://your-domain.com',
-]
+
+)
+SITE_ID = 1
+TAUTH = {
+    'login_field': 'email',
+    'algorithm': 'HS256',
+    'access_token_life_time': timedelta(minutes=120),
+    'active_token_life_time': timedelta(minutes=10),
+    'reset_token_life_time': timedelta(minutes=10),
+    'is_active_required': False,
+    'account_disabled_message': 'User account is disabled',
+    'login_url': 'http://localhost:4200/login/',
+    'active_user_url': 'http://localhost:4200/active/?token=',
+    'reset_password_url': 'http://localhost:4200/reset/?token=',
+    'password_min_length': 6,
+}
 
 # static & media
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -159,53 +175,3 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'famouswebdeveloper@gmail.com'  # Your email address
 # EMAIL_HOST_PASSWORD = '********'  # Your email password
 EMAIL_HOST_PASSWORD = 'zzdjlscpwsggtrdl'  # Your email password
-
-
-# ====================================authentication
-
-SITE_ID = 1
-REST_AUTH = {
-    'USE_JWT': True,
-    'JWT_AUTH_COOKIE': 'jwt-auth',
-}
-
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
-
-# Rest Framework settings
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-}
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-        'EMAIL_AUTHENTICATION': True,  # Use email for Google login
-        'APP': {
-            'client_id': '276749228751-v1uc9saefeu7n82m438n7iu4c47m7eck.apps.googleusercontent.com',     # Replace with your actual client ID
-            'secret': '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',        # Replace with your actual client secret
-            'key': ''
-        }
-    }
-}
-SITE_ID = 1
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
-
-
-# URLs to redirect after login/logout
-LOGIN_URL = 'http://localhost:5173/login'
-LOGIN_REDIRECT_URL = 'http://localhost:5173'
-LOGOUT_URL = 'http://localhost:5173/logout'
-LOGOUT_REDIRECT_URL = 'http://localhost:5173'

@@ -23,3 +23,13 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+
+
+export const google_client_id = ()=>{
+    return '276749228751-v1uc9saefeu7n82m438n7iu4c47m7eck.apps.googleusercontent.com';
+}
+
+export const facebook_app_id = ()=>{
+    return '2389510201391989';
+}

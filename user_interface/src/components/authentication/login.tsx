@@ -1,35 +1,43 @@
-import React from 'react';
-import axios from 'axios';
+import {GoogleLogin} from '@react-oauth/google';
+import FacebookLogin from 'react-facebook-login';
+import {facebook_app_id} from "../../utilites/api.ts";
 
-const GoogleLogin = () => {
-    const handleGoogleLogin = async (response) => {
-        try {
-            const res = await axios.post('http://127.0.0.1:8000/api/auth/google/', {
-                access_token: response.accessToken,
-            });
 
-            // Store the token in localStorage
-            localStorage.setItem('token', res.data.key);
+export  default  function  LoginComponent(){
 
-            // Configure axios defaults for future requests
-            axios.defaults.headers.common['Authorization'] = `Token ${res.data.key}`;
-
-            // Handle successful login (e.g., redirect)
-        } catch (error) {
-            console.error('Google login error:', error);
+    const responseFacebook = (response) => {
+        console.log(response); // Contains user profile information and token
+        if (response.accessToken) {
+            // Use response.accessToken to authenticate with your server if necessary
+            // Here, you can store the token or handle user data as needed
+        } else {
+            console.error("User failed to authenticate with Facebook.");
         }
     };
 
-    return (
-        <div>
-            {/* Add your Google login button component here */}
-            <button onClick={() => {
-                window.location.href = 'http://127.0.0.1:8000/api/auth/google/login/';
-            }}>
-                Login with Google
-            </button>
-        </div>
-    );
-};
+    return(
+        <>
 
-export default GoogleLogin;
+            <div className="flex justify-around">
+                <GoogleLogin
+                    onSuccess={credentialResponse => {
+                        console.log(credentialResponse);
+                    }}
+                    onError={() => {
+                        console.log('Login Failed');
+                    }}
+                />
+
+                <FacebookLogin
+                    appId={facebook_app_id()}  // Replace with your Facebook App ID
+                    autoLoad={false}
+                    fields="name,email,picture"
+                    callback={responseFacebook}
+                    cssClass="facebook-login-button" // Custom class
+                    icon="fa-facebook"
+                />
+            </div>
+
+        </>
+    )
+}
