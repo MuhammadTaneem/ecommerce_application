@@ -49,11 +49,10 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework.authtoken',
-
-    'tauth',
-    'custom_users',
+    'djoser',
 
     'products',
+    'users'
 
 ]
 
@@ -132,32 +131,34 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
-AUTH_USER_MODEL = 'custom_users.CustomUser'
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'tauth.authentication.TAuthJWTAuthentication',
-    ),
-}
-
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8000',
     'http://localhost:4200',
 
 )
 SITE_ID = 1
-TAUTH = {
-    'login_field': 'email',
-    'algorithm': 'HS256',
-    'access_token_life_time': timedelta(minutes=120),
-    'active_token_life_time': timedelta(minutes=10),
-    'reset_token_life_time': timedelta(minutes=10),
-    'is_active_required': False,
-    'account_disabled_message': 'User account is disabled',
-    'login_url': 'http://localhost:4200/login/',
-    'active_user_url': 'http://localhost:4200/active/?token=',
-    'reset_password_url': 'http://localhost:4200/reset/?token=',
-    'password_min_length': 6,
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+AUTH_USER_MODEL = 'users.User'
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,
+    "USER_CREATE_PASSWORD_RETYPE": False,
+    'SERIALIZERS': {},
+    'LOGIN_FIELD': 'email'
 }
 
 # static & media
