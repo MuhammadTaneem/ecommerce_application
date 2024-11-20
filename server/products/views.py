@@ -1,10 +1,11 @@
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from core.enum import PermissionEnum
+from core.permissions import require_permissions
 from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from .serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, ProductSerializer, \
     ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, ProductListSerializer
@@ -54,6 +55,9 @@ def category_lst_view(request):
 
 
 @api_view(['GET'])
+# @permission_classes([require_permissions(PermissionEnum.VIEW_USER)])
+# @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.PRODUCT_VIEW, PermissionEnum.PRODUCT_UPDATE])
+@require_permissions(PermissionEnum.PRODUCT_LIST)
 def products_list(request, slug=None):
     if slug:
         categories = Category.objects.filter(
@@ -100,6 +104,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
 
 
+
 @api_view(['GET', 'POST'])
 def product_details_view(request, pk):
     if request.method == 'GET':
@@ -136,3 +141,4 @@ class ProductImageDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SKUDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SKU.objects.all()
     serializer_class = SKUSerializer
+

@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'djoser',
 
     'products',
-    'users'
+    'core',
 
 ]
 
@@ -143,7 +143,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'core.User'
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),
@@ -157,7 +157,10 @@ DJOSER = {
     'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     "USER_CREATE_PASSWORD_RETYPE": False,
-    'SERIALIZERS': {},
+    'SERIALIZERS': {
+        'user': 'core.serializers.UserSerializer',
+        'current_user': 'core.serializers.UserSerializer',
+    },
     'LOGIN_FIELD': 'email'
 }
 
