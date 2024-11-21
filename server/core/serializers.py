@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from core.enum import PermissionEnum
-from core.models import Role, User
+from core.models import Role
+from django.contrib.auth import get_user_model
+from djoser.serializers import UserCreateSerializer, UserSerializer
+User = get_user_model()
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -23,17 +26,17 @@ class RoleSerializer(serializers.ModelSerializer):
         return value
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(UserSerializer):
     role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), allow_null=True)
 
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'phone', 'date_joined',
+            'id', 'email', 'first_name', 'last_name', 'phone', 'created',
             'is_active', 'is_staff', 'is_superuser', 'is_verified', 'last_login',
             'avatar', 'role'
         ]
-        read_only_fields = ['date_joined', 'last_login']
+        read_only_fields = ['created', 'last_login']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

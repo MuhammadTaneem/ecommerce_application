@@ -1,8 +1,9 @@
 from django.db.models.signals import post_save, post_migrate
 from django.dispatch import receiver
-from core.models import Role, User
+from core.models import Role
 from core.roles import default_roles
-
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 @receiver(post_save, sender=User)
 def assign_default_role(sender, instance, created, **kwargs):

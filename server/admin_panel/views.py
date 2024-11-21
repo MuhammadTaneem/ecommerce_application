@@ -1,8 +1,11 @@
+from django.utils.decorators import method_decorator
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db import transaction
 
+from core.enum import PermissionEnum
+from core.permissions import require_permissions
 from products.models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from products.serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, \
     ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer
@@ -28,11 +31,23 @@ class VariantValueDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = VariantValueSerializer
 
 
+@method_decorator(require_permissions(PermissionEnum.CATEGORY_LIST_VIEW), name='get')
+@method_decorator(require_permissions(PermissionEnum.CATEGORY_CREATE), name='post')
 class CategoryListCreateView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+    # @require_permissions(PermissionEnum.CATEGORY_CREATE)
+    # def post(self, request, *args, **kwargs):
+    #     return super().post(request, *args, **kwargs)
+    #
+    # @require_permissions(PermissionEnum.CATEGORY_LIST_VIEW)
+    # def get(self, request, *args, **kwargs):
+    #     return super().get(request, *args, **kwargs)
 
+
+# @method_decorator(require_permissions(PermissionEnum.CATEGORY_DETAILS), name='get')
+# @method_decorator(require_permissions(PermissionEnum.CATEGORY_UPDATE), name='post')
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -45,9 +60,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
     # create sku if have variant
 
 
-
-
-@api_view(['POST','GET'])
+@api_view(['POST', 'GET'])
 def product_create_list_view(request):
     if request.method == 'POST':
         try:
@@ -85,7 +98,6 @@ def product_create_list_view(request):
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductDetailsSerializer
-
 
 
 class ProductImageListCreateView(generics.ListCreateAPIView):

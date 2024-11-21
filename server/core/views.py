@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from core.models import Role
 from core.serializers import RoleSerializer
+from core.enum import PermissionEnum
 
 
 class RoleViewSet(viewsets.ModelViewSet):
@@ -14,6 +15,8 @@ class RoleViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         try:
+
+            # all_permissions_list = PermissionEnum.choices()
             return super().create(request, *args, **kwargs)
         except ValidationError as e:
             return Response(

@@ -1,9 +1,10 @@
 import uuid
 
 from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import PermissionsMixin, AbstractUser
 from django.db import models
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 
 class Role(models.Model):
@@ -20,49 +21,33 @@ class Role(models.Model):
         return self.permissions or []
 
 
-class CustomUserManager(BaseUserManager):
-    """
-    Custom user manager to handle creating users and superusers.
-    """
-
-    def create_user(self, email, password=None, **extra_fields):
-        """
-        Create and return a regular user with an email and password.
-        """
+class Usermanager(BaseUserManager):
+    def create_user(self, email, phone,password=None, **extra_fields):
+        import pdb; pdb.set_trace()
         if not email:
             raise ValueError("The Email field must be set")
-
         email = self.normalize_email(email)
-        extra_fields.setdefault('is_active', True)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(email=email, phone=phone,**extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        """
-        Create and return a superuser with an email and password.
-        """
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
+    def create_superuser(self, email, user_type, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError("Superuser must have is_staff=True.")
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
-
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(email, user_type, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
+    first_name = models.CharField(max_length=30, null=True)
+    last_name = models.CharField(max_length=30, null=True)
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=15, blank=True)
-    date_joined = models.DateTimeField(default=timezone.now)
+    phone = models.CharField(max_length=15, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+    created = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     role = models.ForeignKey(
@@ -71,15 +56,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         related_name='users'
     )
-    objects = CustomUserManager()
+    username = None
+    objects = Usermanager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+
+    REQUIRED_FIELDS = ['phone']
+
+    def clean(self):
+        if self.phone:
+            if User.objects.filter(phone=self.phone).exclude(id=self.id).exists():
+                raise ValidationError(f"The phone number {self.phone} is already in use.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        import pdb;pdb.set_trace()
+        super().save(*args, **kwargs)
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
-
-
 
     # def get_short_name(self):
     #     return self.first_name
