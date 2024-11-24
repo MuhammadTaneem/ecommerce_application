@@ -1,5 +1,6 @@
 from django.contrib import admin
-from rest_framework.authtoken.admin import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 from core.models import Role
 

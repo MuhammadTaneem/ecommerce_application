@@ -49,7 +49,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework.authtoken',
-    'djoser',
+    # 'djoser',
 
     'products',
     'core',
@@ -128,42 +128,49 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 
-CORS_ORIGIN_ALLOW_ALL = False
+# CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
+# CORS_ORIGIN_WHITELIST = (
+#     'http://localhost:8000',
+#     'http://localhost:4200',
+#
+# )
+SITE_ID = 1
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',
+#     ],
+# }
+
+AUTH_USER_MODEL = 'core.User'
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'core.authentication.TAuthJWTAuthentication',
+    ),
+}
+
+CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8000',
     'http://localhost:4200',
 
 )
-SITE_ID = 1
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-}
 
-AUTH_USER_MODEL = 'core.User'
-SIMPLE_JWT = {
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+TAUTH = {
+    'login_field': 'email',
+    'algorithm': 'HS256',
+    'access_token_life_time': timedelta(minutes=120),
+    'active_token_life_time': timedelta(minutes=10),
+    'reset_token_life_time': timedelta(minutes=10),
+    'is_active_required': False,
+    'account_disabled_message': 'User account is disabled',
+    'login_url': 'http://localhost:4200/login/',
+    'active_user_url': 'http://localhost:4200/active/?token=',
+    'reset_password_url': 'http://localhost:4200/reset/?token=',
+    'password_min_length': 6,
 }
-DJOSER = {
-    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': '#/activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': False,
-    "USER_CREATE_PASSWORD_RETYPE": False,
-    'SERIALIZERS': {
-        'user': 'core.serializers.UserSerializer',
-        'current_user': 'core.serializers.UserSerializer',
-    },
-    'LOGIN_FIELD': 'email'
-}
-
 # static & media
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 STATIC_URL = 'static/'

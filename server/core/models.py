@@ -23,7 +23,6 @@ class Role(models.Model):
 
 class Usermanager(BaseUserManager):
     def create_user(self, email, phone,password=None, **extra_fields):
-        import pdb; pdb.set_trace()
         if not email:
             raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
@@ -70,7 +69,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         self.clean()
-        import pdb;pdb.set_trace()
         super().save(*args, **kwargs)
 
     def get_full_name(self):

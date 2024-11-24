@@ -9,6 +9,7 @@ urlpatterns = [
                   path("admin/", admin.site.urls),
                   path('api/products/', include('products.urls')),
                   path('api/admin/', include('admin_panel.urls')),
-                  path('auth/', include('djoser.urls')),
-                  path('auth/', include('djoser.urls.jwt')),
+                  path('api/auth/', include('core.urls')),
+                  # path('auth/', include('djoser.urls')),
+                  # path('auth/', include('djoser.urls.jwt')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
