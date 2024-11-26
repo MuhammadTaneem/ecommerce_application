@@ -49,6 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     created = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    permissions = models.JSONField(default=list)
     role = models.ForeignKey(
         Role,
         on_delete=models.SET_NULL,

@@ -4,8 +4,9 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from core.authentication import require_permissions
 from core.enum import PermissionEnum
-from core.permissions import require_permissions
 from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from .serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, ProductSerializer, \
     ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, ProductListSerializer
@@ -56,9 +57,10 @@ def category_lst_view(request):
 
 @api_view(['GET'])
 # @permission_classes([require_permissions(PermissionEnum.VIEW_USER)])
-# @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.PRODUCT_VIEW, PermissionEnum.PRODUCT_UPDATE])
+# @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.CATEGORY_DELETE])
 @require_permissions(PermissionEnum.PRODUCT_LIST)
 def products_list(request, slug=None):
+    # import pdb;pdb.set_trace()
     if slug:
         categories = Category.objects.filter(
             Q(slug=slug) |

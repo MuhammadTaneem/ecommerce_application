@@ -1,6 +1,10 @@
 from datetime import timedelta
+from functools import lru_cache
+import logging
+
 from django.conf import settings
 
+logger = logging.getLogger(__name__)
 default_settings = {
     'login_field': 'email',
     'is_active_required': False,
@@ -39,12 +43,16 @@ def merge_settings(default, custom):
 
 
 class ConfData:
-    conf_data = None
+    _config = None
 
-    def get_data(self):
-        if self.conf_data is None:
-            custom_settings = getattr(settings, 'TAUTH', {})
-            conf_data = merge_settings(default_settings, custom_settings)
-            return conf_data
-        else:
-            return self.conf_data
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def get_data():
+        if ConfData._config is None:
+            try:
+                custom_settings = getattr(settings, 'TAUTH', {})
+                ConfData._config = merge_settings(default_settings, custom_settings)
+            except Exception as e:
+                logger.error(f"Failed to load configuration: {str(e)}")
+                raise
+        return ConfData._config

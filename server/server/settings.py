@@ -109,7 +109,7 @@ DATABASES = {
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = 'Asia/Dhaka'
 
 USE_I18N = True
 
@@ -186,3 +186,43 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'famouswebdeveloper@gmail.com'  # Your email address
 # EMAIL_HOST_PASSWORD = '********'  # Your email password
 EMAIL_HOST_PASSWORD = 'zzdjlscpwsggtrdl'  # Your email password
+
+# Optimize Celery settings
+# CELERY_TASK_ALWAYS_EAGER = False
+# CELERY_TASK_ACKS_LATE = True
+# CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_TIMEZONE = TIME_ZONE
+# CELERY_BROKER_POOL_LIMIT = 100
+# CELERY_BROKER_CONNECTION_TIMEOUT = 3
+# CELERY_BROKER_CONNECTION_RETRY = True
+# CELERY_BROKER_CONNECTION_MAX_RETRIES = 3
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# CELERY_IMPORTS = ('bus_ticket_booking.tasks',)
+
+# CELERY_BEAT_SCHEDULE = {
+#     'cancel_pending_reservation': {
+#         'task': 'bus_ticket_booking.tasks.cancel_pending_reservation',  # Task to run
+#         'schedule': timedelta(minutes=1)  # Run every 5 minutes
+#             also  you can use crontab for scheduling better control
+#     },
+#     # 'delete_completed_tasks': {
+#     #     'task': 'bus_ticket_booking.tasks.delete_completed_tasks',  # Task to run
+#     #     'schedule': timedelta(minutes=5)  # Run every 5 minutes
+#     # },
+# }
+
+CACHE_TTL = 60 * 6 * 1
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+            'CULL_FREQUENCY': 3,
+        },
+        'KEY_PREFIX': 'redis_',  # Optional prefix for all keys
+    }
+}

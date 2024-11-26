@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.db import transaction
 
 from core.enum import PermissionEnum
-from core.permissions import require_permissions
+from core.authentication import require_permissions
 from products.models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from products.serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, \
     ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer

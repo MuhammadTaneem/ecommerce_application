@@ -4,9 +4,9 @@ from core.views import *
 
 app_name = 'core'
 urlpatterns = [
-    path('login/', user_login, name='login'),
-    path('logout/', user_logout, name='logout'),
-    path('sign_up/', sign_up, name='sign_up'),
+    path('login/', user_login, name='login'),  # checked
+    path('logout/', user_logout, name='logout'),  # can improve
+    path('sign_up/', sign_up, name='sign_up'),  # checked
     path('profile/', get_profile, name='get_profile'),
     path('update_profile/', update_profile, name='update_profile'),
     path('update_email/', update_email, name='update_email'),
