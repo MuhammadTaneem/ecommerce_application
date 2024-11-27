@@ -13,6 +13,8 @@ services:
     depends_on:
       - db
       - redis
+      - celery_worker
+      - celery_beat
     env_file:
       - .env
     environment:

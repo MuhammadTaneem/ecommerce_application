@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import check_password
 from core.authentication import t_auth_active_token_verify, t_auth_reset_token_verify
-from core.utilities import email_sender, token_generator, activation_email_sender
+from core.utilities import token_generator, activation_email_sender, reset_password_email_sender
 from core.serializers import *
 from core.enum import TokenType
 
@@ -57,8 +57,8 @@ def sign_up(request):
         if serializer.is_valid():
             user = serializer.save()
             start_time = datetime.datetime.now()
-            # activation_email_sender.delay(user.email, request.user.id)
-            activation_email_sender(user.email, request.user.id)
+            activation_email_sender.delay(user.email, request.user.id)
+            # activation_email_sender(user.email, request.user.id)
             end_time = datetime.datetime.now()
             print(f"execution time: {end_time - start_time}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -89,8 +89,7 @@ def change_password(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
-    user = request.user
-
+    user = User.objects.get(id=request.user.id)
     if request.method == 'PUT':
         serializer = UserUpdateSerializer(user, data=request.data, partial=True)
 
@@ -103,16 +102,12 @@ def update_profile(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_email(request):
-    user = request.user
-    user_permissions_list = user.get_user_roll_permissions()
-    import pdb;pdb.set_trace()
-
-
+    user = User.objects.get(id=request.user.id)
     if request.method == 'PUT':
         serializer = UserEmailUpdate(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            response = activation_email_sender(user.email, user.id)
+            response = activation_email_sender.delay(user.email, user.id)
             if response:
                 return Response({'message': 'Your email is updated. Please check your email'},
                                 status=status.HTTP_200_OK)
@@ -120,8 +115,6 @@ def update_email(request):
                 return Response({'message': 'Send Activation email field.'}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 # def token_generator(user_id, token_type):
@@ -167,14 +160,14 @@ def re_send_activation_email(request):
         return Response({'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         user = User.objects.get(email=email)
+        activation_email_sender.delay(email, user.id)
+        return Response({'message': 'Activation email send. Please check your email'},
+                        status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({'message': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-    response = activation_email_sender(email, user.id)
-    if response:
-        return Response({'message': 'Activation email send. Please check your email'}, status=status.HTTP_200_OK)
-    else:
-        return Response({'message': 'Send Activation email field.'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({f"message : {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -198,29 +191,21 @@ def active_user(request):
 
 @api_view(['POST'])
 def send_reset_password_email(request):
-    email = request.data.get('email', None)
-    if email is None:
-        return Response({'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
+        email = request.data.get('email', None)
+        if email is None:
+            return Response({'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
         user = User.objects.get(email=email)
+        reset_password_email_sender.delay(email=email, user_id=user.id)
+        return Response({'message': 'Reset Password email send. Please check your email'},
+                        status=status.HTTP_200_OK)
+
     except User.DoesNotExist:
         return Response({'message': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)
-    try:
 
-        token = token_generator(user_id=user.id, token_type=TokenType.reset)
-        reset_password_url = config_data['urls']['reset_password_url']
-        logo_url = config_data['logo_url']
-        context = {'reset_password_url': reset_password_url + token, 'logo_url': logo_url}
-        template_path = 'emails/reset_password.html'
-        html_content = render_to_string(template_path, context)
-        response = email_sender(email=email, body=html_content, subject='Reset Password')
-        if response:
-            return Response({'message': 'Reset Password email send. Please check your email'},
-                            status=status.HTTP_200_OK)
-        else:
-            return Response({'message': 'Reset Password email field.'}, status=status.HTTP_400_BAD_REQUEST)
-    except:
-        return Response({'message': 'Internal Server Error'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({f"message : {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PUT'])

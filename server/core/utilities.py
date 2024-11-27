@@ -68,3 +68,20 @@ def activation_email_sender(email, user_id):
     except Exception as e:
         print(f"Email sending failed: {str(e)}")
         return False
+
+
+@shared_task(name='reset_password_email_sender')
+def reset_password_email_sender(email, user_id):
+    try:
+
+        token = token_generator(user_id=user_id, token_type=TokenType.reset)
+        reset_password_url = config_data['urls']['reset_password_url']
+        logo_url = config_data['logo_url']
+        context = {'reset_password_url': reset_password_url + token, 'logo_url': logo_url}
+        template_path = 'emails/reset_password.html'
+        html_content = render_to_string(template_path, context)
+        return email_sender(email=email, body=html_content, subject='Reset Password')
+
+    except Exception as e:
+        print(f"Email sending failed: {str(e)}")
+        return False

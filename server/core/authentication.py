@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 from typing import Optional, Union, List
 
@@ -11,6 +12,8 @@ from core.enum import TokenType, PermissionEnum
 from django.core.cache import cache
 
 from core.models import Role
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_role_permissions(role_id: int):
@@ -36,6 +39,8 @@ def get_user_from_token(payload):
     try:
         user = user_model.objects.get(id=user_id)
         user_role_permissions = get_user_role_permissions(user.role.id)
+        # import pdb;
+        # pdb.set_trace()
         user.permissions.extend(user_role_permissions)
 
     except user_model.DoesNotExist:

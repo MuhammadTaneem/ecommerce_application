@@ -4,6 +4,7 @@ from core.config import ConfData
 from core.enum import PermissionEnum
 from core.models import Role
 from django.contrib.auth import get_user_model
+
 User = get_user_model()
 
 
@@ -50,7 +51,8 @@ class ReadWriteUserSerializer(BaseUserSerializer):
 class UserUpdateSerializer(BaseUserSerializer):
     class Meta:
         model = User
-        exclude = ['password', User.USERNAME_FIELD]
+        exclude = ['password', 'permissions', User.USERNAME_FIELD]
+        read_only_fields = ('role', 'is_superuser', 'is_staff', 'is_active', 'permissions', 'created', 'last_login')
 
 
 class UserEmailUpdate(BaseUserSerializer):
@@ -151,6 +153,3 @@ class ActiveUserSerializer(BaseUserSerializer):
     def update(self, instance, validated_data):
         validated_data['is_active'] = True
         return super().update(instance, validated_data)
-
-
-

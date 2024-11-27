@@ -46,7 +46,7 @@ class ConfData:
     _config = None
 
     @staticmethod
-    @lru_cache(maxsize=1)
+    @lru_cache(maxsize=128)
     def get_data():
         if ConfData._config is None:
             try:
