@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.8'
 
 services:
   app:
@@ -14,7 +14,7 @@ services:
       - db
       - redis
       - celery_worker
-      - celery_beat
+#      - celery_beat
     env_file:
       - .env
     environment:
@@ -31,7 +31,7 @@ services:
     volumes:
       - .:/django
     depends_on:
-      - db
+#      - db
       - redis
     env_file:
       - .env
@@ -49,8 +49,9 @@ services:
     volumes:
       - .:/django
     depends_on:
-      - db
-      - redis
+     - celery_worker
+#      - db
+#      - redis
     env_file:
       - .env
     environment:
@@ -74,7 +75,7 @@ services:
     container_name: postgres_db
     restart: always
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   redis:
     image: redis:alpine

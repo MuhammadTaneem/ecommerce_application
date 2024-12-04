@@ -13,22 +13,35 @@ class TokenType(Enum):
 
 enum_dict = {e.value: e.name for e in TokenType}
 
-class PermissionEnum(str, Enum):
 
-    #Products
+class PermissionEnum(str, Enum):
+    # Products
     PRODUCT_LIST = 'product_list'
     PRODUCT_DETAILS = 'product_details'
     PRODUCT_CREATE = 'product_create'
     PRODUCT_UPDATE = 'product_update'
     PRODUCT_DELETE = 'product_delete'
 
-
-    #Category
+    # Category
     CATEGORY_LIST_VIEW = 'category_list_view'
     CATEGORY_DETAILS = 'category_details'
     CATEGORY_CREATE = 'category_create'
     CATEGORY_UPDATE = 'category_update'
     CATEGORY_DELETE = 'category_delete'
+
+    # variant
+    VARIANT_ATTRIBUTES_LIST_VIEW = 'variant_attributes_list_view'
+    VARIANT_ATTRIBUTES_CREATE = 'variant_attributes_create'
+    VARIANT_ATTRIBUTES_UPDATE = 'variant_attributes_update'
+    VARIANT_ATTRIBUTES_DELETE = 'variant_attributes_delete'
+    VARIANT_ATTRIBUTES_DETAILS = 'variant_attributes_details'
+
+    VARIANT_LIST_VIEW = 'variant_list_view'
+    VARIANT_DETAILS = 'variant_details'
+    VARIANT_CREATE = 'variant_create'
+    VARIANT_UPDATE = 'variant_update'
+    VARIANT_DELETE = 'variant_delete'
+
 
 
     # #Orders
@@ -48,8 +61,6 @@ class PermissionEnum(str, Enum):
     # VIEW_USER = 'view_user'
     # EDIT_USER = 'edit_user'
     # DELETE_USER = 'delete_user'
-
-
 
     @classmethod
     def choices(cls):

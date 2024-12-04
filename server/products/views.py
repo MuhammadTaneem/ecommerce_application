@@ -58,7 +58,7 @@ def category_lst_view(request):
 @api_view(['GET'])
 # @permission_classes([require_permissions(PermissionEnum.VIEW_USER)])
 # @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.CATEGORY_DELETE])
-@require_permissions(PermissionEnum.PRODUCT_LIST)
+# @require_permissions(PermissionEnum.PRODUCT_LIST)
 def products_list(request, slug=None):
     # import pdb;pdb.set_trace()
     if slug:

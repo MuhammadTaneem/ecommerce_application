@@ -1,41 +1,147 @@
 from django.utils.decorators import method_decorator
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db import transaction
+from rest_framework.views import APIView
 
 from core.enum import PermissionEnum
-from core.authentication import require_permissions
+from core.authentication import require_permissions, TauthPermissionClass
 from products.models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from products.serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, \
-    ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer
+    ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, VariantSerializer
 
 
-class VariantAttributeListCreateView(generics.ListCreateAPIView):
+# class VariantAttributeListCreateView(generics.ListCreateAPIView):
+#     queryset = VariantAttribute.objects.all()
+#     serializer_class = VariantAttributeSerializer
+#
+#     def get_permissions(self):
+#         if self.request.method == 'GET':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_ATTRIBUTES_LIST_VIEW)
+#             ]
+#         elif self.request.method == 'POST':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_ATTRIBUTES_CREATE)
+#             ]
+#         return [permissions.IsAuthenticated()]
+
+
+# class VariantAttributeDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = VariantAttribute.objects.all()
+#     serializer_class = VariantDetailAttributeSerializer
+#
+#     def get_permissions(self):
+#         if self.request.method == 'PUT':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_ATTRIBUTES_UPDATE)
+#             ]
+#         elif self.request.method == 'GET':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_ATTRIBUTES_DETAILS)
+#             ]
+#         elif self.request.method == 'DELETE':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_ATTRIBUTES_DELETE)
+#             ]
+#         return [permissions.IsAuthenticated()]
+
+
+# class VariantListCreateView(generics.ListCreateAPIView):
+#     queryset = VariantValue.objects.all()
+#     serializer_class = VariantSerializer
+#
+#     def get_permissions(self):
+#         if self.request.method == 'GET':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_LIST_VIEW)
+#             ]
+#         elif self.request.method == 'POST':
+#             return [
+#                 permissions.IsAuthenticated(),
+#                 TauthPermissionClass(PermissionEnum.VARIANT_CREATE)
+#             ]
+#         return [permissions.IsAuthenticated()]
+
+
+class VariantListCreateView(APIView):
+    # queryset = VariantValue.objects.all()
+    # serializer_class = VariantSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.VARIANT_LIST_VIEW)
+            ]
+        elif self.request.method == 'POST':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.VARIANT_CREATE)
+            ]
+        return [permissions.IsAuthenticated()]
+
+    # def get(self, request, format=None):
+    #     snippets = Snippet.objects.all()
+    #     serializer = SnippetSerializer(snippets, many=True)
+    #     return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = VariantSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VariantDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = VariantAttribute.objects.all()
-    serializer_class = VariantAttributeSerializer
+    serializer_class = VariantSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'PUT':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.VARIANT_UPDATE)
+            ]
+        elif self.request.method == 'GET':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.VARIANT_DETAILS)
+            ]
+        elif self.request.method == 'DELETE':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.VARIANT_DELETE)
+            ]
+        return [permissions.IsAuthenticated()]
 
 
-class VariantAttributeDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = VariantAttribute.objects.all()
-    serializer_class = VariantAttributeSerializer
-
-
-class VariantValueListCreateView(generics.ListCreateAPIView):
-    queryset = VariantValue.objects.all()
-    serializer_class = VariantValueSerializer
-
-
-class VariantValueDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = VariantValue.objects.all()
-    serializer_class = VariantValueSerializer
-
-
-@method_decorator(require_permissions(PermissionEnum.CATEGORY_LIST_VIEW), name='get')
-@method_decorator(require_permissions(PermissionEnum.CATEGORY_CREATE), name='post')
+# @method_decorator(require_permissions(PermissionEnum.CATEGORY_LIST_VIEW), name='get')
+# @method_decorator(require_permissions(PermissionEnum.CATEGORY_CREATE), name='post')
 class CategoryListCreateView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.CATEGORY_CREATE)
+            ]
+        elif self.request.method == 'GET':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.CATEGORY_LIST_VIEW)
+            ]
+        return [permissions.IsAuthenticated()]
 
     # @require_permissions(PermissionEnum.CATEGORY_CREATE)
     # def post(self, request, *args, **kwargs):
@@ -51,6 +157,19 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.request.method == 'PUT':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.CATEGORY_UPDATE)
+            ]
+        elif self.request.method == 'GET':
+            return [
+                permissions.IsAuthenticated(),
+                TauthPermissionClass(PermissionEnum.CATEGORY_DETAILS)
+            ]
+        return [permissions.IsAuthenticated()]
 
 
 class ProductListCreateView(generics.ListCreateAPIView):

@@ -2,12 +2,12 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # path('variant-attributes/', views.VariantAttributeListCreateView.as_view(), name='variant-attribute-list-create'),
-    # path('variant-attributes/<int:pk>/', views.VariantAttributeDetailView.as_view(), name='variant-attribute-detail'),
-    # path('variant-values/', views.VariantValueListCreateView.as_view(), name='variant-value-list-create'),
-    # path('variant-values/<int:pk>/', views.VariantValueDetailView.as_view(), name='variant-value-detail'),
+    # path('variant_attr/', views.VariantAttributeListCreateView.as_view(), name='variant-attribute-list-create'),
+    # path('variant_attr/<int:pk>/', views.VariantAttributeDetailView.as_view(), name='variant-attribute-detail'),
+    path('variant/', views.VariantListCreateView.as_view(), name='variant-list-create'),
+    path('variant/<int:pk>/', views.VariantDetailView.as_view(), name='variant-detail'),
     path('categories/', views.CategoryListCreateView.as_view(), name='category-list-create'),
-    # path('categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category-detail'),
+    path('categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category-detail'),
     # path('products/', views.product_create_list_view, name='product-list-create'),
     # path('products/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
     # path('product-images/', views.ProductImageListCreateView.as_view(), name='product-image-list-create'),

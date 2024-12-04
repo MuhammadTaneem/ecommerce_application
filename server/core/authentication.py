@@ -3,6 +3,7 @@ from functools import wraps
 from typing import Optional, Union, List
 
 import django.db
+from rest_framework import permissions
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 import jwt
@@ -111,3 +112,26 @@ def require_permissions(required_permissions: Union[PermissionEnum, List[Permiss
         return wrapper
 
     return decorator
+
+
+class TauthPermissionClass(permissions.BasePermission):
+    def __init__(self, required_permissions=None):
+        self.required_permissions = required_permissions or []
+
+    def has_permission(self, request, view):
+        # Check authentication
+        if not request.user.is_authenticated:
+            return False
+
+        # Normalize to list if needed
+        permissions_list = (
+            [self.required_permissions]
+            if isinstance(self.required_permissions, PermissionEnum)
+            else self.required_permissions
+        )
+
+        # Check if user has all required permissions
+        return all(
+            permission in request.user.permissions
+            for permission in permissions_list
+        )

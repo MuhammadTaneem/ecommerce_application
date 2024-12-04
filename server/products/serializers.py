@@ -1,7 +1,9 @@
 from rest_framework import serializers
+# from social_core.utils import slugify
+
 from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from django.conf import settings
-import  pdb
+
 
 class VariantAttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,10 +11,73 @@ class VariantAttributeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug']
 
 
+class VariantDetailAttributeSerializer(VariantAttributeSerializer):
+    values = serializers.SerializerMethodField()
+
+    class Meta(VariantAttributeSerializer.Meta):
+        fields = VariantAttributeSerializer.Meta.fields + ['values']
+
+    def get_values(self, obj):
+        if obj.values.exists():
+            return VariantValueSerializer(obj.values, many=True).data
+        return []
+
+
 class VariantValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = VariantValue
         fields = ['id', 'attribute', 'value']
+
+
+class VariantSerializer(serializers.ModelSerializer):
+    values = VariantValueSerializer(many=True, required=False, read_only=True)
+
+    class Meta:
+        model = VariantAttribute
+        fields = ['id', 'name', 'slug', 'values']
+        read_only_fields = ['slug']
+
+    def create(self, validated_data):
+        values_data = self.initial_data.get('values', None)
+        attribute = VariantAttribute.objects.create(**validated_data)
+        for value_data in values_data:
+            VariantValue.objects.create(attribute=attribute, **value_data)
+        return attribute
+
+    def update(self, instance, validated_data):
+        values_data = self.initial_data.get('values', [])
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+        existing_values = instance.values.all()
+        processed_value_ids = []
+        for value_data in values_data:
+            value_id = value_data.get('id')
+
+            if value_id:
+                try:
+                    value_instance = existing_values.get(id=value_id)
+                    value_instance.value = value_data.get('value', value_instance.value)
+                    value_instance.attribute = instance
+                    value_instance.save()
+                    processed_value_ids.append(value_instance.id)
+                except VariantValue.DoesNotExist:
+                    print("dosent exits")
+                    new_value = VariantValue.objects.create(
+                        attribute=instance,
+                        **value_data
+                    )
+                    processed_value_ids.append(new_value.id)
+            else:
+                print("created")
+                new_value = VariantValue.objects.create(
+                    attribute=instance,
+                    value=value_data.get('value',None)
+                )
+                processed_value_ids.append(new_value.id)
+
+        existing_values.exclude(id__in=processed_value_ids).delete()
+
+        return instance
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -62,11 +127,9 @@ class SKUSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Pop variants from validated_data
         variants_data = validated_data.pop('variants', [])
-        pdb.set_trace()  # Set a breakpoint here
 
     def update(self, instance, validated_data):
         variants_data = validated_data.pop('variants', [])
-        pdb.set_trace()
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -78,7 +141,7 @@ class ProductSerializer(serializers.ModelSerializer):
                   'images', 'category', 'key_features']
 
     def validate_category(self, value):
-        if not value or value is '':
+        if not value or value == '':
             raise serializers.ValidationError("Category is required.")
         return value
 
@@ -107,10 +170,11 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants','additional_info','short_description','discount_price',
+        fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'additional_info', 'short_description',
+                  'discount_price',
                   'category', 'key_features', 'description', 'images', 'skus']
 
     def validate_category(self, value):
-        if not value or value is '':
+        if not value or value == '':
             raise serializers.ValidationError("Category is required.")
         return value
