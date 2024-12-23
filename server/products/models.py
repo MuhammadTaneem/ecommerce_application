@@ -1,3 +1,5 @@
+import uuid
+
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
@@ -61,6 +63,10 @@ class Product(models.Model):
     key_features = models.JSONField(default=dict, blank=True)
     description = models.JSONField(default=dict, blank=True)
     additional_info = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
 
     def is_in_stock(self):
         if self.has_variants:
@@ -127,10 +133,9 @@ class SKU(models.Model):
             variants_dict[variant.attribute.name] = variant.value
         return variants_dict
 
-    # def save(self, *args, **kwargs):
-    #     if not self.sku_code:
-    #         self.sku_code = self.generate_sku_code()
-    #     super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        self.sku_code = str(uuid.uuid4())
+        super().save(*args, **kwargs)
     #
     # def generate_sku_code(self):
     #     # Create SKU code based on the product name and variant values

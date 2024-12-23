@@ -37,7 +37,12 @@ class VariantSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug', 'values']
         read_only_fields = ['slug']
 
+    def get_values(self, obj):
+        related_values = obj.values.all()
+        return VariantValueSerializer(related_values, many=True).data
+
     def create(self, validated_data):
+        # import pdb; pdb.set_trace()
         values_data = self.initial_data.get('values', None)
         attribute = VariantAttribute.objects.create(**validated_data)
         for value_data in values_data:
@@ -61,7 +66,7 @@ class VariantSerializer(serializers.ModelSerializer):
                     value_instance.save()
                     processed_value_ids.append(value_instance.id)
                 except VariantValue.DoesNotExist:
-                    print("dosent exits")
+                    print("doesn't exits")
                     new_value = VariantValue.objects.create(
                         attribute=instance,
                         **value_data
@@ -71,12 +76,16 @@ class VariantSerializer(serializers.ModelSerializer):
                 print("created")
                 new_value = VariantValue.objects.create(
                     attribute=instance,
-                    value=value_data.get('value',None)
+                    value=value_data.get('value', None)
                 )
                 processed_value_ids.append(new_value.id)
 
         existing_values.exclude(id__in=processed_value_ids).delete()
+        return instance
 
+    def destroy(self, instance):
+        instance.values.all().delete()
+        instance.delete()
         return instance
 
 
@@ -115,7 +124,6 @@ class SKUSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         variants_list = []
-        # import pdb;pdb.set_trace()
         for variant in data.get('variants'):
             if variant.attribute.name in variants_list:
                 raise serializers.ValidationError({
@@ -124,13 +132,6 @@ class SKUSerializer(serializers.ModelSerializer):
             variants_list.append(variant.attribute.name)
         return data
 
-    def create(self, validated_data):
-        # Pop variants from validated_data
-        variants_data = validated_data.pop('variants', [])
-
-    def update(self, instance, validated_data):
-        variants_data = validated_data.pop('variants', [])
-
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -138,12 +139,18 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'base_price', 'stock_quantity', 'has_variants',
-                  'images', 'category', 'key_features']
+                  'images', 'category', 'key_features', 'additional_info']
 
-    def validate_category(self, value):
-        if not value or value == '':
-            raise serializers.ValidationError("Category is required.")
-        return value
+    # def validate_category(self, value):
+    #     # import pdb;pdb.set_trace()
+    #     if not value or value == '':
+    #         raise serializers.ValidationError("Category is required.")
+    #     return value
+
+    def validate(self, attrs):
+        if 'category' not in attrs or not attrs['category']:
+            raise serializers.ValidationError({"category": "Category is required."})
+        return attrs
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -166,15 +173,22 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductDetailsSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
-    skus = SKUSerializer(many=True, read_only=True)
+    skus = SKUSerializer(many=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'additional_info', 'short_description',
-                  'discount_price',
-                  'category', 'key_features', 'description', 'images', 'skus']
+        fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'is_deleted', 'additional_info',
+                  'short_description', 'discount_price', 'category', 'key_features', 'description', 'images', 'skus']
 
-    def validate_category(self, value):
-        if not value or value == '':
-            raise serializers.ValidationError("Category is required.")
-        return value
+    def validate(self, attrs):
+        if 'category' not in attrs or not attrs['category']:
+            raise serializers.ValidationError({"category": "Category is required."})
+        return attrs
+
+    def create(self, validated_data):
+        # import pdb; pdb.set_trace()
+        skus_data = self.initial_data.get('skus', None)
+        product = Product.objects.create(**validated_data)
+        for sku_data in skus_data:
+            SKU.objects.create(product=product, **sku_data)
+        return product

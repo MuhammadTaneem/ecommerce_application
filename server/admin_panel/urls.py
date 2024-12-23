@@ -2,13 +2,12 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # path('variant_attr/', views.VariantAttributeListCreateView.as_view(), name='variant-attribute-list-create'),
-    # path('variant_attr/<int:pk>/', views.VariantAttributeDetailView.as_view(), name='variant-attribute-detail'),
     path('variant/', views.VariantListCreateView.as_view(), name='variant-list-create'),
     path('variant/<int:pk>/', views.VariantDetailView.as_view(), name='variant-detail'),
     path('categories/', views.CategoryListCreateView.as_view(), name='category-list-create'),
     path('categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category-detail'),
-    # path('products/', views.product_create_list_view, name='product-list-create'),
+    path('products/', views.product_create_list_view, name='product-list-create'),
+    path('products/<int:pk>/', views.product_detail_update_view, name='product_detail_update_view'),
     # path('products/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
     # path('product-images/', views.ProductImageListCreateView.as_view(), name='product-image-list-create'),
     # path('product-images/<int:pk>/', views.ProductImageDetailView.as_view(), name='product-image-detail'),

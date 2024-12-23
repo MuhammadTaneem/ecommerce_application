@@ -43,7 +43,7 @@ def category_lst_view(request):
     return Response(serializer.data)
 
 
-# @api_view()
+# @api_view() c
 # def category_product(request, slug=None):
 #     if slug:
 #         categories = Category.objects.filter(
@@ -59,36 +59,47 @@ def category_lst_view(request):
 # @permission_classes([require_permissions(PermissionEnum.VIEW_USER)])
 # @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.CATEGORY_DELETE])
 # @require_permissions(PermissionEnum.PRODUCT_LIST)
-def products_list(request, slug=None):
-    # import pdb;pdb.set_trace()
+def products_list(request):
+    slug = request.query_params.get('slug')
+    min_price = request.query_params.get('min_price', None)
+    max_price = request.query_params.get('max_price', None)
+    search_query = request.query_params.get('s')
+    products = Product.objects.filter(is_deleted=False)
     if slug:
-        categories = Category.objects.filter(
-            Q(slug=slug) |
-            Q(slug__startswith=slug + '_')
-        ).prefetch_related('products')
-        products = Product.objects.filter(category__in=categories)
-    else:
-        products = Product.objects.all()
+        categories_filter = Q(slug=slug) | Q(slug__startswith=slug + '_')
+        products = Product.objects.filter(category__in=categories_filter)
 
-    # Dynamic filtering based on variant attributes (e.g., color, size)
-    variant_filters = {}
-    for key, value in request.query_params.items():
-        try:
-            # Get the VariantAttribute and its corresponding value
-            attribute = VariantAttribute.objects.get(slug=key)
-            variant_value = VariantValue.objects.get(attribute=attribute, value=value)
+    if min_price is not None:
+        products = products.filter(base_price__gte=min_price)
+    if max_price is not None:
+        products = products.filter(base_price__lte=max_price)
 
-            # Add to filter criteria (filtering SKUs by selected variant value)
-            variant_filters['skus__variants'] = variant_value
-        except VariantAttribute.DoesNotExist:
-            continue  # Ignore invalid attribute filters
-        except VariantValue.DoesNotExist:
-            continue  # Ignore invalid variant values
+    if search_query:
+        search_filter = (
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(short_description__icontains=search_query)
+        )
+        products = products.filter(search_filter)
 
-    if variant_filters:
-        products = products.filter(skus__variants__in=variant_filters.values()).distinct()
 
-    # Serialize the filtered products
+    # filter_by_variant
+    variants_items = request.GET.get('variants')
+    import pdb;pdb.set_trace()
+    variant_filters = []
+    if variants_items:
+        for key, value in variants_items:
+            try:
+                variant_value = VariantValue.objects.get(attribute__name__iexact=key, value__iexact=value)
+                variant_filters.append(variant_value)
+            except VariantAttribute.DoesNotExist:
+                continue
+            except VariantValue.DoesNotExist:
+                continue
+
+    if variant_filters is not None and len(variant_filters) > 0:
+        products = products.filter(skus__variants__in=variant_filters).distinct()
+
     serializer = ProductListSerializer(products, many=True, context={'request': request})
 
     return Response(serializer.data)
@@ -101,9 +112,6 @@ def products_list(request, slug=None):
 #     return Response(serializer.data)
 
 
-class ProductListCreateView(generics.ListCreateAPIView):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
 
 
 
@@ -143,4 +151,3 @@ class ProductImageDetailView(generics.RetrieveUpdateDestroyAPIView):
 class SKUDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SKU.objects.all()
     serializer_class = SKUSerializer
-
