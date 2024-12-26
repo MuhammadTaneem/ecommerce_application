@@ -1,10 +1,10 @@
+from django.db import connection
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from core.authentication import require_permissions
 from core.enum import PermissionEnum
 from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
@@ -12,24 +12,24 @@ from .serializers import VariantAttributeSerializer, VariantValueSerializer, Cat
     ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, ProductListSerializer
 
 
-class VariantAttributeListCreateView(generics.ListCreateAPIView):
-    queryset = VariantAttribute.objects.all()
-    serializer_class = VariantAttributeSerializer
-
-
-class VariantAttributeDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = VariantAttribute.objects.all()
-    serializer_class = VariantAttributeSerializer
-
-
-class VariantValueListCreateView(generics.ListCreateAPIView):
-    queryset = VariantValue.objects.all()
-    serializer_class = VariantValueSerializer
-
-
-class VariantValueDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = VariantValue.objects.all()
-    serializer_class = VariantValueSerializer
+# class VariantAttributeListCreateView(generics.ListCreateAPIView):
+#     queryset = VariantAttribute.objects.all()
+#     serializer_class = VariantAttributeSerializer
+#
+#
+# class VariantAttributeDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = VariantAttribute.objects.all()
+#     serializer_class = VariantAttributeSerializer
+#
+#
+# class VariantValueListCreateView(generics.ListCreateAPIView):
+#     queryset = VariantValue.objects.all()
+#     serializer_class = VariantValueSerializer
+#
+#
+# class VariantValueDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = VariantValue.objects.all()
+#     serializer_class = VariantValueSerializer
 
 
 # class CategoryListView(generics.ListAPIView):
@@ -60,13 +60,24 @@ def category_lst_view(request):
 # @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.CATEGORY_DELETE])
 # @require_permissions(PermissionEnum.PRODUCT_LIST)
 def products_list(request):
-    slug = request.query_params.get('slug')
-    min_price = request.query_params.get('min_price', None)
-    max_price = request.query_params.get('max_price', None)
+    products = product_filter(request)
+    categories = Category.objects.filter(parent__isnull=True)
+    product_serializer = ProductListSerializer(products, many=True, context={'request': request})
+    category_serializer = CategorySerializer(categories, many=True)
+    return Response({'product': product_serializer.data, 'categories': category_serializer.data})
+
+
+def product_filter(request, show_deleted=False, show_active=None):
+    category = request.data.get('category', None)
+    min_price = request.data.get('min_price', None)
+    max_price = request.data.get('max_price', None)
     search_query = request.query_params.get('s')
-    products = Product.objects.filter(is_deleted=False)
-    if slug:
-        categories_filter = Q(slug=slug) | Q(slug__startswith=slug + '_')
+    variants_items = request.data.get('variants')
+    products = Product.objects.filter(is_deleted=show_deleted)
+    if show_active:
+        products = products.filter(is_active=show_active)
+    if category:
+        categories_filter = Q(slug=category) | Q(slug__startswith=category + '_')
         products = Product.objects.filter(category__in=categories_filter)
 
     if min_price is not None:
@@ -82,37 +93,16 @@ def products_list(request):
         )
         products = products.filter(search_filter)
 
-
-    # filter_by_variant
-    variants_items = request.GET.get('variants')
-    import pdb;pdb.set_trace()
     variant_filters = []
     if variants_items:
-        for key, value in variants_items:
-            try:
-                variant_value = VariantValue.objects.get(attribute__name__iexact=key, value__iexact=value)
+        for key, value in variants_items.items():
+            variant_value = VariantValue.objects.filter(attribute__name__iexact=key, value__iexact=value).first()
+            print(variant_value)
+            if variant_value:
                 variant_filters.append(variant_value)
-            except VariantAttribute.DoesNotExist:
-                continue
-            except VariantValue.DoesNotExist:
-                continue
-
     if variant_filters is not None and len(variant_filters) > 0:
-        products = products.filter(skus__variants__in=variant_filters).distinct()
-
-    serializer = ProductListSerializer(products, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-# @api_view()
-# def products_list(request):
-#     products = Product.objects.all()
-#     serializer = ProductListSerializer(products, many=True, context={'request': request})
-#     return Response(serializer.data)
-
-
-
+        products = products.filter(skus__variants__in=variant_filters)
+    return products
 
 
 @api_view(['GET', 'POST'])

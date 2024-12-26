@@ -126,6 +126,7 @@ def product_create_list_view(request):
             with transaction.atomic():
                 product_data = request.data.get('product')
                 product_images = request.data.get('images')
+                import pdb;pdb.set_trace()
                 product_serializer = ProductSerializer(data=product_data)
                 if product_serializer.is_valid():
                     product = product_serializer.save()
@@ -143,6 +144,17 @@ def product_create_list_view(request):
                             else:
                                 transaction.set_rollback(True)
                                 return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    images_data = request.data.get('images', [])
+                    if images_data:
+                        for image_data in images_data:
+                            image_data['product'] = product.id
+                            image_serializer = ProductImageSerializer(data=image_data)
+                            if image_serializer.is_valid():
+                                image_serializer.save()
+                            else:
+                                transaction.set_rollback(True)
+                                return Response(image_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
                     return Response(product_serializer.data, status=status.HTTP_201_CREATED)
                 else:
                     return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -195,6 +207,16 @@ def product_detail_update_view(request, pk):
                             else:
                                 transaction.set_rollback(True)
                                 return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+                    # image update
+
+                    image_data = request.data.get('images', [])
+                    if image_data:
+                        for image_data in image_data:
+                            image_id = image_data.get('id')
+                            if image_id:
+                                pass
 
                     return Response(product_serializer.data, status=status.HTTP_200_OK)
                 else:

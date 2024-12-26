@@ -2,10 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('variant-attributes/', views.VariantAttributeListCreateView.as_view(), name='variant-attribute-list-create'),
-    path('variant-attributes/<int:pk>/', views.VariantAttributeDetailView.as_view(), name='variant-attribute-detail'),
-    path('variant-values/', views.VariantValueListCreateView.as_view(), name='variant-value-list-create'),
-    path('variant-values/<int:pk>/', views.VariantValueDetailView.as_view(), name='variant-value-detail'),
+    # path('variant-attributes/', views.VariantAttributeListCreateView.as_view(), name='variant-attribute-list-create'),
+    # path('variant-attributes/<int:pk>/', views.VariantAttributeDetailView.as_view(), name='variant-attribute-detail'),
+    # path('variant-values/', views.VariantValueListCreateView.as_view(), name='variant-value-list-create'),
+    # path('variant-values/<int:pk>/', views.VariantValueDetailView.as_view(), name='variant-value-detail'),
     path('categories/', views.category_lst_view, name='category-list'),
     path('products/', views.products_list, name='product-list'),
     path('products/<slug:slug>/', views.products_list, name='products_list'),
