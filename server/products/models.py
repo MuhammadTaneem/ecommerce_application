@@ -120,6 +120,7 @@ class SKU(models.Model):
     product = models.ForeignKey('Product', related_name='skus', on_delete=models.CASCADE)
     sku_code = models.CharField(max_length=255, unique=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     variants = models.ManyToManyField(VariantValue)
 

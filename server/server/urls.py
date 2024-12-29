@@ -9,4 +9,5 @@ urlpatterns = [
                   path('api/products/', include('products.urls')),
                   path('api/admin/', include('admin_panel.urls')),
                   path('api/auth/', include('core.urls')),
+                  path('api/order/', include('order.urls')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
