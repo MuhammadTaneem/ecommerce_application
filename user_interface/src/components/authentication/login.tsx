@@ -1,9 +1,10 @@
 import {GoogleLogin} from '@react-oauth/google';
-import FacebookLogin from 'react-facebook-login';
+import { FacebookProvider, useLogin } from 'react-facebook';
 import {facebook_app_id} from "../../utilites/api.ts";
 
 
 export  default  function  LoginComponent(){
+    const { login, status, isLoading, error} = useLogin();
 
     const responseFacebook = (response) => {
         console.log(response); // Contains user profile information and token
@@ -14,6 +15,19 @@ export  default  function  LoginComponent(){
             console.error("User failed to authenticate with Facebook.");
         }
     };
+
+
+    async function handleLogin() {
+        try {
+            const response = await login({
+                scope: 'email',
+            });
+
+            console.log(response.status);
+        } catch (error: any) {
+            console.log(error.message);
+        }
+    }
 
 
     return(
@@ -29,14 +43,9 @@ export  default  function  LoginComponent(){
                     }}
                 />
 
-                <FacebookLogin
-                    appId={facebook_app_id()}  // Replace with your Facebook App ID
-                    autoLoad={false}
-                    fields="name,email,picture"
-                    callback={responseFacebook}
-                    cssClass="facebook-login-button" // Custom class
-                    icon="fa-facebook"
-                />
+                <button onClick={handleLogin} disabled={isLoading}>
+                    Login via Facebook
+                </button>
             </div>
 
         </>

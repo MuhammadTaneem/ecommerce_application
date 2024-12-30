@@ -181,38 +181,42 @@ def product_detail_update_view(request, pk):
         try:
             with transaction.atomic():
                 product_data = request.data.get('product')
-                product_images = request.data.get('images')
+                product_images = request.data.get('images', [])
+                errors_dict = {}
 
-                product_serializer = ProductDetailsSerializer(product, data=product_data, partial=True)
-                if product_serializer.is_valid():
-                    product = product_serializer.save()
+                if product_data:
+                    product_serializer = ProductDetailsSerializer(product, data=product_data, partial=True)
+                    if product_serializer.is_valid():
+                        product = product_serializer.save()
 
-                    if product_data.get('has_variants', False):
-                        skus_data = request.data.get('skus', [])
-                        for sku_data in skus_data:
-                            sku_id = sku_data.get('id')
-                            if sku_id:
-                                try:
-                                    sku = SKU.objects.get(id=sku_id, product=product)
-                                    sku_serializer = SKUSerializer(sku, data=sku_data, partial=True)
-                                except SKU.DoesNotExist:
-                                    return Response({'error': f'SKU with id {sku_id} not found'},
-                                                    status=status.HTTP_404_NOT_FOUND)
-                            else:
-                                sku_data['product'] = product.id
-                                sku_serializer = SKUSerializer(data=sku_data)
+                        if product_data.get('has_variants', False):
+                            skus_data = request.data.get('skus', [])
+                            for sku_data in skus_data:
+                                sku_id = sku_data.get('id')
+                                if sku_id:
+                                    try:
+                                        sku = SKU.objects.get(id=sku_id, product=product)
+                                        sku_serializer = SKUSerializer(sku, data=sku_data, partial=True)
+                                    except SKU.DoesNotExist:
+                                        return Response({'error': f'SKU with id {sku_id} not found'},
+                                                        status=status.HTTP_404_NOT_FOUND)
+                                else:
+                                    sku_data['product'] = product.id
+                                    sku_serializer = SKUSerializer(data=sku_data)
 
-                            if sku_serializer.is_valid():
-                                sku_serializer.save()
-                            else:
-                                transaction.set_rollback(True)
-                                return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                                if sku_serializer.is_valid():
+                                    sku_serializer.save()
+                                else:
+                                    transaction.set_rollback(True)
+                                    return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                    else:
+                        errors_dict = product_serializer.errors
 
 
                     # image update
-
                     image_data = request.data.get('images', [])
-                    if image_data:
+                    if product_images:
                         for image_data in image_data:
                             image_id = image_data.get('id')
                             if image_id:
@@ -220,7 +224,7 @@ def product_detail_update_view(request, pk):
 
                     return Response(product_serializer.data, status=status.HTTP_200_OK)
                 else:
-                    return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(errors_dict, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
