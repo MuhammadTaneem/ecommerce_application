@@ -16,6 +16,7 @@ import ProductDetailsComponent from "./components/product/product_details.tsx";
 import LoginComponent from "./components/authentication/login.tsx";
 import {GoogleOAuthProvider} from "@react-oauth/google";
 import {google_client_id} from "./utilites/api.ts";
+import AdminProductComponent from "./components/admin_panel/products.tsx";
 
 
 const router = createBrowserRouter(
@@ -24,6 +25,7 @@ const router = createBrowserRouter(
             <Route path='/' element={<LayoutComponent/>}>
                 <Route path='/' element={<Navigate to='/products' replace/>}/>
                 <Route path='/login' element={<LoginComponent/>}></Route>
+                <Route path='/admin' element={<AdminProductComponent/>}></Route>
                 <Route path='/home' element={<HomepageComponent/>}></Route>
                 <Route path='/products/:fragment?' element={<ProductListComponent/>}></Route>
                 <Route path='/product/:id' element={<ProductDetailsComponent/>}></Route>
