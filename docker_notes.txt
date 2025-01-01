@@ -1,0 +1,14 @@
+celery -A server worker -l info
+docker-compose run --service-ports app
+docker-compose up --build
+docker-compose up
+docker-compose down
+
+
+remove all docker image:: docker rmi -f $(docker images -q)
+stop all container : docker stop $(docker ps -aq)
+remove all container : docker rm $(docker ps -aq)
+show all container : docker ps -a
+show all valuems : docker volume ls
+remove all valuems : docker volume rm $(docker volume ls -q)
+full clenup: docker system prune -a --volumes -f

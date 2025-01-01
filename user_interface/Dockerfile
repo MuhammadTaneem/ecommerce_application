@@ -1,18 +1,33 @@
-FROM node:18-alpine
+# # Base image
+# FROM node:18-alpine
 
+# # Set the working directory
+# WORKDIR /app
+
+# # Copy package files and install dependencies
+# COPY package.json package-lock.json ./
+# RUN npm install
+
+# # Copy project files
+# COPY . .
+
+# # Expose the Vite default port
+# EXPOSE 5173
+
+# # Default command
+# CMD ["npm", "run", "dev"]
+
+
+# Base image
+FROM node:alpine
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies including react-facebook-login
 RUN npm install
 
-# Copy the rest of the application
 COPY . .
 
-# Expose port 3000
-EXPOSE 3000
-
-# Start the development server
+EXPOSE 5713
 CMD ["npm", "run", "dev"]
+# ENTRYPOINT ["npm", "run", "dev", "--", "--port=5713", "--host=0.0.0.0"]

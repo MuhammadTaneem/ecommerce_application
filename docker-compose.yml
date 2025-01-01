@@ -1,49 +1,104 @@
-version: "3.9"
-
 services:
-  web:
-    build:
-      context: .
-      dockerfile: ./server/Dockerfile
+  backend:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    volumes:
+      - ecommerce:/data/backend
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
+    container_name: django_container
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       - db
       - redis
       - celery_worker
-      - celery_beat
 
-  db:
-    image: postgres:latest
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
     environment:
-      POSTGRES_PASSWORD: your_postgres_password
-      POSTGRES_USER: your_postgres_user
-      POSTGRES_DB: your_postgres_db_name
-
-  redis:
-    image: redis:latest
+      - POSTGRES_DB=${NAME}
+      - POSTGRES_USER=${USER}
+      - POSTGRES_PASSWORD=${PASSWORD}
+      - REDIS_HOST=redis
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - ecommerce_network 
 
   celery_worker:
     build:
-      context: .
-      dockerfile: ./server/Dockerfile  # Use the same Dockerfile for worker
-    command: celery -A ecommerce_application worker -l info
-    depends_on:
-      - redis
-      - db
+      context: ./server
+      dockerfile: Dockerfile
+    command: celery -A server worker -l info
+    volumes:
+      - ecommerce:/data/celery_worker
+    networks:
+      - ecommerce_network 
+
 
   celery_beat:
     build:
-      context: .
-      dockerfile: ./server/Dockerfile  # Use the same Dockerfile for beat
-    command: celery -A ecommerce_application beat -l info
+      context: ./server
+      dockerfile: Dockerfile
+    command: celery -A server beat -l info
+    volumes:
+      - ecommerce:/data/celery_beat
     depends_on:
-      - redis
-      - db
+     - celery_worker
+    networks:
+      - ecommerce_network   
+
+  db:
+    image: postgres
+    volumes:
+      - ecommerce:/data/postgres
+    environment:
+      - POSTGRES_DB=${NAME}
+      - POSTGRES_USER=${USER}
+      - POSTGRES_PASSWORD=${PASSWORD}
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5433:5432"
+    networks:
+      - ecommerce_network 
+
+  redis:
+    image: redis:alpine
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - ecommerce:/data/redis
+    restart: always
+
+    networks:
+      - ecommerce_network 
+
+
+  frontend:
+    build:
+      context: ./user_interface
+      dockerfile: Dockerfile
+    volumes:
+      - ./user_interface:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    expose:
+      - "5173"
+    environment:
+      - CHOKIDAR_USEPOLLING = true  
+    command: ["npm", "run", "dev"]
+    networks:
+      - ecommerce_network  
 
 volumes:
-  postgres_data:
+  ecommerce:
+
+
+networks:
+  ecommerce_network:
+    driver: bridge
