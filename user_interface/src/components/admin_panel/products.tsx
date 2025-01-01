@@ -5,6 +5,7 @@ import {ProductListType} from "../../features/product_type.ts";
 import axiosInstance from "../../utilites/api.ts";
 import {addProduct} from "../../features/productSlice.ts";
 import {ShoppingCartIcon} from "@heroicons/react/24/solid";
+import AdminCreateProductComponent from "./create_product.tsx";
 
 export default function AdminProductComponent() {
 
@@ -46,11 +47,31 @@ export default function AdminProductComponent() {
         }
     };
 
+    function onAddNewProduct(){
+        // setLoading(true);
+        console.log("onAddNewProduct");
+    }
 
+    // const [isPopupOpen, setIsPopupOpen] = useState(false);
+    //
+    // const handleOpenPopup = () => setIsPopupOpen(true);
+    // const handleClosePopup = () => setIsPopupOpen(false);
+    //
+    // const handleSaveProduct = (product: { name: string; price: number }) => {
+    //     setProducts([...products, product]);
+    //     console.log('Product Saved:', product);
+    // };
 
     return (
         <>
-            <p>Add Product</p>
+            <button
+                onClick={onAddNewProduct}
+                className="px-6 py-0 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+                + Add New Product
+            </button>
+            <br/>
+
             <br/>
             {loading ? (
                 <p>Loading...</p>
@@ -58,7 +79,7 @@ export default function AdminProductComponent() {
                 <div className="product-list pt-5 grid grid-cols-4 text-blue-600">
                     {products.map((product: ProductListType, index: number) => (
                         <div key={index}
-                             onClick={()=>{
+                             onClick={() => {
                                  navigate(`/product/${product.id}`);
                              }}
                              className="product-card max-w-sm bg-white shadow-lg rounded-lg overflow-hidden m-3">
@@ -90,6 +111,11 @@ export default function AdminProductComponent() {
             ) : (
                 <p>No products available.</p>
             )}
+            <AdminCreateProductComponent
+                // isOpen={isPopupOpen}
+                // onClose={handleClosePopup}
+                // onSave={handleSaveProduct}
+            />
         </>
     )
 }
