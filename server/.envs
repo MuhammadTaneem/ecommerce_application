@@ -1,7 +1,0 @@
-ENGINE=django.db.backends.postgresql
-NAME=ecommerce
-USER=postgres
-PASSWORD=123456
-HOST=db
-PORT=5432
-SITE_URL=http://localhost:8000/
