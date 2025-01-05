@@ -165,7 +165,7 @@ TAUTH = {
     'access_token_life_time': timedelta(minutes=120),
     'active_token_life_time': timedelta(minutes=10),
     'reset_token_life_time': timedelta(minutes=10),
-    'is_active_required': True,
+    'is_active_required': False,
     'account_disabled_message': 'User account is disabled',
     'login_url': 'http://localhost:4200/login/',
     'active_user_url': 'http://localhost:4200/active/?token=',
@@ -201,8 +201,8 @@ EMAIL_HOST_PASSWORD = 'zzdjlscpwsggtrdl'  # Your email password
 # CELERY_TASK_SOFT_TIME_LIMIT = 60
 # CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 # CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL'),
+CELERY_RESULT_BACKEND =  os.getenv('CELERY_RESULT_BACKEND'),
 CELERY_TIMEZONE = TIME_ZONE
 # CELERY_BROKER_POOL_LIMIT = 100
 # CELERY_BROKER_CONNECTION_TIMEOUT = 3
@@ -228,7 +228,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
         # 'LOCATION': 'redis://127.0.0.1:6379/1',
-        'LOCATION': 'redis://redis:6379/1',
+        'LOCATION':  os.getenv('CACHES_LOCATION'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },

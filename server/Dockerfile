@@ -1,5 +1,5 @@
-FROM python:3.12-slim
-LABEL authors="Taneem"
+# FROM python:3.12-slim
+# LABEL authors="Taneem"
 
 # WORKDIR /django
 
@@ -24,6 +24,8 @@ LABEL authors="Taneem"
 # CMD ["python", "manage.py","runserver", "--host", "0.0.0.0", "--port", "8000"]
 
 
+FROM python:3.12-slim
+LABEL authors="Taneem"
 
 # Set the working directory
 WORKDIR /app

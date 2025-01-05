@@ -7,6 +7,8 @@ services:
       - ecommerce:/data/backend
     ports:
       - "8000:8000"
+    expose:
+      - "8000"  
     container_name: django_container
     command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     depends_on:
@@ -22,10 +24,13 @@ services:
       - POSTGRES_USER=${USER}
       - POSTGRES_PASSWORD=${PASSWORD}
       - REDIS_HOST=redis
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - CACHES_LOCATION = ${CACHES_LOCATION}
     networks:
       - ecommerce_network 
+    stdin_open: true
+    tty: true   
 
   celery_worker:
     build:
@@ -34,6 +39,12 @@ services:
     command: celery -A server worker -l info
     volumes:
       - ecommerce:/data/celery_worker
+    env_file:
+      - .env
+
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     networks:
       - ecommerce_network 
 
@@ -73,6 +84,12 @@ services:
     volumes:
       - ecommerce:/data/redis
     restart: always
+
+    env_file:
+      - .env
+
+    environment:
+      - CACHES_LOCATION = ${CACHES_LOCATION}
 
     networks:
       - ecommerce_network 
