@@ -126,7 +126,7 @@ def product_create_list_view(request):
             with transaction.atomic():
                 product_data = request.data.get('product')
                 product_images = request.data.get('images')
-                import pdb;pdb.set_trace()
+                # import pdb;pdb.set_trace()
                 product_serializer = ProductSerializer(data=product_data)
                 if product_serializer.is_valid():
                     product = product_serializer.save()

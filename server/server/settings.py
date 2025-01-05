@@ -215,7 +215,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 #     'cancel_pending_reservation': {
 #         'task': 'bus_ticket_booking.tasks.cancel_pending_reservation',  # Task to run
 #         'schedule': timedelta(minutes=1)  # Run every 5 minutes
-#             also  you can use crontab for scheduling better control
+#             # also  you can use crontab for scheduling better control
 #     },
 #     # 'delete_completed_tasks': {
 #     #     'task': 'bus_ticket_booking.tasks.delete_completed_tasks',  # Task to run

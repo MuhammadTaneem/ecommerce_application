@@ -1,74 +1,219 @@
+# services:
+#   backend:
+#     build: 
+#       context: ./server
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./server:/app
+#       - ./server/static:/app/static
+#       - ./server/media:/app/media
+#     ports:
+#       - "8000:8000"
+#     container_name: django_container
+#     command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+#     depends_on:
+#       - db
+#       - redis
+#       - celery_worker
+
+#     env_file:
+#       - .env
+
+#     environment:
+#       - POSTGRES_DB=${NAME}
+#       - POSTGRES_USER=${USER}
+#       - POSTGRES_PASSWORD=${PASSWORD}
+#       - HOST=${HOST}
+#       - PORT=${PORT}
+#       - REDIS_HOST=redis
+#       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+#       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+#       - CACHES_LOCATION=${CACHES_LOCATION}
+#     networks:
+#       - ecommerce_network 
+#     restart: always
+#     stdin_open: true
+#     tty: true   
+
+#   celery_worker:
+#     build:
+#       context: ./server
+#       dockerfile: Dockerfile
+#     command: celery -A server worker -l info
+#     volumes:
+#       - ./server:/app
+#     env_file:
+#       - .env
+
+#     environment:
+#       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+#       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+#     restart: always
+#     networks:
+#       - ecommerce_network 
+
+
+#   celery_beat:
+#     build:
+#       context: ./server
+#       dockerfile: Dockerfile
+#     command: celery -A server beat -l info
+#     volumes:
+#       - ./server:/app
+#     depends_on:
+#      - celery_worker
+#     networks:
+#       - ecommerce_network  
+#     restart: always
+
+#   db:
+#     image: postgres
+#     volumes:
+#       - postgres_data:/data/postgres
+#     environment:
+#       - POSTGRES_DB=${NAME}
+#       - POSTGRES_USER=${USER}
+#       - POSTGRES_PASSWORD=${PASSWORD}
+#       - HOST=${HOST}
+#       - PORT=${PORT}
+#     container_name: postgres_db
+#     restart: always
+#     ports:
+#       - "5433:5432"
+#     networks:
+#       - ecommerce_network 
+
+#   redis:
+#     image: redis:alpine
+#     container_name: redis_container
+#     ports:
+#       - "6379:6379"
+
+#     volumes:
+#       - redis_data:/data
+#     restart: always
+
+#     env_file:
+#       - .env
+
+#     environment:
+#       - CACHES_LOCATION=${CACHES_LOCATION}
+
+#     networks:
+#       - ecommerce_network 
+
+
+#   frontend:
+#     build:
+#       context: ./user_interface
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./user_interface:/app
+#       - /app/node_modules
+#     ports:
+#       - "5173:5173"
+#     environment:
+#       - CHOKIDAR_USEPOLLING = true  
+#     command: ["npm", "run", "dev"]
+#     networks:
+#       - ecommerce_network 
+#     stdin_open: true
+#     tty: true
+
+
+
+# volumes:
+#   redis_data:
+
+
+# networks:
+#   ecommerce_network:
+#     driver: bridge
+
+
+
+
+# docker-compose.yml
 services:
   backend:
     build: 
       context: ./server
       dockerfile: Dockerfile
     volumes:
-      - ecommerce:/data/backend
+      - ./server:/app
+      - ./server/static:/app/static
+      - ./server/media:/app/media
     ports:
       - "8000:8000"
-    expose:
-      - "8000"  
     container_name: django_container
     command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       - db
       - redis
       - celery_worker
-
     env_file:
       - .env
-
     environment:
       - POSTGRES_DB=${NAME}
       - POSTGRES_USER=${USER}
       - POSTGRES_PASSWORD=${PASSWORD}
+      - HOST=${HOST}
+      - PORT=${PORT}
       - REDIS_HOST=redis
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
-      - CACHES_LOCATION = ${CACHES_LOCATION}
+      - CACHES_LOCATION=${CACHES_LOCATION}
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - DJANGO_DEBUG=True
     networks:
       - ecommerce_network 
-    stdin_open: true
-    tty: true   
+    restart: always
+    stdin_open: true  # Enable STDIN for pdb
+    tty: true        # Enable TTY for pdb
 
   celery_worker:
     build:
       context: ./server
       dockerfile: Dockerfile
-    command: celery -A server worker -l info
+    command: celery -A server worker --loglevel=info
     volumes:
-      - ecommerce:/data/celery_worker
+      - ./server:/app
     env_file:
       - .env
-
     environment:
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - PYTHONUNBUFFERED=1
+    restart: always
     networks:
       - ecommerce_network 
-
 
   celery_beat:
     build:
       context: ./server
       dockerfile: Dockerfile
-    command: celery -A server beat -l info
+    command: celery -A server beat --loglevel=info
     volumes:
-      - ecommerce:/data/celery_beat
+      - ./server:/app
     depends_on:
      - celery_worker
+    environment:
+      - PYTHONUNBUFFERED=1
     networks:
-      - ecommerce_network   
+      - ecommerce_network  
+    restart: always
 
   db:
     image: postgres
     volumes:
-      - ecommerce:/data/postgres
+      - postgres_data:/data/postgres
     environment:
       - POSTGRES_DB=${NAME}
       - POSTGRES_USER=${USER}
       - POSTGRES_PASSWORD=${PASSWORD}
+      - HOST=${HOST}
+      - PORT=${PORT}
     container_name: postgres_db
     restart: always
     ports:
@@ -82,18 +227,14 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ecommerce:/data/redis
+      - redis_data:/data
     restart: always
-
     env_file:
       - .env
-
     environment:
-      - CACHES_LOCATION = ${CACHES_LOCATION}
-
+      - CACHES_LOCATION=${CACHES_LOCATION}
     networks:
       - ecommerce_network 
-
 
   frontend:
     build:
@@ -104,18 +245,21 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
-    expose:
-      - "5173"
     environment:
-      - CHOKIDAR_USEPOLLING = true  
-    command: ["npm", "run", "dev"]
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+    command: npm run dev -- --host 0.0.0.0
     networks:
-      - ecommerce_network  
+      - ecommerce_network 
+    stdin_open: true
+    tty: true
 
 volumes:
-  ecommerce:
-
+  postgres_data:
+  redis_data:
 
 networks:
   ecommerce_network:
     driver: bridge
+# Last edited just now

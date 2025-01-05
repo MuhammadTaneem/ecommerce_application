@@ -56,11 +56,11 @@ def sign_up(request):
         serializer = ReadWriteUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            start_time = datetime.datetime.now()
+            # start_time = datetime.datetime.now()
             activation_email_sender.delay(user.email, request.user.id)
             # activation_email_sender(user.email, request.user.id)
-            end_time = datetime.datetime.now()
-            print(f"execution time: {end_time - start_time}")
+            # end_time = datetime.datetime.now()
+            # print(f"execution time: {end_time - start_time}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
