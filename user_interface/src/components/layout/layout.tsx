@@ -4,7 +4,9 @@ import { Outlet } from "react-router-dom";
 import FooterComponent from "./footer.tsx";
 import SidebarComponent from "./sidebar.tsx";
 import { useMediaQuery } from "react-responsive";
-const isAuthenticated = true;
+import AdminSidebarComponent from "./admin_sidebar.tsx";
+const isAuthenticated:boolean = true;
+const isAdminUser:boolean = true;
 
 
 export interface NavbarComponentProps {
@@ -27,12 +29,14 @@ export default function LayoutComponent() {
 
     return (
         <>
+
             {isAuthenticated ? <NavbarComponent  onToggleSidebar={toggleSidebar}
                                                  isSidebarOpen={isSidebarOpen}
                                                  isLargeScreen={isLargeScreen}
             /> : <h2>Please log in.</h2>}
             <div className="main-container flex">
-                {isSidebarOpen && <SidebarComponent  onToggleSidebar={toggleSidebar}
+                {isAdminUser && <AdminSidebarComponent></AdminSidebarComponent>}
+                {isSidebarOpen && !isAdminUser && <SidebarComponent  onToggleSidebar={toggleSidebar}
                                                      isSidebarOpen={isSidebarOpen}
                                                      isLargeScreen={isLargeScreen} />}
                 < Outlet />

@@ -1,3 +1,5 @@
+import json
+
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view
@@ -124,14 +126,20 @@ def product_create_list_view(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
+
                 product_data = request.data.get('product')
-                product_images = request.data.get('images')
-                # import pdb;pdb.set_trace()
+                if product_data and type(product_data) is str:
+                    product_data = json.loads(product_data)
+
+                product_images = request.data.get('images', [])
+                # import pdb; pdb.set_trace()
                 product_serializer = ProductSerializer(data=product_data)
                 if product_serializer.is_valid():
                     product = product_serializer.save()
                     if product_data.get('has_variants', False):
                         skus_data = request.data.get('skus', [])
+                        if skus_data and type(skus_data) is str:
+                            skus_data = json.loads(skus_data)
                         for sku_data in skus_data:
                             sku_data['product'] = product.id
                             sku_serializer = SKUSerializer(data=sku_data)
@@ -144,9 +152,9 @@ def product_create_list_view(request):
                             else:
                                 transaction.set_rollback(True)
                                 return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                    images_data = request.data.get('images', [])
-                    if images_data:
-                        for image_data in images_data:
+                    # images_data = request.data.get('images', [])
+                    if product_images:
+                        for image_data in product_images:
                             image_data['product'] = product.id
                             image_serializer = ProductImageSerializer(data=image_data)
                             if image_serializer.is_valid():

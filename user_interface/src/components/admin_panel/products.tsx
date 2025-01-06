@@ -1,17 +1,20 @@
 import {useAppDispatch} from "../../core/store.ts";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
-import {ProductListType} from "../../features/product_type.ts";
+// import {ProductListType} from "../../features/product_type.ts";
 import axiosInstance from "../../utilites/api.ts";
 import {addProduct} from "../../features/productSlice.ts";
-import {ShoppingCartIcon} from "@heroicons/react/24/solid";
-import AdminCreateProductComponent from "./create_product.tsx";
+// import {ShoppingCartIcon} from "@heroicons/react/24/solid";
+import {ProductListType} from "../../features/product_type.ts";
+import AdminAddProductComponent from "./create_product.tsx";
+
+
+
 
 export default function AdminProductComponent() {
-
     const dispatch = useAppDispatch();
     const location = useLocation();
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const [products, setProducts] = useState<ProductListType[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [searchCategory, setSearchCategory] = useState<string>(get_params());
@@ -47,75 +50,12 @@ export default function AdminProductComponent() {
         }
     };
 
-    function onAddNewProduct(){
-        // setLoading(true);
-        console.log("onAddNewProduct");
-    }
-
-    // const [isPopupOpen, setIsPopupOpen] = useState(false);
-    //
-    // const handleOpenPopup = () => setIsPopupOpen(true);
-    // const handleClosePopup = () => setIsPopupOpen(false);
-    //
-    // const handleSaveProduct = (product: { name: string; price: number }) => {
-    //     setProducts([...products, product]);
-    //     console.log('Product Saved:', product);
-    // };
 
     return (
         <>
-            <button
-                onClick={onAddNewProduct}
-                className="px-6 py-0 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-            >
-                + Add New Product
-            </button>
-            <br/>
-
-            <br/>
-            {loading ? (
-                <p>Loading...</p>
-            ) : products.length > 0 ? (
-                <div className="product-list pt-5 grid grid-cols-4 text-blue-600">
-                    {products.map((product: ProductListType, index: number) => (
-                        <div key={index}
-                             onClick={() => {
-                                 navigate(`/product/${product.id}`);
-                             }}
-                             className="product-card max-w-sm bg-white shadow-lg rounded-lg overflow-hidden m-3">
-
-                            {product.image ? (
-                                <img className="w-full h-64" src={product.image}
-                                     alt={product.name}/>
-                            ) : (
-                                <img className="w-full h-48 object-cover" src="/src/assets/placeholder.png"
-                                     alt={product.name}/>
-                            )}
+                <p> Producat Page </p>
 
 
-                            <div className="p-4">
-                                <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
-
-                                <div className="price-cart-line pt-3 flex justify-between">
-                                    <span className="text-gray-600">${product.base_price}</span>
-
-                                    <button
-                                        className="mt-1 text-gray-700 rounded-full hover:text-black hover:bg-gray-200 transition duration-300 ease-in-out p-2">
-                                        <ShoppingCartIcon className="w-5 h-5"/>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p>No products available.</p>
-            )}
-            <AdminCreateProductComponent
-                // isOpen={isPopupOpen}
-                // onClose={handleClosePopup}
-                // onSave={handleSaveProduct}
-            />
         </>
     )
 }

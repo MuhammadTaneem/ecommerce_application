@@ -36,7 +36,7 @@ from .serializers import VariantAttributeSerializer, VariantValueSerializer, Cat
 #     queryset = Category.objects.all()
 #     serializer_class = CategorySerializer
 
-@api_view()
+@api_view(['GET'])
 def category_lst_view(request):
     categories = Category.objects.filter(parent__isnull=True)
     serializer = CategorySerializer(categories, many=True)
@@ -61,7 +61,8 @@ def category_lst_view(request):
 # @require_permissions(PermissionEnum.PRODUCT_LIST)
 def products_list(request):
     products = product_filter(request)
-    categories = Category.objects.filter(parent__isnull=True)
+    # categories = Category.objects.filter(parent__isnull=True)
+    categories = Category.objects.all()
     product_serializer = ProductListSerializer(products, many=True, context={'request': request})
     category_serializer = CategorySerializer(categories, many=True)
     return Response({'product': product_serializer.data, 'categories': category_serializer.data})

@@ -34,10 +34,10 @@ export default function ProductListComponent() {
             const queryUrl = searchCategory ? `${searchCategory}/` : '';
             const response = await axiosInstance.get(`/products/products/${queryUrl}`);
 
-            setProducts(response.data);
-            dispatch(addProduct(response.data));
+            setProducts(response.data['product']);
+            dispatch(addProduct(response.data['product']));
 
-            console.log(response.data); // Consider removing this in production
+            console.log(response.data['product']); // Consider removing this in production
         } catch (error) {
             console.error("Error fetching products:", error);
         } finally {
