@@ -17,7 +17,7 @@ import LoginComponent from "./components/authentication/login.tsx";
 import {GoogleOAuthProvider} from "@react-oauth/google";
 import {google_client_id} from "./utilites/api.ts";
 import AdminProductComponent from "./components/admin_panel/products.tsx";
-import AdminAddProductComponent from "./components/admin_panel/create_product.tsx";
+import AdminAddProductComponent from "./components/admin_panel/add_product.tsx";
 
 
 const router = createBrowserRouter(

@@ -12,6 +12,8 @@ export default function AdminAddProductComponent() {
 
     return (
         <p>Product add page </p>
+        // table
+
     );
 
 }

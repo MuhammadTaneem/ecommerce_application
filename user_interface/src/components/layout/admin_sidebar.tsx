@@ -9,16 +9,31 @@ export default function AdminSidebarComponent() {
             <nav className="flex-1 p-4">
                 <ul>
                     <li className="mb-2">
-                        <Link to="/admin/products" className="flex items-center p-2 text-gray-300 rounded hover:bg-gray-700">
-                            <span className="material-icons">Products</span>
+                        <Link to="/admin/products"
+                              className="flex items-center p-2 text-gray-300 rounded hover:bg-gray-700">
+                            {/*<span className="material-icons">Products</span>*/}
                             <span className="ml-2">Products</span>
                         </Link>
                     </li>
                     <li className="mb-2">
                         <Link to="/admin/products/add"
                               className="flex items-center p-2 text-gray-300 rounded hover:bg-gray-700">
-                            <span className="material-icons">Add Product</span>
-                            <span className="ml-2">Products</span>
+                            {/*<span className="material-icons">Add Product</span>*/}
+                            <span className="ml-2">Add Products</span>
+                        </Link>
+                    </li>
+                    <li className="mb-2">
+                        <Link to="/admin/products/add"
+                              className="flex items-center p-2 text-gray-300 rounded hover:bg-gray-700">
+                            {/*<span className="material-icons">Add Product</span>*/}
+                            <span className="ml-2">Category</span>
+                        </Link>
+                    </li>
+                    <li className="mb-2">
+                        <Link to="/admin/products/add"
+                              className="flex items-center p-2 text-gray-300 rounded hover:bg-gray-700">
+                            {/*<span className="material-icons">Add Product</span>*/}
+                            <span className="ml-2">Category Add</span>
                         </Link>
                     </li>
 

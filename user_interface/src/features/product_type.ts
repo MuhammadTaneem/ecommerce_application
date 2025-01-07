@@ -49,4 +49,5 @@ export type ProductListType = {
     name: string;
     image: string;
     base_price: number;
+    has_variants: boolean;
 }

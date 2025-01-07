@@ -69,7 +69,7 @@ class VariantDetailView(generics.RetrieveUpdateDestroyAPIView):
 # @method_decorator(require_permissions(PermissionEnum.CATEGORY_LIST_VIEW), name='get')
 # @method_decorator(require_permissions(PermissionEnum.CATEGORY_CREATE), name='post')
 class CategoryListCreateView(generics.ListCreateAPIView):
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(parent__isnull=True)
     serializer_class = CategorySerializer
 
     def get_permissions(self):

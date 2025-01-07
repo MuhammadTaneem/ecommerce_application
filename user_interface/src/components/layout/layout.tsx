@@ -39,7 +39,10 @@ export default function LayoutComponent() {
                 {isSidebarOpen && !isAdminUser && <SidebarComponent  onToggleSidebar={toggleSidebar}
                                                      isSidebarOpen={isSidebarOpen}
                                                      isLargeScreen={isLargeScreen} />}
+                <div className="clearfix">
+
                 < Outlet />
+                </div>
             </div>
             <FooterComponent />
         </>
