@@ -8,6 +8,7 @@ import {addProduct} from "../../features/productSlice.ts";
 import {ProductListType} from "../../features/product_type.ts";
 import AdminAddProductComponent from "./add_product.tsx";
 import {ShoppingCartIcon} from "@heroicons/react/24/solid";
+import {Button} from "@/components/ui/button.tsx";
 
 
 export default function AdminProductComponent() {
@@ -41,7 +42,7 @@ export default function AdminProductComponent() {
             setProducts(response.data['product']);
             dispatch(addProduct(response.data['product']));
 
-            console.log(response.data); // Consider removing this in production
+            console.log(response.data);
         } catch (error) {
             console.error("Error fetching products:", error);
         } finally {
@@ -52,57 +53,57 @@ export default function AdminProductComponent() {
 
     return (
         <>
-
             <div className="">
 
                 <p> Producat Page </p>
             </div>
+            <Button>Click me</Button>
             {loading ? (
                 <p>Loading...</p>
             ) : products.length > 0 ? (
-                    <div className="pt-5   text-blue-600 ">
-                        <table className="min-w-full bg-white border border-gray-200 ">
-                            <thead>
-                            <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                                <th className="py-3 px-6 text-left">ID</th>
-                                <th className="py-3 px-6 text-left">Name</th>
-                                <th className="py-3 px-6 text-left">Base Price</th>
-                                <th className="py-3 px-6 text-left">has variants</th>
-                                <th className="py-3 px-6 text-left">Actions</th>
+                <div className="pt-5   text-blue-600 ">
+
+                    <table className="min-w-full bg-white border border-gray-200 w-screen ">
+                        <thead>
+                        <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                            <th className="py-3 px-6 text-left">ID</th>
+                            <th className="py-3 px-6 text-left">Name</th>
+                            <th className="py-3 px-6 text-left">Base Price</th>
+                            <th className="py-3 px-6 text-left">has variants</th>
+                            <th className="py-3 px-6 text-left">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody className="text-gray-600 text-sm font-light ">
+
+
+                        {products.map((product: ProductListType, index: number) => (
+
+                            <tr
+                                key={product.id}
+                                className={`border-b border-gray-200 hover:bg-gray-100 ${
+                                    index % 2 === 0 ? 'bg-gray-50' : ''
+                                }`}
+                            >
+                                <td className="py-3 px-6">{product.id}</td>
+                                <td className="py-3 px-6">{product.name}</td>
+                                <td className="py-3 px-6">{product.base_price}</td>
+                                <td className="py-3 px-6">{product.has_variants?'yes':'no'}</td>
+                                <td className="py-3 px-6">
+                                    <button className="text-blue-500 hover:text-blue-700">Edit</button>
+                                    <span className="material-icons">settings</span>
+                                    <button className="text-red-500 hover:text-red-700 ml-2">Delete</button>
+                                </td>
                             </tr>
-                            </thead>
-                            <tbody className="text-gray-600 text-sm font-light ">
+                        ))}
+                        </tbody>
 
+                    </table>
 
-                            {products.map((product: ProductListType, index: number) => (
-
-                                <tr
-                                    key={product.id}
-                                    className={`border-b border-gray-200 hover:bg-gray-100 ${
-                                        index % 2 === 0 ? 'bg-gray-50' : ''
-                                    }`}
-                                >
-                                    <td className="py-3 px-6">{product.id}</td>
-                                    <td className="py-3 px-6">{product.name}</td>
-                                    <td className="py-3 px-6">{product.base_price}</td>
-                                    <td className="py-3 px-6">{product.has_variants?'yes':'no'}</td>
-                                    <td className="py-3 px-6">
-                                        <button className="text-blue-500 hover:text-blue-700">Edit</button>
-                                        <button className="text-red-500 hover:text-red-700 ml-2">Delete</button>
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-
-                        </table>
-
-                    </div>
-                )
-                :
-                (
-                    <p>No products available.</p>
-                )
+                </div>
+            ):(<p>No products available.</p>)
             }
+
+
 
         </>
     )

@@ -189,20 +189,20 @@ services:
     networks:
       - ecommerce_network 
 
-  celery_beat:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    command: celery -A server beat --loglevel=info
-    volumes:
-      - ./server:/app
-    depends_on:
-     - celery_worker
-    environment:
-      - PYTHONUNBUFFERED=1
-    networks:
-      - ecommerce_network  
-    restart: always
+  # celery_beat:
+  #   build:
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   command: celery -A server beat --loglevel=info
+  #   volumes:
+  #     - ./server:/app
+  #   depends_on:
+  #    - celery_worker
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #   networks:
+  #     - ecommerce_network  
+  #   restart: always
 
   db:
     image: postgres
