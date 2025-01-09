@@ -51,3 +51,9 @@ export type ProductListType = {
     base_price: number;
     has_variants: boolean;
 }
+
+export interface AdminProductListType extends ProductListType {
+    admin_notes: string;
+    stock_quantity: number;
+    image: string;
+}

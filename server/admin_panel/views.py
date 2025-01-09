@@ -11,7 +11,8 @@ from core.enum import PermissionEnum
 from core.authentication import require_permissions, TauthPermissionClass
 from products.models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
 from products.serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, \
-    ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, VariantSerializer
+    ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, VariantSerializer, \
+    AdminProductListSerializer
 
 
 class VariantListCreateView(APIView):
@@ -133,7 +134,8 @@ def product_create_list_view(request):
 
                 product_images = request.data.get('images', [])
                 # import pdb; pdb.set_trace()
-                product_serializer = ProductSerializer(data=product_data)
+                # product_serializer = ProductSerializer(data=product_data)
+                product_serializer = AdminProductListSerializer(data=product_data)
                 if product_serializer.is_valid():
                     product = product_serializer.save()
                     if product_data.get('has_variants', False):

@@ -170,6 +170,9 @@ class ProductListSerializer(serializers.ModelSerializer):
             return image.image.url
         return None
 
+class AdminProductListSerializer(ProductListSerializer):
+    class Meta(ProductListSerializer.Meta):
+        fields = ProductListSerializer.Meta.fields + ['stock_quantity', 'created_at']
 
 class ProductDetailsSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
