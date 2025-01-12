@@ -35,8 +35,8 @@ dump.rdb
 *.psql
 
 # Environment variables
-.env
-*.env
+# .env
+# *.env
 
 # Node.js and React specific
 node_modules/

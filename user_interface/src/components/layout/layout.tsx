@@ -17,7 +17,7 @@ export interface NavbarComponentProps {
 
 
 export default function LayoutComponent() {
-    const isLargeScreen = useMediaQuery({ query: "(min-width: 1200px)" });
+    const isLargeScreen = useMediaQuery({query: "(min-width: 1200px)"});
     const [isSidebarOpen, setIsSidebarOpen] = useState(isLargeScreen);
 
     // Function to toggle sidebar
@@ -26,25 +26,65 @@ export default function LayoutComponent() {
     };
 
 
+//
+//     return (
+//         <>
+//
+//             {isAuthenticated ? <NavbarComponent  onToggleSidebar={toggleSidebar}
+//                                                  isSidebarOpen={isSidebarOpen}
+//                                                  isLargeScreen={isLargeScreen}
+//             /> : <h2>Please log in.</h2>}
+//             <div className="main-container flex">
+//                 {isAdminUser && <AdminSidebarComponent></AdminSidebarComponent>}
+//                 {isSidebarOpen && !isAdminUser && <SidebarComponent  onToggleSidebar={toggleSidebar}
+//                                                      isSidebarOpen={isSidebarOpen}
+//                                                      isLargeScreen={isLargeScreen} />}
+//                 <div className="clearfix">
+//
+//                 < Outlet />
+//                 </div>
+//             </div>
+//             <FooterComponent />
+//         </>
+//     );
+// }
 
     return (
         <>
+            {/* Navbar: Show if authenticated */}
+            {isAuthenticated ? (
+                <NavbarComponent
+                    onToggleSidebar={toggleSidebar}
+                    isSidebarOpen={isSidebarOpen}
+                    isLargeScreen={isLargeScreen}
+                />
+            ) : (
+                <h2>Please log in.</h2>
+            )}
 
-            {isAuthenticated ? <NavbarComponent  onToggleSidebar={toggleSidebar}
-                                                 isSidebarOpen={isSidebarOpen}
-                                                 isLargeScreen={isLargeScreen}
-            /> : <h2>Please log in.</h2>}
+            {/* Main container */}
             <div className="main-container flex">
-                {isAdminUser && <AdminSidebarComponent></AdminSidebarComponent>}
-                {isSidebarOpen && !isAdminUser && <SidebarComponent  onToggleSidebar={toggleSidebar}
-                                                     isSidebarOpen={isSidebarOpen}
-                                                     isLargeScreen={isLargeScreen} />}
-                <div className="clearfix">
+                {/* Admin Sidebar: Show only for admin users */}
+                {isAdminUser && <AdminSidebarComponent/>}
 
-                < Outlet />
+                {/* Regular Sidebar: Show for non-admin users when sidebar is open */}
+                {!isAdminUser && isSidebarOpen && (
+                    <SidebarComponent
+                        onToggleSidebar={toggleSidebar}
+                        isSidebarOpen={isSidebarOpen}
+                        isLargeScreen={isLargeScreen}
+                    />
+                )}
+
+                {/* Main content */}
+                <div className="content flex-1">
+                    <Outlet/>
                 </div>
             </div>
-            <FooterComponent />
+
+            {/* Footer */}
+            <FooterComponent/>
         </>
     );
+
 }
