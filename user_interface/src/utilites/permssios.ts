@@ -1,3 +1,3 @@
-export const hasPermission = (userPermissions, requiredPermission) => {
-    return userPermissions.includes(requiredPermission);
-};
+// export const hasPermission = (userPermissions, requiredPermission) => {
+//     return userPermissions.includes(requiredPermission);
+// };

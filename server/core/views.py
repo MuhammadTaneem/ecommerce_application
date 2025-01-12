@@ -35,13 +35,13 @@ def user_login(request):
                                 status=status.HTTP_200_OK)
             else:
                 invalid_credentials_message = config_data['messages']['invalid_credentials_message']
-                return Response({'detail': invalid_credentials_message}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(message = invalid_credentials_message,errors= {'message':invalid_credentials_message}, status=status.HTTP_400_BAD_REQUEST)
         else:
             account_disabled_message = config_data['messages']['account_disabled_message']
-            return Response({'detail': account_disabled_message}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': account_disabled_message}, status=status.HTTP_400_BAD_REQUEST)
     else:
         user_dos_not_exist_message = config_data['messages']['user_dos_not_exist_message']
-        return Response({'detail': user_dos_not_exist_message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(message = user_dos_not_exist_message,errors = {'message': user_dos_not_exist_message} ,status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

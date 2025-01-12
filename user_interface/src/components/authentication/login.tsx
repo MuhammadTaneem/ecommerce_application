@@ -1,18 +1,20 @@
 import {GoogleLogin} from '@react-oauth/google';
 // import { FacebookProvider, useLogin } from 'react-facebook';
 // import {facebook_app_id} from "../../utilites/api.ts";
-import {useState} from 'react';
+// import {useState} from 'react';
 import {zodResolver} from "@hookform/resolvers/zod";
 import {SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod"
-import {Input} from "postcss";
+import axiosInstance from "@/utilites/api.ts"
+import axios, { AxiosError } from 'axios';
+// import {addCategory} from "@/features/categoriesSlice.ts";
 
 const schema = z.object({
     email: z.string().email({
         message: "Please enter a valid email address.",
     }),
-    password: z.string().min(8,{
-        message: "password should at lest 8 characters.",
+    password: z.string().min(6,{
+        message: "password should at lest 6 characters.",
     }),
 });
 
@@ -32,18 +34,36 @@ export default function LoginComponent() {
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            console.log(data);
-            console.log(data['email']);
-
-        } catch (error) {
-            setError("root", {
-                message: "This email is already taken",
+            const response = await axiosInstance.post('/auth/login/', {
+                'email': data.email,
+                'password': data.password,
             });
+            if(response.status === 200) {
+                const token = response.data
+                console.log(token);
+                // call login context and set the token
+            }else{
+                console.log(response.data);
+
+            }
+            // if response is ok
+
+            // dispatch(addCategory(response.data));
+        }  catch (error:unknown) {
+            console.log(error);
+            if (error?.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.log(error.response.data.message); // Access the error message
+            }
+            // else {
+            //     // Something happened in setting up the request that triggered an Error
+            //     setErrorMessage('An unknown error occurred');
+            // }
         }
     };
 
-    const [isLoading, setIsLoading] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false);
 
 
     // const responseFacebook = (response) => {
@@ -57,17 +77,6 @@ export default function LoginComponent() {
     // };
 
 
-    // async function handleLogin() {
-    //     try {
-    //         const response = await login({
-    //             scope: 'email',
-    //         });
-    //
-    //         console.log(response.status);
-    //     } catch (error: any) {
-    //         console.log(error.message);
-    //     }
-    // }
 
 
     return (

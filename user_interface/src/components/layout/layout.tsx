@@ -6,7 +6,7 @@ import SidebarComponent from "./sidebar.tsx";
 import { useMediaQuery } from "react-responsive";
 import AdminSidebarComponent from "./admin_sidebar.tsx";
 const isAuthenticated:boolean = true;
-const isAdminUser:boolean = true;
+const isAdminUser:boolean = false;
 
 
 export interface NavbarComponentProps {

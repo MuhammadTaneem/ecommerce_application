@@ -1,10 +1,9 @@
-// src/contexts/AuthContext.tsx
-import React, {createContext, useContext, useState, useEffect} from 'react';
-import {api} from '../../utilites/api';
+import React, {createContext, useContext, useState, useEffect} from "react";
+import {api} from '@/utilites/api.ts';
 
 interface AuthContextType {
     isAuthenticated: boolean;
-    user: any | null;
+    user: unknown | null;
     login: (token: string) => void;
     logout: () => void;
 }
@@ -20,7 +19,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<unknown>(null);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -36,14 +35,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
             setIsAuthenticated(true);
         } catch (error) {
             logout();
+            console.log(error)
         }
     };
 
-    // const login = (token: string) => {
-    //     localStorage.setItem('token', token);
-    //     setIsAuthenticated(true);
-    //     fetchUser();
-    // };
+    const login = (token: string) => {
+        localStorage.setItem('token', token);
+        setIsAuthenticated(true);
+        fetchUser();
+    };
 
 
 

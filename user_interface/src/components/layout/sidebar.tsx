@@ -1,16 +1,16 @@
 import {useEffect, useState} from "react";
 import axiosInstance from "../../utilites/api.ts";
-import {addCategory} from "../../features/categoriesSlice.ts";
-import {useAppDispatch, useAppSelector} from "../../core/store.ts";
+import {addCategory} from "@/features/categoriesSlice.ts";
+import {useAppDispatch, useAppSelector} from "@/core/store.ts";
 import {ChevronRightIcon, ChevronDownIcon, XMarkIcon, Bars3Icon} from '@heroicons/react/24/solid'
-import {CategoryType} from "../../features/categories_type.ts";
+import {CategoryType} from "@/features/categories_type.ts";
 import {useNavigate} from "react-router-dom";
 import {NavbarComponentProps} from "./layout.tsx";
 
 
 export default function SidebarComponent({onToggleSidebar, isSidebarOpen, isLargeScreen}: NavbarComponentProps) {
     const categories: CategoryType[] = useAppSelector(state => state.categories.categories)
-
+    console.log(isLargeScreen);
     const dispatch = useAppDispatch();
     useEffect(() => {
         const fetchData = async () => {
