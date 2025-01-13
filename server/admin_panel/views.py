@@ -2,7 +2,8 @@ import json
 
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status, permissions
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.views import APIView
@@ -15,6 +16,19 @@ from products.serializers import VariantAttributeSerializer, VariantValueSeriali
     AdminProductListSerializer
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def product_context(request):
+    if request.method == 'GET':
+        categories = Category.objects.filter(parent__isnull=True)
+        category_serializer = CategorySerializer(categories, many=True)
+        variants = VariantAttribute.objects.all()
+        variant_serializer = VariantSerializer(variants, many=True)
+        return Response({'categories': category_serializer.data,
+                         'variants': variant_serializer.data},
+                        status=status.HTTP_200_OK)
+
+ 
 class VariantListCreateView(APIView):
 
     def get_permissions(self):
@@ -222,7 +236,6 @@ def product_detail_update_view(request, pk):
 
                     else:
                         errors_dict = product_serializer.errors
-
 
                     # image update
                     image_data = request.data.get('images', [])

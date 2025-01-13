@@ -47,8 +47,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <Provider store={store}>
             {/*<GoogleOAuthProvider  clientId={google_client_id()}> <RouterProvider router={router}/></GoogleOAuthProvider>;*/}
-            <RouterProvider router={router}/>;
-        </Provider>,
+            <RouterProvider router={router}/>
+        </Provider>
     </React.StrictMode>
 )
 
