@@ -1,63 +1,15 @@
-import React, {createContext, useContext, useState, useEffect} from "react";
-import {api} from '@/utilites/api.ts';
+import api from "@/utilites/api.ts"; // Import your api instance
 
-interface AuthContextType {
-    isAuthenticated: boolean;
-    user: unknown | null;
-    login: (token: string) => void;
-    logout: () => void;
-}
+export const fetchUserProfile = async (token: string) => {
+    try {
+        const response = await api.get('auth/profile/', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
 
-const AuthContext = createContext<AuthContextType>({
-    isAuthenticated: false,
-    user: null,
-    login: () => {
-    },
-    logout: () => {
-    },
-});
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [user, setUser] = useState<unknown>(null);
-
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            fetchUser();
-        }
-    }, []);
-
-    const fetchUser = async () => {
-        try {
-            const response = await api.get('/auth/user/');
-            setUser(response.data);
-            setIsAuthenticated(true);
-        } catch (error) {
-            logout();
-            console.log(error)
-        }
-    };
-
-    const login = (token: string) => {
-        localStorage.setItem('token', token);
-        setIsAuthenticated(true);
-        fetchUser();
-    };
-
-
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        setIsAuthenticated(false);
-        setUser(null);
-    };
-
-    return (
-        <AuthContext.Provider value={{isAuthenticated, user, login, logout}}>
-            {children}
-        </AuthContext.Provider>
-    );
+        return response.data; // Return the user data
+    } catch (error) {
+        throw new Error(error?.message || 'Failed to fetch user profile');
+    }
 };
-
-export const useAuth = () => useContext(AuthContext);

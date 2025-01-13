@@ -14,10 +14,11 @@ import {store} from "./core/store.ts";
 import ProductListComponent from "./components/product/products.tsx";
 import ProductDetailsComponent from "./components/product/product_details.tsx";
 import LoginComponent from "./components/authentication/login.tsx";
-import {GoogleOAuthProvider} from "@react-oauth/google";
-import {google_client_id} from "./utilites/api.ts";
+// import {GoogleOAuthProvider} from "@react-oauth/google";
+// import {google_client_id} from "./utilites/api.ts";
 import AdminProductComponent from "./components/admin_panel/products.tsx";
 import AdminAddProductComponent from "./components/admin_panel/add_product.tsx";
+import ProfileComponent from "@/components/authentication/profile.tsx";
 
 
 const router = createBrowserRouter(
@@ -26,6 +27,7 @@ const router = createBrowserRouter(
             <Route path='/' element={<LayoutComponent/>}>
                 <Route path='/' element={<Navigate to='/products' replace/>}/>
                 <Route path='/login' element={<LoginComponent/>}></Route>
+                <Route path='/profile' element={<ProfileComponent/>}></Route>
                 <Route path='/admin/products' element={<AdminProductComponent/>}></Route>
                 <Route path='/admin/products/add' element={<AdminAddProductComponent/>}></Route>
                 <Route path='/home' element={<HomepageComponent/>}></Route>
@@ -44,7 +46,8 @@ const router = createBrowserRouter(
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <Provider store={store}>
-            <GoogleOAuthProvider  clientId={google_client_id()}> <RouterProvider router={router}/></GoogleOAuthProvider>;
+            {/*<GoogleOAuthProvider  clientId={google_client_id()}> <RouterProvider router={router}/></GoogleOAuthProvider>;*/}
+            <RouterProvider router={router}/>;
         </Provider>,
     </React.StrictMode>
 )

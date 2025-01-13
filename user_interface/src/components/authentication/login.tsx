@@ -1,13 +1,11 @@
-import {GoogleLogin} from '@react-oauth/google';
-// import { FacebookProvider, useLogin } from 'react-facebook';
-// import {facebook_app_id} from "../../utilites/api.ts";
-// import {useState} from 'react';
+
 import {zodResolver} from "@hookform/resolvers/zod";
 import {SubmitHandler, useForm} from "react-hook-form";
 import {z} from "zod"
 import axiosInstance from "@/utilites/api.ts"
-import axios, { AxiosError } from 'axios';
-// import {addCategory} from "@/features/categoriesSlice.ts";
+import {useAppDispatch} from "@/core/store.ts";
+import {login, logout} from "@/features/authSlice.ts";
+
 
 const schema = z.object({
     email: z.string().email({
@@ -20,6 +18,8 @@ const schema = z.object({
 
 type FormFields = z.infer<typeof schema>;
 export default function LoginComponent() {
+
+    const dispatch = useAppDispatch();
     const {
         register,
         handleSubmit,
@@ -41,25 +41,17 @@ export default function LoginComponent() {
             if(response.status === 200) {
                 const token = response.data
                 console.log(token);
-                // call login context and set the token
-            }else{
-                console.log(response.data);
-
+                dispatch(login(token));
             }
-            // if response is ok
 
-            // dispatch(addCategory(response.data));
-        }  catch (error:unknown) {
-            console.log(error);
-            if (error?.response) {
-                // The request was made and the server responded with a status code
-                // that falls out of the range of 2xx
-                console.log(error.response.data.message); // Access the error message
-            }
-            // else {
-            //     // Something happened in setting up the request that triggered an Error
-            //     setErrorMessage('An unknown error occurred');
-            // }
+        }  catch (error) {
+            dispatch(logout());
+
+            setError("root", {
+                message:error?.message,
+            });
+            console.log(error?.message);
+            console.log(error?.status);
         }
     };
 
@@ -134,26 +126,29 @@ export default function LoginComponent() {
                         </div>
 
                         {/* Root Error */}
+                        <div className="text-red-500">
+                            <p>{errors.email?.message}</p>
+                        </div>
                         {errors.root && (
                             <div className="text-red-500 text-sm mt-2">{errors.root.message}</div>
                         )}
                     </form>
 
                     {/*social auth*/}
-                    <div className="flex justify-around mt-8">
-                        <GoogleLogin
-                            onSuccess={credentialResponse => {
-                                console.log(credentialResponse);
-                            }}
-                            onError={() => {
-                                console.log('Login Failed');
-                            }}
-                        />
+                    {/*<div className="flex justify-around mt-8">*/}
+                    {/*    <GoogleLogin*/}
+                    {/*        onSuccess={credentialResponse => {*/}
+                    {/*            console.log(credentialResponse);*/}
+                    {/*        }}*/}
+                    {/*        onError={() => {*/}
+                    {/*            console.log('Login Failed');*/}
+                    {/*        }}*/}
+                    {/*    />*/}
 
-                        {/*<button onClick={handleLogin} disabled={isLoading}>*/}
-                        {/*    Login via Facebook*/}
-                        {/*</button>*/}
-                    </div>
+                    {/*    /!*<button onClick={handleLogin} disabled={isLoading}>*!/*/}
+                    {/*    /!*    Login via Facebook*!/*/}
+                    {/*    /!*</button>*!/*/}
+                    {/*</div>*/}
 
                 </div>
             </div>

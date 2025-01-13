@@ -1,13 +1,9 @@
-import {useAppDispatch} from "../../core/store.ts";
+import {useAppDispatch} from "@/core/store.ts";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
-// import {ProductListType} from "../../features/product_type.ts";
 import axiosInstance from "../../utilites/api.ts";
-import {addProduct} from "../../features/productSlice.ts";
-// import {ShoppingCartIcon} from "@heroicons/react/24/solid";
-import {AdminProductListType, ProductListType} from "../../features/product_type.ts";
-import AdminAddProductComponent from "./add_product.tsx";
-import {ShoppingCartIcon} from "@heroicons/react/24/solid";
+import {addProduct} from "@/features/productSlice.ts";
+import {AdminProductListType} from "@/features/product_type.ts";
 import {Button} from "@/components/ui/button.tsx";
 import {EyeIcon, PencilIcon, TrashIcon} from '@heroicons/react/24/solid'
 

@@ -15,6 +15,24 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.log(error);
+        // Extract and normalize error message
+        const message =
+            error.response?.data?.error?.message ||
+            error.response?.data?.message ||
+            error.message ||
+            'Something went wrong.';
+        return Promise.reject({ message, status: error.response?.status });
+    }
+);
+
+
+
+
 export default api;
 //
 // api.interceptors.request.use((config) => {

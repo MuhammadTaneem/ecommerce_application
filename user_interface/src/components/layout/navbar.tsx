@@ -3,11 +3,13 @@ import {Link} from 'react-router-dom';
 import {MagnifyingGlassIcon, ShoppingCartIcon, MoonIcon, UserIcon} from '@heroicons/react/24/solid'
 import {Bars3Icon} from '@heroicons/react/24/solid';
 import {NavbarComponentProps} from "./layout.tsx";
+import {useAppSelector} from "@/core/store.ts";
 
 
 export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLargeScreen}: NavbarComponentProps) {
     const [darkTheme, setDarkTheme] = useState(true)
-
+    const token = useAppSelector((state) => state.auth.token);
+    const isAuthenticated = useAppSelector((state) => state.auth.is_authenticated);
     useEffect(() => {
         document.querySelector('html')?.classList.remove("light", "dark")
         document.querySelector('html')?.classList.add(darkTheme ? "dark" : "light")
@@ -123,6 +125,10 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
                 <button
                     className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
                     Popular Products
+                </button>
+                <button
+                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    {isAuthenticated? token:'false'}
                 </button>
 
             </div>
