@@ -1,7 +1,7 @@
 import json
 
 from django.utils.decorators import method_decorator
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,25 +10,43 @@ from rest_framework.views import APIView
 
 from core.enum import PermissionEnum
 from core.authentication import require_permissions, TauthPermissionClass
-from products.models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
+from products.models import VariantAttribute, Category, Product, SKU, Brand, Tag
 from products.serializers import VariantAttributeSerializer, VariantValueSerializer, CategorySerializer, \
     ProductSerializer, ProductImageSerializer, SKUSerializer, ProductDetailsSerializer, VariantSerializer, \
-    AdminProductListSerializer
+    AdminProductListSerializer, FlatCategorySerializer, BrandSerializer, TagSerializer
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def product_context(request):
     if request.method == 'GET':
-        categories = Category.objects.filter(parent__isnull=True)
-        category_serializer = CategorySerializer(categories, many=True)
+        categories = Category.objects.all()
+        category_serializer = FlatCategorySerializer(categories, many=True)
         variants = VariantAttribute.objects.all()
         variant_serializer = VariantSerializer(variants, many=True)
-        return Response({'categories': category_serializer.data,
-                         'variants': variant_serializer.data},
-                        status=status.HTTP_200_OK)
 
- 
+        brands = Brand.objects.all()
+        brand_serializer = BrandSerializer(brands, many=True)
+        tags = Tag.objects.all()
+        tag_serializer = TagSerializer(tags, many=True)
+
+        return Response(
+            {'categories': category_serializer.data,
+             'variants': variant_serializer.data,
+             'brands': brand_serializer.data,
+             'tags': tag_serializer.data,
+             },
+            status=status.HTTP_200_OK)
+
+
+class BrandViewSet(viewsets.ModelViewSet):
+    """
+    A simple ViewSet for viewing and editing accounts.
+    """
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+
+
 class VariantListCreateView(APIView):
 
     def get_permissions(self):

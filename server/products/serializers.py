@@ -1,8 +1,20 @@
 from rest_framework import serializers
 # from social_core.utils import slugify
 
-from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU
+from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU, Brand, Tag
 from django.conf import settings
+
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = ['id', 'name', 'description', 'created_at', 'updated_at']
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'slug', 'created_at', 'updated_at']
 
 
 class VariantAttributeSerializer(serializers.ModelSerializer):
@@ -103,6 +115,16 @@ class CategorySerializer(serializers.ModelSerializer):
         return []
 
 
+class FlatCategorySerializer(CategorySerializer):
+    label = serializers.SerializerMethodField()
+
+    class Meta(CategorySerializer.Meta):
+        fields = [field for field in CategorySerializer.Meta.fields if field != 'subcategories']
+
+    def get_label(self, obj):
+        return obj.slug.replace('_', ' > ')
+
+
 class ProductImageSerializer(serializers.ModelSerializer):
     # image_url = serializers.SerializerMethodField()
 
@@ -139,7 +161,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'base_price', 'stock_quantity', 'has_variants',
-                  'images', 'category', 'key_features', 'additional_info']
+                  'images', 'category', 'key_features', 'additional_info', 'brand', 'tags']
 
     # def validate_category(self, value):
     #     # import pdb;pdb.set_trace()
@@ -170,9 +192,11 @@ class ProductListSerializer(serializers.ModelSerializer):
             return image.image.url
         return None
 
+
 class AdminProductListSerializer(ProductListSerializer):
     class Meta(ProductListSerializer.Meta):
         fields = ProductListSerializer.Meta.fields + ['stock_quantity', 'created_at']
+
 
 class ProductDetailsSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -181,7 +205,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'is_deleted', 'additional_info',
-                  'short_description', 'discount_price', 'category', 'key_features', 'description', 'images', 'skus']
+                  'short_description', 'discount_price', 'category', 'key_features', 'description', 'images', 'skus',
+                  'brand', 'tags']
 
     def validate(self, attrs):
         if 'category' not in attrs or not attrs['category']:

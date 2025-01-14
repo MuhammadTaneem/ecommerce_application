@@ -8,15 +8,7 @@
 
 
 .text_logo {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    font-style: italic;
-    font-size: 24px; /* Larger font size for logo */
-    font-weight: normal; /* Make the text bold */
-    color: #0ad3c2; /* Dark color, adjust as needed */
-    text-transform: uppercase; /* Make the text uppercase */
-    letter-spacing: 0px; /* Increase spacing between letters */
-    text-shadow: 2px 2px 5px #0c4e49; /* Add a subtle shadow for depth */
-    display: inline-block; /* Make sure it behaves like a logo */
+    @apply text-2xl font-bold text-blue-500 dark:text-blue-400 tracking-wide capitalize;
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -42,20 +34,50 @@
     @apply text-xl mr-2;
 }
 
-@layer components {
-    .input_field {
-        @apply block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-100 focus:border-indigo-100 sm:text-sm text-gray-900;
-    }
+/*@layer components {*/
+/*    .input_field {*/
+/*        @apply block w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-100 focus:border-indigo-100 sm:text-sm dark:text-gray-100 dark:bg-gray-800;*/
+/*    }*/
 
-    .input_field:focus {
-        @apply outline-none ring-2;
-    }
+/*    .input_field:focus {*/
+/*        @apply outline-none ring-2;*/
+/*    }*/
 
-    .input_error {
-        @apply border-red-500 text-red-500;
-    }
+/*    .input_error {*/
+/*        @apply border-red-500 text-red-500;*/
+/*    }*/
+/*}*/
+.input_field {
+    @apply block w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-100 focus:border-indigo-100 sm:text-sm dark:text-gray-100 dark:bg-gray-800;
 }
 
+.select_field{
+    @apply block w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-indigo-100 focus:border-indigo-100 sm:text-sm dark:text-gray-100 dark:bg-gray-800;
+}
+.input_label{
+    @apply  block text-sm font-medium mb-2;
+}
+.bg_button {
+    @apply hover:bg-gray-200 dark:hover:bg-gray-700 rounded px-5  transition-colors duration-200 ;
+}
+
+.card {
+    @apply
+    p-6
+    rounded-[var(--radius)]
+    shadow-md
+    bg-[var(--card)]
+    text-[var(--card-foreground)]
+    border
+    /*border-[var(--border)];*/
+}
+
+.dark .card {
+    @apply
+    bg-[var(--card)]
+    text-[var(--card-foreground)]
+    /*border-[var(--border)];*/
+}
 
 @layer base {
     :root {
@@ -112,6 +134,8 @@
         --chart-5: 340 75% 55%
     }
 }
+
+
 @layer base {
     * {
         @apply border-border;

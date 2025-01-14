@@ -74,10 +74,10 @@ export default function LoginComponent() {
     return (
         <>
 
-            <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
-                <div className="max-w-md w-full bg-white p-8 shadow-md rounded-lg">
+            <div className="min-h-screen flex items-center justify-center  px-6">
+                <div className="card">
                     <div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
                             Sign in to HORROR
                         </h2>
                     </div>
@@ -115,10 +115,10 @@ export default function LoginComponent() {
                             <button
                                 disabled={isSubmitting}
                                 type="submit"
-                                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                                className={`w-full flex justify-center  py-2 px-4   border-2 rounded-md shadow-sm text-sm font-medium  ${
                                     isSubmitting
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        ? "cursor-not-allowed"
+                                        : "focus:outline-none focus:ring-2 focus:ring-offset-2 "
                                 }`}
                             >
                                 {isSubmitting ? "Loading..." : "Submit"}

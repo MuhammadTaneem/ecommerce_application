@@ -12,6 +12,25 @@ export type SkuType = {
     variants: number[];
 };
 
+
+export type BrandType = {
+    id: number;
+    name: string;
+    description: string | null;
+    created_at: string; // ISO format date
+    updated_at: string; // ISO format date
+};
+
+export type TagType = {
+    id: number;
+    name: string;
+    slug: string;
+    created_at: string; // ISO format date
+    updated_at: string; // ISO format date
+};
+
+
+
 export type ProductType = {
     id: number;
     name: string;
@@ -23,6 +42,8 @@ export type ProductType = {
     images: ProductImageType[];
     category: number;
     skus: SkuType[];
+    brand: BrandType | null;
+    tags: TagType[];
     key_features: {
         [key: string]: string;
     };

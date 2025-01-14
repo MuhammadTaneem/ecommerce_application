@@ -35,16 +35,11 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
 
     return (<>
         <div
-            className="navbar  py-1.5
-                border-b-2  rounded-b
-                text-gray-700 dark:text-gray-300
-                hover:text-gray-900 hover:dark:text-white
-                bg-white dark:bg-gray-800
-                ">
+            className="navbar  py-1.5 border-b-2  rounded-b">
             <div className="first_row flex justify-between md:pt-3">
                 <span className=" pl-2 flex items-center">
                     <Link key="logo" to="/" className="company_logo px-5">
-                        <p className="text_logo"> HORROR</p>
+                        <p className="text_logo"> horror</p>
                     </Link>
 
 
@@ -53,7 +48,7 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
 
                 </span>
 
-                <div className="flex items-center">
+                <div className="flex items-center dark:text-black mb-5 ">
                     <div className="relative">
                         <input type="text" value={query}
                                onChange={handleInputChange}
@@ -63,11 +58,11 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
                                    }
                                }}
                                placeholder="Search..."
-                               className=' text-black w-80 p-1 rounded-lg focus:outline-0'/>
+                               className='  w-80 p-1  focus:outline-0 rounded-lg border-2 border-r-2'/>
                         <div className="absolute inset-y-0 right-0 flex items-center pl-3">
                             <button
                                 onClick={onClick}
-                                className=" p-2  text-black rounded-full hover:text-teal-500 ">
+                                className=" p-2  rounded-full hover:text-teal-500">
                                 <MagnifyingGlassIcon className="w-5 h-5"/>
                             </button>
                         </div>
@@ -80,13 +75,13 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
 
                 <button
                     onClick={themeToggle}
-                    className=" p-2  text-white rounded-full hover:text-teal-500 ">
+                    className=" p-2   rounded-full hover:text-teal-500 ">
                                 <MoonIcon className="w-5 h-5"/>
                                </button>
 
                     <button
                         onClick={themeToggle}
-                        className=" p-2  text-white rounded-full hover:text-teal-500 ">
+                        className=" p-2   rounded-full hover:text-teal-500 ">
                                 <ShoppingCartIcon className="w-5 h-5"/>
                             </button>
                     {/*<button className="hover:bg-gray-200 dark:hover:bg-gray-700 p-2">*/}
@@ -97,7 +92,7 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
                     {/*</button>*/}
                     <button
                         onClick={onClick}
-                        className=" p-2  text-white rounded-full hover:text-teal-500 ">
+                        className=" p-2  rounded-full hover:text-teal-500 ">
                                 <UserIcon className="w-5 h-5"/>
                             </button>
 
@@ -106,28 +101,29 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
             </div>
             <div className="secound_row px-5 flex justify-start">
                 <button
-                    className="flex items-center justify-center w-10 h-10  hover:bg-gray-700 rounded-full transition"
+                    // className="flex items-center justify-center w-10 h-10  hover:bg-gray-700 rounded-full transition"
+                    className="bg_button"
                     onClick={onToggleSidebar}
                     aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
                 >
                     <Bars3Icon className="w-5 h-5 text-gray-300"/>
                 </button>
                 <button
-                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    className="bg_button">
                     Offer
                 </button>
 
                 <button
-                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    className="bg_button">
                     Free Delivery
                 </button>
 
                 <button
-                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    className="bg_button">
                     Popular Products
                 </button>
                 <button
-                    className="text-gray-300  hover:bg-gray-700 rounded px-5  transition-colors duration-200">
+                    className="bg_button">
                     {isAuthenticated? token:'false'}
                 </button>
 

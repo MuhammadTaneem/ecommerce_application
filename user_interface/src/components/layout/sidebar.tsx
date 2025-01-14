@@ -27,10 +27,10 @@ export default function SidebarComponent({onToggleSidebar, isSidebarOpen, isLarg
 
 
     return (<>
-        <div className="sidebar p-4  bg-gray-100 dark:bg-gray-100 w-auto">
+        <div className="sidebar p-4  w-auto h-screen border">
             <div className="button-line mb-4 grid justify-items-end">
                 {<button
-                    className="flex items-center justify-center w-10 h-10  text-gray-900 hover:bg-gray-600 hover:text-gray-300 rounded-full transition"
+                    className="flex items-center justify-center w-10 h-10 rounded-full transition"
                     onClick={onToggleSidebar}
                     aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
                 >
@@ -66,7 +66,7 @@ function CategoryDropdown({category}: { category: CategoryType }) {
     return (
 
 
-        <div>
+        <div className="">
 
             <div
                 className="cursor-pointer flex justify-between items-center "
