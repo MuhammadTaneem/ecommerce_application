@@ -3,7 +3,7 @@ import axiosInstance from "@/utilites/api.ts";
 import {addProduct} from "@/features/productSlice.ts";
 import {z} from "zod"
 import {useAppSelector} from "@/core/store.ts";
-import {SubmitHandler, useForm} from "react-hook-form";
+import {SubmitHandler, useFieldArray, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {login, logout} from "@/features/authSlice.ts";
 import {PhotoIcon} from "@heroicons/react/16/solid";
@@ -47,7 +47,7 @@ export default function AdminAddProductComponent() {
         stock_quantity: z.number().nullable().optional(),
         category: z.number().int("Category must be a valid number"),
         has_variants: z.boolean(),
-        brand: z.string().optional(),
+        brand: z.number().optional(),
         tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
         key_features: z.array(
             z.object({
@@ -69,6 +69,7 @@ export default function AdminAddProductComponent() {
 
     type productFormFields = z.infer<typeof productSchema>;
     const {
+        control,
         register,
         handleSubmit,
         setError,
@@ -79,13 +80,21 @@ export default function AdminAddProductComponent() {
             has_variants: false,
         },
         resolver: zodResolver(productSchema),
+        defaultValues: {
+            key_features: [],
+        },
     });
 
 
 
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "key_features",
+    });
+
 
     const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
-        console.log("submityting something")
+        console.log("submitting something")
         setTimeout(() => {
             console.log("3 seconds have passed");
         }, 3000);
@@ -260,7 +269,7 @@ export default function AdminAddProductComponent() {
                         {/* Category Field */}
 
                         <div className="col-span-2">
-                            <label htmlFor="category" className="block text-sm font-medium">
+                            <label htmlFor="category" className="input_label">
                                 Select Category
                             </label>
                             <select
@@ -281,7 +290,7 @@ export default function AdminAddProductComponent() {
                         {/* Brand Field */}
 
                         <div className="col-span-2">
-                            <label htmlFor="brand" className="block text-sm font-medium">
+                            <label htmlFor="brand" className="input_label">
                                 Select Brand
                             </label>
                             <select
@@ -318,7 +327,60 @@ export default function AdminAddProductComponent() {
                         </div>
 
                         {/* Key Features */}
-                        {/*<h3>Key Features</h3>*/}
+
+                        <div className="col-span-5">
+                            <h3 className="text-lg font-semibold">Key Features
+                                <button
+                                    type="button"
+                                    onClick={() => append({key: "", value: ""})}
+                                    className="p-2 rounded">
+                                    +
+                                </button>
+                            </h3>
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="flex items-center space-x-4">
+                                    {/* Key Input */}
+                                    <input
+                                        {...register(`key_features.${index}.key`)}
+                                        type="text"
+                                        placeholder="Key"
+                                        className="input_field"
+                                    />
+                                    {errors.key_features?.[index]?.key && (
+                                        <p className="text-red-500 text-sm">
+                                            {errors.key_features[index].key?.message}
+                                        </p>
+                                    )}
+
+                                    {/* Value Input */}
+                                    <input
+                                        {...register(`key_features.${index}.value`)}
+                                        type="text"
+                                        placeholder="Value"
+                                        className="input_field"
+                                    />
+                                    {errors.key_features?.[index]?.value && (
+                                        <p className="text-red-500 text-sm">
+                                            {errors.key_features[index].value?.message}
+                                        </p>
+                                    )}
+
+                                    {/* Remove Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => remove(index)}
+                                        className="p-2 rounded text-red-600"
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Add New Key-Value Button */}
+
+
+
+                        </div>
                         {/*{keyFeatureFields.map((field, index) => (*/}
                         {/*    <div key={field.id} className="flex space-x-2">*/}
                         {/*        <input*/}
@@ -392,7 +454,7 @@ export default function AdminAddProductComponent() {
                         {/*</button>*/}
 
                         {/* Submit Button */}
-                        <div>
+                        <div className='col-span-5'>
                             <button
                                 disabled={isSubmitting}
                                 type="submit"
@@ -419,24 +481,3 @@ export default function AdminAddProductComponent() {
     );
 
 }
-
-
-// popuip code
-//
-//     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-//         // <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-md">
-//         // <button
-//             className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-//             onClick={handleSubmit}
-//         >
-//             &times;
-//         </button>
-//         <p>pop up windows is here</p>
-//         <button
-//             onClick={handleSubmit}
-//         >
-//             submit product
-//
-//         </button>
-//     </div>
-// </div>

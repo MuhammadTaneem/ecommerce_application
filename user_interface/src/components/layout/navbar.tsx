@@ -124,7 +124,7 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
                 </button>
                 <button
                     className="bg_button">
-                    {isAuthenticated? token:'false'}
+                    {isAuthenticated? token.slice(0, 3):'false'}
                 </button>
 
             </div>
