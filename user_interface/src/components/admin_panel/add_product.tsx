@@ -1,19 +1,17 @@
 import {useEffect, useState} from "react";
 import axiosInstance from "@/utilites/api.ts";
-import {addProduct} from "@/features/productSlice.ts";
 import {z} from "zod"
 import {useAppSelector} from "@/core/store.ts";
 import {SubmitHandler, useFieldArray, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {login, logout} from "@/features/authSlice.ts";
 import {PhotoIcon} from "@heroicons/react/16/solid";
-import {CategoryType} from "@/features/categories_type.ts";
-import {BrandType} from "@/features/product_type.ts";
+import {BrandType, CategoryType, ProductContextType} from "@/features/product_type.ts";
+
 
 
 export default function AdminAddProductComponent() {
     const [loading, setLoading] = useState<boolean>(false);
-    const [contextData, setContextData] = useState<any>({});
+    const [contextData, setContextData] = useState<ProductContextType>({});
     const token = useAppSelector(state => (state.auth.token));
 
     useEffect(() => {
@@ -44,10 +42,10 @@ export default function AdminAddProductComponent() {
         base_price: z.number().positive("Base price must be a positive number"),
         short_description: z.string().optional(),
         discount_price: z.number().optional(),
-        stock_quantity: z.number().nullable().optional(),
+        stock_quantity: z.number(),
         category: z.number().int("Category must be a valid number"),
         has_variants: z.boolean(),
-        brand: z.number().optional(),
+        brand: z.number().nullable().optional(),
         tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
         key_features: z.array(
             z.object({
@@ -61,8 +59,9 @@ export default function AdminAddProductComponent() {
             z.object({
                 sku_code: z.string().min(1, "SKU code is required"),
                 price: z.number().positive("Price must be positive"),
-                stock_quantity: z.number().nullable(),
-                variants_dict: z.record(z.string(), z.string()),
+                discount_price: z.number().positive("Price must be positive").optional(),
+                stock_quantity: z.number(),
+                variants_dict: z.array(z.number()),
             })
         ).optional(),
     });
@@ -78,16 +77,14 @@ export default function AdminAddProductComponent() {
         defaultValues: {
             base_price: 0,
             has_variants: false,
+            key_features: [],
+            brand: null
         },
         resolver: zodResolver(productSchema),
-        defaultValues: {
-            key_features: [],
-        },
     });
 
 
-
-    const { fields, append, remove } = useFieldArray({
+    const {fields, append, remove} = useFieldArray({
         control,
         name: "key_features",
     });
@@ -99,26 +96,25 @@ export default function AdminAddProductComponent() {
             console.log("3 seconds have passed");
         }, 3000);
         console.log(data)
-        // try {
-        //     const response = await axiosInstance.post('/auth/login/', {
-        //         'email': data.email,
-        //         'password': data.password,
-        //     });
-        //     if (response.status === 200) {
-        //         const token = response.data
-        //         console.log(token);
-        //         dispatch(login(token));
-        //     }
-        //
-        // } catch (error) {
-        //     dispatch(logout());
-        //
-        //     setError("root", {
-        //         message: error?.message,
-        //     });
-        //     console.log(error?.message);
-        //     console.log(error?.status);
-        // }
+
+
+        try {
+            const response = await axiosInstance.post('admin/products/', {"product":data});
+            if (response.status === 200) {
+                const token = response.data
+                console.log(token);
+                // dispatch(login(token));
+            }
+
+        } catch (error) {
+            // dispatch(logout());
+
+            setError("root", {
+                message: error?.message,
+            });
+            console.log(error?.message);
+            console.log(error?.status);
+        }
     };
 
 
@@ -136,11 +132,11 @@ export default function AdminAddProductComponent() {
                     {/*            {...register("name")}*/}
                     {/*            type="text"*/}
                     {/*            placeholder="name"*/}
-                    {/*            className="input_field"*/}
+                    {/*            className="input-field"*/}
                     {/*        />*/}
 
                     {/*        {errors.name && (*/}
-                    {/*            <div className="text-red-500 text-sm">{errors.name.message}</div>*/}
+                    {/*            <div className="error-message">{errors.name.message}</div>*/}
                     {/*        )}*/}
                     {/*    </div>*/}
                     {/*</form>*/}
@@ -194,74 +190,75 @@ export default function AdminAddProductComponent() {
                     </div>
 
 
-                    <form  className="my-8  grid grid-cols-5 auto-rows-min gap-4" onSubmit={handleSubmit(onSubmitProduct)}>
+                    <form className="my-8  grid grid-cols-5 auto-rows-min gap-4"
+                          onSubmit={handleSubmit(onSubmitProduct)}>
 
 
                         <div className="col-span-2">
-                            <label className="input_label">Product Name </label>
+                            <label className="input-label">Product Name </label>
                             <input
                                 {...register("name")}
                                 type="text"
                                 id="product_name"
                                 placeholder="Product Name"
-                                className="input_field"
+                                className="input-field"
                             />
-                            {errors.name && <div className="text-red-500 text-sm">{errors.name.message}</div>}
+                            {errors.name && <div className="error-message">{errors.name.message}</div>}
                         </div>
 
                         {/* Base Price Field */}
                         <div className=" ">
-                            <label className="input_label">Price </label>
+                            <label className="input-label">Price </label>
                             <input
-                                {...register("base_price",{valueAsNumber:true})}
+                                {...register("base_price", {valueAsNumber: true})}
                                 type="number"
                                 placeholder="Base Price"
-                                className="input_field"
+                                className="input-field"
                             />
                             {errors.base_price && (
-                                <div className="text-red-500 text-sm">{errors.base_price.message}</div>
+                                <div className="error-message">{errors.base_price.message}</div>
                             )}
                         </div>
 
                         {/* Discount Price Field */}
                         <div className="space-y-1">
-                            <label className="input_label">Discount Price </label>
+                            <label className="input-label">Discount Price </label>
                             <input
-                                {...register("discount_price",{valueAsNumber:true})}
+                                {...register("discount_price", {valueAsNumber: true})}
                                 type="number"
                                 placeholder="Discount Price"
-                                className="input_field"
+                                className="input-field"
                             />
                             {errors.discount_price && (
-                                <div className="text-red-500 text-sm">{errors.discount_price.message}</div>
+                                <div className="error-message ">{errors.discount_price.message}</div>
                             )}
                         </div>
 
                         {/* Stock Quantity Field */}
                         <div className="">
-                            <label className="input_label">Stock Quantity </label>
+                            <label className="input-label">Stock Quantity </label>
                             <input
-                                {...register("stock_quantity",{valueAsNumber:true})}
+                                {...register("stock_quantity", {valueAsNumber: true})}
                                 type="number"
                                 placeholder="Stock Quantity"
-                                className="input_field"
+                                className="input-field"
                             />
                             {errors.stock_quantity && (
-                                <div className="text-red-500 text-sm">{errors.stock_quantity.message}</div>
+                                <div className="error-message ">{errors.stock_quantity.message}</div>
                             )}
                         </div>
 
 
                         {/* Short Description Field */}
                         <div className="">
-                            <label className="input_label">Short Description </label>
+                            <label className="input-label">Short Description </label>
                             <textarea
                                 {...register("short_description")}
                                 placeholder="Short Description"
-                                className="input_field "
+                                className="input-field "
                             />
                             {errors.short_description && (
-                                <div className="text-red-500 text-sm">{errors.short_description.message}</div>
+                                <div className="error-message ">{errors.short_description.message}</div>
                             )}
                         </div>
 
@@ -269,66 +266,53 @@ export default function AdminAddProductComponent() {
                         {/* Category Field */}
 
                         <div className="col-span-2">
-                            <label htmlFor="category" className="input_label">
+                            <label htmlFor="category" className="input-label">
                                 Select Category
                             </label>
                             <select
-                                {...register('category',{valueAsNumber:true})}
+                                {...register('category', {valueAsNumber: true})}
                                 id="category"
-                                className="select_field"
+                                className="select-field"
                             >
                                 <option value="">Select a category</option>
-                                {contextData['categories']?.map((category:CategoryType) => (
+                                {contextData['categories']?.map((category: CategoryType) => (
                                     <option key={category.id} value={category.id}>
                                         {category.label}
                                     </option>
                                 ))}
                             </select>
                             {errors.category &&
-                                <div className="text-red-500 text-sm">{errors.category.message}</div>}
+                                <div className="error-message ">{errors.category.message}</div>}
                         </div>
                         {/* Brand Field */}
 
                         <div className="col-span-2">
-                            <label htmlFor="brand" className="input_label">
+                            <label htmlFor="brand" className="input-label">
                                 Select Brand
                             </label>
                             <select
-                                {...register('brand',{valueAsNumber:true})}
+                                {...register('brand',  { valueAsNumber: true})}
                                 id="brand"
-                                className="select_field"
+                                defaultValue=""
+                                className="select-field"
                             >
-                                <option value="" disabled >Select a brand</option>
-                                {contextData['brands']?.map((brand:BrandType) => (
+                                <option value="" disabled>Select a brand</option>
+                                {contextData['brands']?.map((brand: BrandType) => (
                                     <option key={brand.id} value={brand.id}>
                                         {brand.name}
                                     </option>
                                 ))}
                             </select>
                             {errors.brand &&
-                                <div className="text-red-500 text-sm">{errors.brand.message}</div>}
+                                <div className="error-message ">{errors.brand.message}</div>}
                         </div>
 
 
-                        {/* Has Variants Checkbox */}
-                        <div className="flex items-center space-x-2">
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    {...register("has_variants")}
-                                    className="sr-only peer"
-                                />
-                                <div
-                                    className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
-                                <div
-                                    className="w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform absolute top-0.5 left-0.5"></div>
-                            </label>
-                            <span className="text-gray-700">Has Variants</span>
-                        </div>
+
 
                         {/* Key Features */}
 
-                        <div className="col-span-5">
+                        <div className="col-span-5 space-y-2">
                             <h3 className="text-lg font-semibold">Key Features
                                 <button
                                     type="button"
@@ -337,6 +321,24 @@ export default function AdminAddProductComponent() {
                                     +
                                 </button>
                             </h3>
+
+                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                Key Feature                                <button
+                                    type="button"
+                                    onClick={() => append({key: "", value: ""})}
+                                    className="p-2 rounded flex items-center justify-center relative"
+                                >
+        <span className="relative flex h-6 w-6 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+            <span
+                className="relative  inline-flex items-center justify-center h-6 w-6 rounded-full bg-sky-500 text-white font-bold">
+                +
+            </span>
+        </span>
+                                </button>
+                            </h3>
+
+
                             {fields.map((field, index) => (
                                 <div key={field.id} className="flex items-center space-x-4">
                                     {/* Key Input */}
@@ -344,10 +346,10 @@ export default function AdminAddProductComponent() {
                                         {...register(`key_features.${index}.key`)}
                                         type="text"
                                         placeholder="Key"
-                                        className="input_field"
+                                        className="input-field"
                                     />
                                     {errors.key_features?.[index]?.key && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="error-message">
                                             {errors.key_features[index].key?.message}
                                         </p>
                                     )}
@@ -357,10 +359,10 @@ export default function AdminAddProductComponent() {
                                         {...register(`key_features.${index}.value`)}
                                         type="text"
                                         placeholder="Value"
-                                        className="input_field"
+                                        className="input-field"
                                     />
                                     {errors.key_features?.[index]?.value && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="error-message">
                                             {errors.key_features[index].value?.message}
                                         </p>
                                     )}
@@ -376,24 +378,40 @@ export default function AdminAddProductComponent() {
                                 </div>
                             ))}
 
-                            {/* Add New Key-Value Button */}
-
-
-
                         </div>
+
+                        {/* Has Variants Checkbox */}
+                        <div className="flex items-center space-x-2">
+
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    {...register("has_variants")}
+                                    className="sr-only peer"
+                                />
+                                <div
+                                    className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                                <div
+                                    className="w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform absolute top-0.5 left-0.5"></div>
+                            </label>
+                            <span className="text-gray-700">Has Variants</span>
+                        </div>
+
+
+
                         {/*{keyFeatureFields.map((field, index) => (*/}
                         {/*    <div key={field.id} className="flex space-x-2">*/}
                         {/*        <input*/}
                         {/*            {...register(`key_features.${index}.key`)}*/}
                         {/*            type="text"*/}
                         {/*            placeholder="Key"*/}
-                        {/*            className="input_field"*/}
+                        {/*            className="input-field"*/}
                         {/*        />*/}
                         {/*        <input*/}
                         {/*            {...register(`key_features.${index}.value`)}*/}
                         {/*            type="text"*/}
                         {/*            placeholder="Value"*/}
-                        {/*            className="input_field"*/}
+                        {/*            className="input-field"*/}
                         {/*        />*/}
                         {/*        <button*/}
                         {/*            type="button"*/}
@@ -420,19 +438,19 @@ export default function AdminAddProductComponent() {
                         {/*            {...register(`skus.${index}.sku_code`)}*/}
                         {/*            type="text"*/}
                         {/*            placeholder="SKU Code"*/}
-                        {/*            className="input_field"*/}
+                        {/*            className="input-field"*/}
                         {/*        />*/}
                         {/*        <input*/}
                         {/*            {...register(`skus.${index}.price`)}*/}
                         {/*            type="number"*/}
                         {/*            placeholder="Price"*/}
-                        {/*            className="input_field"*/}
+                        {/*            className="input-field"*/}
                         {/*        />*/}
                         {/*        <input*/}
                         {/*            {...register(`skus.${index}.stock_quantity`)}*/}
                         {/*            type="number"*/}
                         {/*            placeholder="Stock Quantity"*/}
-                        {/*            className="input_field"*/}
+                        {/*            className="input-field"*/}
                         {/*        />*/}
                         {/*        <button*/}
                         {/*            type="button"*/}
@@ -470,7 +488,7 @@ export default function AdminAddProductComponent() {
 
                         {/* Root Error */}
                         {errors.root && (
-                            <div className="text-red-500 text-sm mt-2">{errors.root.message}</div>
+                            <div className="error-message mt-2">{errors.root.message}</div>
                         )}
                     </form>
 

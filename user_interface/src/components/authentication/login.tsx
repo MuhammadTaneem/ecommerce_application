@@ -89,11 +89,11 @@ export default function LoginComponent() {
                                 {...register("email")}
                                 type="text"
                                 placeholder="Email"
-                                className="input_field"
+                                className="input-field"
                             />
 
                             {errors.email && (
-                                <div className="text-red-500 text-sm">{errors.email.message}</div>
+                                <div className="error-message">{errors.email.message}</div>
                             )}
                         </div>
 
@@ -103,10 +103,10 @@ export default function LoginComponent() {
                                 {...register("password")}
                                 type="password"
                                 placeholder="Password"
-                                className="input_field"
+                                className="input-field"
                             />
                             {errors.password && (
-                                <div className="text-red-500 text-sm">{errors.password.message}</div>
+                                <div className="error-message">{errors.password.message}</div>
                             )}
                         </div>
 
@@ -130,7 +130,7 @@ export default function LoginComponent() {
                             <p>{errors.email?.message}</p>
                         </div>
                         {errors.root && (
-                            <div className="text-red-500 text-sm mt-2">{errors.root.message}</div>
+                            <div className="error-message mt-2">{errors.root.message}</div>
                         )}
                     </form>
 

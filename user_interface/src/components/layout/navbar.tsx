@@ -39,7 +39,7 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
             <div className="first_row flex justify-between md:pt-3">
                 <span className=" pl-2 flex items-center">
                     <Link key="logo" to="/" className="company_logo px-5">
-                        <p className="text_logo"> horror</p>
+                        <p className="text-logo"> horror</p>
                     </Link>
 
 
@@ -102,28 +102,28 @@ export default function NavbarComponent({onToggleSidebar, isSidebarOpen, isLarge
             <div className="secound_row px-5 flex justify-start">
                 <button
                     // className="flex items-center justify-center w-10 h-10  hover:bg-gray-700 rounded-full transition"
-                    className="bg_button"
+                    className="bg-button"
                     onClick={onToggleSidebar}
                     aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
                 >
                     <Bars3Icon className="w-5 h-5 text-gray-300"/>
                 </button>
                 <button
-                    className="bg_button">
+                    className="bg-button">
                     Offer
                 </button>
 
                 <button
-                    className="bg_button">
+                    className="bg-button">
                     Free Delivery
                 </button>
 
                 <button
-                    className="bg_button">
+                    className="bg-button">
                     Popular Products
                 </button>
                 <button
-                    className="bg_button">
+                    className="bg-button">
                     {isAuthenticated? token.slice(0, 3):'false'}
                 </button>
 

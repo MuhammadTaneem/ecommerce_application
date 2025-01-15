@@ -1,6 +1,29 @@
+export type CategoryType = {
+    id: number;
+    label: string;
+    slug: string;
+    parent: number | null;
+    description: string;
+    image: string | null;
+    subcategories: CategoryType[];
+};
+
 export  type VariantDict = {
     [key: string]: string;
 };
+
+export type VariantValuesType = {
+    id: number;
+    attribute : number;
+    value: string;
+}
+
+export type VariantType = {
+    id: number;
+    name:string;
+    slug:string;
+    values : VariantValuesType[];
+}
 
 export type SkuType = {
     id: number;
@@ -77,4 +100,13 @@ export interface AdminProductListType extends ProductListType {
     admin_notes: string;
     stock_quantity: number;
     image: string;
+}
+
+
+export type  ProductContextType = {
+    brands: BrandType[];
+    tags : TagType[];
+    categories : CategoryType[];
+    variants : VariantType[];
+
 }

@@ -6,7 +6,7 @@ import SidebarComponent from "./sidebar.tsx";
 import { useMediaQuery } from "react-responsive";
 import AdminSidebarComponent from "./admin_sidebar.tsx";
 const isAuthenticated:boolean = true;
-const isAdminUser:boolean = false;
+const isAdminUser:boolean = true;
 
 
 export interface NavbarComponentProps {
@@ -63,21 +63,25 @@ export default function LayoutComponent() {
             )}
 
             {/* Main container */}
-            <div className="main-container flex">
-                {/* Admin Sidebar: Show only for admin users */}
-                {isAdminUser && <AdminSidebarComponent/>}
+            <div className="flex">
 
-                {/* Regular Sidebar: Show for non-admin users when sidebar is open */}
-                {!isAdminUser && isSidebarOpen && (
-                    <SidebarComponent
-                        onToggleSidebar={toggleSidebar}
-                        isSidebarOpen={isSidebarOpen}
-                        isLargeScreen={isLargeScreen}
-                    />
-                )}
+                <div className="text-nowrap">
+                    {/* Admin Sidebar: Show only for admin users */}
+                    {isAdminUser &&  isSidebarOpen && <AdminSidebarComponent/>}
+
+                    {/* Regular Sidebar: Show for non-admin users when sidebar is open */}
+                    {!isAdminUser && isSidebarOpen && (
+                        <SidebarComponent
+                            onToggleSidebar={toggleSidebar}
+                            isSidebarOpen={isSidebarOpen}
+                            isLargeScreen={isLargeScreen}
+                        />
+                    )}
+                </div>
+
 
                 {/* Main content */}
-                <div className="content flex-1">
+                <div className="size-full">
                     <Outlet/>
                 </div>
             </div>

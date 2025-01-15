@@ -1,12 +1,13 @@
 import {Link} from "react-router-dom";
 
+
 export default function AdminSidebarComponent() {
     return (
-        <div className="flex flex-col h-screen border">
-            <div className="flex items-center justify-center h-16 ">
-                <h1 className="text-xl font-bold  w-64 text-center">Admin Dashboard</h1>
+        <div className="h-screen border">
+            <div className="items-center justify-center h-16 ">
+                <h1 className="text-xl font-bold  text-center px-4 py-2">Admin Dashboard</h1>
             </div>
-            <nav className="flex-1 p-4">
+            <nav className="p-4">
                 <ul>
                     <li className="mb-2">
                         <Link to="/admin/products"
