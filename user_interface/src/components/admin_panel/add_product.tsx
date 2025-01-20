@@ -122,7 +122,7 @@ export default function AdminAddProductComponent() {
         }
     };
 
-    // cosnt select_varients: Record<number, string>[] = {};
+
 
 
     return (
@@ -498,7 +498,6 @@ export default function AdminAddProductComponent() {
                                             {variant.values.map((value) => {
                                                 const selectedValue = field.value?.[variant.id]; // Get selected value for this variant
                                                 const isSelected = selectedValue === value.id;
-                                                // console.log([variant.id], value.id);
 
                                                 return (
                                                     <button
@@ -514,13 +513,6 @@ export default function AdminAddProductComponent() {
                                                             cursor: "pointer",
                                                         }}
                                                         onClick={() => {
-                                                            console.log(watch())
-
-
-                                                            // select_varients[variant.id]= value.id;
-                                                            // console.log(select_varients);
-
-                                                            // Update the selected value for this variant
                                                             field.onChange({
                                                                 ...field.value, // Preserve other selected variants
                                                                 [variant.id]: value.id, // Update only this variant
