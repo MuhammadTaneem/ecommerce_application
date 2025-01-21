@@ -144,9 +144,16 @@ class SKUSerializer(serializers.ModelSerializer):
         model = SKU
         fields = ['id', 'product', 'sku_code', 'price', 'stock_quantity', 'variants_dict', 'variants']
 
+    def run_validation(self, data):
+        variants_data = data.get('variants')
+        if isinstance(variants_data, list):
+            data['variants'] = [list(variant.values())[0] for variant in variants_data]
+        return super().run_validation(data)
+
     def validate(self, data):
         variants_list = []
-        for variant in data.get('variants'):
+        variants_data = data.get('variants')
+        for variant in variants_data:
             if variant.attribute.name in variants_list:
                 raise serializers.ValidationError({
                     'variants': f"{variant.attribute.name} is added multiple times."

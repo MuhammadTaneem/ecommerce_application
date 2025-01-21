@@ -178,6 +178,7 @@ def product_create_list_view(request):
                         if skus_data and type(skus_data) is str:
                             skus_data = json.loads(skus_data)
                         for sku_data in skus_data:
+                            # import pdb;pdb.set_trace()
                             sku_data['product'] = product.id
                             sku_serializer = SKUSerializer(data=sku_data)
                             if sku_serializer.is_valid():

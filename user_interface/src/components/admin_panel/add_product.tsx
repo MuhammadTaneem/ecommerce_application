@@ -40,11 +40,27 @@ export default function AdminAddProductComponent() {
         name: z.string().min(1, "Name is required"),
         base_price: z.number().positive("Base price must be a positive number"),
         short_description: z.string().optional(),
-        discount_price: z.number().optional(),
+        discount_price: z.union([
+            z.number(),
+            z.string().transform((val) => {
+                if (val === "") return null;
+                const num = Number(val);
+                if (isNaN(num)) throw new Error("Invalid number");
+                return num;
+            })
+        ]).nullable(),
         stock_quantity: z.number(),
         category: z.number().int("Category must be a valid number"),
         has_variants: z.boolean(),
-        brand: z.number().nullish().optional(),
+        brand: z.union([
+            z.number(),
+            z.string().transform((val) => {
+                if (val === "") return null;
+                const num = Number(val);
+                if (isNaN(num)) throw new Error("Invalid number");
+                return num;
+            })
+        ]).nullable(),
         tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
         key_features: z.array(
             z.object({
@@ -58,9 +74,20 @@ export default function AdminAddProductComponent() {
             z.object({
                 sku_code: z.string().optional(),
                 base_price: z.number().positive("Price must be positive"),
-                discount_price: z.number().positive("Price must be positive").optional(),
+                discount_price: z.union([
+                    z.number(),
+                    z.string().transform((val) => {
+                        if (val === "") return null;
+                        const num = Number(val);
+                        if (isNaN(num)) throw new Error("Invalid number");
+                        return num;
+                    })
+                ]).nullable(),
                 stock_quantity: z.number(),
-                variants_dict: z.array(z.number()),
+                // variants: z.record(z.string(), z.number()),
+                variants: z.array(
+                    z.record(z.string(), z.number()) // Array of objects with string keys and number values
+                ),
             })
         ).optional(),
     });
@@ -96,24 +123,19 @@ export default function AdminAddProductComponent() {
 
 
     const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
-        console.log("submitting something")
-        setTimeout(() => {
-            console.log("3 seconds have passed");
-        }, 3000);
-        console.log(data)
-
-
+        const { skus, ...productData } = data;
+        const skusData = skus || [];
+        console.log("Product Data (Without SKUs):", productData);
+        console.log("SKUs Data:", skusData);
         try {
-            const response = await axiosInstance.post('admin/products/', {"product": data});
-            if (response.status === 200) {
-                const token = response.data
-                console.log(token);
+            const response = await axiosInstance.post('admin/products/', {"product": data,"skus":skusData});
+            if (response.status === 201) {
+                const response_product = response.data
+                console.log(response_product);
                 // dispatch(login(token));
             }
 
         } catch (error) {
-            // dispatch(logout());
-
             setError("root", {
                 message: error?.message,
             });
@@ -241,7 +263,7 @@ export default function AdminAddProductComponent() {
               <div className="space-y-1">
                 <label className="input-label">Discount Price </label>
                 <input
-                  {...register("discount_price", { valueAsNumber: true })}
+                  {...register("discount_price")}
                   type="number"
                   placeholder="Discount Price"
                   className="input-field"
@@ -315,12 +337,12 @@ export default function AdminAddProductComponent() {
                   Select Brand
                 </label>
                 <select
-                  {...register("brand", { valueAsNumber: true })}
+                  {...register("brand")}
                   id="brand"
                   defaultValue=""
                   className="select-field"
                 >
-                  <option value="" disabled>
+                  <option value="">
                     Select a brand
                   </option>
                   {contextData["brands"]?.map((brand: BrandType) => (
@@ -485,19 +507,72 @@ export default function AdminAddProductComponent() {
                         <h4>Variants</h4>
 
 
-                        {contextData["variants"]?.map((variant, variantIndex) => (
+                        {/*{contextData["variants"]?.map((variant, variantIndex) => (*/}
 
 
+                        {/*    <div key={variant.id} style={{ marginBottom: "20px" }}>*/}
+                        {/*        <label>{variant.name}:</label>*/}
+                        {/*        <Controller*/}
+                        {/*            name={`skus.${index}.variants`}*/}
+                        {/*            control={control}*/}
+                        {/*            render={({ field }) => (*/}
+                        {/*                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>*/}
+                        {/*                    {variant.values.map((value) => {*/}
+                        {/*                        const selectedValue = field.value?.[variant.id]; // Get selected value for this variant*/}
+                        {/*                        const isSelected = selectedValue === value.id;*/}
+
+                        {/*                        return (*/}
+                        {/*                            <button*/}
+                        {/*                                key={value.id}*/}
+                        {/*                                type="button"*/}
+                        {/*                                style={{*/}
+                        {/*                                    padding: "10px 20px",*/}
+                        {/*                                    border: "1px solid",*/}
+                        {/*                                    borderColor: isSelected ? "blue" : "#ccc",*/}
+                        {/*                                    backgroundColor: isSelected ? "lightblue" : "white",*/}
+                        {/*                                    color: isSelected ? "black" : "#333",*/}
+                        {/*                                    borderRadius: "5px",*/}
+                        {/*                                    cursor: "pointer",*/}
+                        {/*                                }}*/}
+                        {/*                                onClick={() => {*/}
+                        {/*                                    field.onChange({*/}
+                        {/*                                        ...field.value, // Preserve other selected variants*/}
+                        {/*                                        [variant.id]: value.id, // Update only this variant*/}
+                        {/*                                    });*/}
+
+                        {/*                                    console.log(watch())*/}
+                        {/*                                }}*/}
+                        {/*                            >*/}
+                        {/*                                {value.value}*/}
+                        {/*                            </button>*/}
+                        {/*                        );*/}
+                        {/*                    })}*/}
+                        {/*                </div>*/}
+                        {/*            )}*/}
+                        {/*        />*/}
+                        {/*        {errors?.skus?.[index]?.variants && (*/}
+                        {/*            <p  className="error-message ">{errors.skus[index]?.variants?.message}</p>*/}
+                        {/*        )}*/}
+                        {/*    </div>*/}
+                        {/*))}*/}
+
+
+                        {contextData["variants"]?.map((variant) => (
                             <div key={variant.id} style={{ marginBottom: "20px" }}>
                                 <label>{variant.name}:</label>
                                 <Controller
-                                    name={`skus.${index}.variants_dict`}
+                                    name={`skus.${index}.variants`}
                                     control={control}
                                     render={({ field }) => (
                                         <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                                             {variant.values.map((value) => {
-                                                const selectedValue = field.value?.[variant.id]; // Get selected value for this variant
-                                                const isSelected = selectedValue === value.id;
+                                                // Check if this value is selected in the array
+                                                const selectedVariant = field.value?.find(
+                                                    (v) => Object.keys(v)[0] === String(variant.id)
+                                                );
+                                                const isSelected = selectedVariant
+                                                    ? selectedVariant[variant.id] === value.id
+                                                    : false;
 
                                                 return (
                                                     <button
@@ -513,10 +588,22 @@ export default function AdminAddProductComponent() {
                                                             cursor: "pointer",
                                                         }}
                                                         onClick={() => {
-                                                            field.onChange({
-                                                                ...field.value, // Preserve other selected variants
-                                                                [variant.id]: value.id, // Update only this variant
-                                                            });
+                                                            const updatedVariants = field.value ? [...field.value] : [];
+                                                            const existingIndex = updatedVariants.findIndex(
+                                                                (v) => Object.keys(v)[0] === String(variant.id)
+                                                            );
+
+                                                            if (existingIndex > -1) {
+                                                                // Replace the existing variant selection
+                                                                updatedVariants[existingIndex] = { [variant.id]: value.id };
+                                                            } else {
+                                                                // Add a new variant selection
+                                                                updatedVariants.push({ [variant.id]: value.id });
+                                                            }
+
+                                                            field.onChange(updatedVariants);
+
+                                                            console.log(watch()); // Log the current form data
                                                         }}
                                                     >
                                                         {value.value}
@@ -526,11 +613,12 @@ export default function AdminAddProductComponent() {
                                         </div>
                                     )}
                                 />
-                                {errors?.skus?.[index]?.variants_dict && (
-                                    <p  className="error-message ">{errors.skus[index]?.variants_dict?.message}</p>
+                                {errors?.skus?.[index]?.variants && (
+                                    <p className="error-message">{errors.skus[index]?.variants?.message}</p>
                                 )}
                             </div>
                         ))}
+
 
 
 
@@ -544,11 +632,11 @@ export default function AdminAddProductComponent() {
                     </div>
                 ))}
                 <button type="button" onClick={() => addSku({
-                    sku_code: "fasdfds",
-                    base_price: 0,
-                    discount_price: 0,
-                    stock_quantity: 0,
-                    variants_dict: [],
+                    sku_code: "",
+                    base_price: null,
+                    discount_price: null,
+                    stock_quantity: null,
+                    variants: [],
                 })}>
                   Add SKU
                 </button>

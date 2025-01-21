@@ -9,7 +9,7 @@ export type CategoryType = {
 };
 
 export  type VariantDict = {
-    [key: string]: string;
+    [key: string]:  string | number ;
 };
 
 export type VariantValuesType = {
