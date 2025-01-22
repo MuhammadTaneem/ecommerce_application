@@ -16,20 +16,44 @@ const api = axios.create({
     },
 });
 
+export  type  ErrorDictType = {
+    [key: string]: string;
+}
+
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         console.log(error);
-        // Extract and normalize error message
-        const message =
+
+
+        const error_dict: ErrorDictType= {};
+        const server_errors = error.response?.data;
+        if (server_errors && typeof server_errors === 'object') {
+            for (const [key, value] of Object.entries(server_errors)) {
+                if (Array.isArray(value)) {
+                    error_dict[key] = value.join('\n');
+                }
+                else {
+                    error_dict[key] = String(value);
+                }
+            }
+        }
+
+        console.log('Formatted Error Dictionary:', error_dict);
+        const message:string =
             error.response?.data?.error?.message ||
             error.response?.data?.message ||
             error.message ||
             'Something went wrong.';
-        return Promise.reject({ message, status: error.response?.status });
+        return Promise.reject({ message, status: error.response?.status, error_dict } as NormalizedError);
     }
 );
 
+export interface NormalizedError {
+    message: string;
+    status?: number;
+    error_dict?: ErrorDictType;
+}
 
 
 

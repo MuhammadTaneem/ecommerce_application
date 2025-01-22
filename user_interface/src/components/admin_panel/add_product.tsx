@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import axiosInstance from "@/utilites/api.ts";
+import axiosInstance, {NormalizedError} from "@/utilites/api.ts";
 import {z} from "zod"
 import {useAppSelector} from "@/core/store.ts";
 import {Controller, SubmitHandler, useFieldArray, useForm} from "react-hook-form";
@@ -10,7 +10,13 @@ import {BrandType, CategoryType, ProductContextType} from "@/features/product_ty
 
 export default function AdminAddProductComponent() {
     const [loading, setLoading] = useState<boolean>(false);
-    const [contextData, setContextData] = useState<ProductContextType>({});
+    const [contextData, setContextData] = useState<ProductContextType>({
+        brands: [],
+        categories: [],
+        tags: [],
+        variants: []
+    });
+    const [file, setFile] = useState<File | null>(null);
     const token = useAppSelector(state => (state.auth.token));
 
     useEffect(() => {
@@ -120,32 +126,101 @@ export default function AdminAddProductComponent() {
     control,
     name: "skus",
   });
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, is_main:boolean = false) => {
+        const selectedFile = event.target.files?.[0];
+        console.log("changeging -------------")
+        if (selectedFile) {
+            console.log(is_main);
+            // Validate file type and size
+            const validTypes = ['image/png', 'image/jpeg', 'image/gif'];
+            const maxSize = 10 * 1024 * 1024; // 10MB
 
-
-    const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
-        const { skus, ...productData } = data;
-        const skusData = skus || [];
-        console.log("Product Data (Without SKUs):", productData);
-        console.log("SKUs Data:", skusData);
-        try {
-            const response = await axiosInstance.post('admin/products/', {"product": data,"skus":skusData});
-            if (response.status === 201) {
-                const response_product = response.data
-                console.log(response_product);
-                // dispatch(login(token));
+            if (!validTypes.includes(selectedFile.type)) {
+                // setError('Invalid file type. Please upload a PNG, JPG, or GIF.');
+                setFile(null);
+                return;
             }
 
-        } catch (error) {
-            setError("root", {
-                message: error?.message,
-            });
-            console.log(error?.message);
-            console.log(error?.status);
+            if (selectedFile.size > maxSize) {
+                // setError('File size exceeds 10MB limit.');
+                setFile(null);
+                return;
+            }
+
+            setFile(selectedFile);
+            console.log(file);
+            // setError(null); // Clear any previous errors
+        }
+    };
+
+    const handleUpload = () => {
+        if (file) {
+            // Here you can handle the file upload logic, e.g., sending it to a server
+            console.log('Uploading file:', file);
+            // Example: Use FormData to send the file
+            const formData = new FormData();
+            formData.append('main_image', file);
+
+            // You can use fetch or axios to upload the file
+            // fetch('/upload', {
+            //     method: 'POST',
+            //     body: formData,
+            // })
+            // .then(response => response.json())
+            // .then(data => console.log(data))
+            // .catch(err => console.error(err));
         }
     };
 
 
 
+    const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
+        const { skus, ...productData } = data;
+        const skusData = skus || [];
+        try {
+
+            const response = await axiosInstance.post('admin/products/', {"product": productData,"skus":skusData});
+            if (response.status === 201) {
+                const response_product = response.data
+                console.log("response_product");
+                console.log(response_product);
+                // dispatch(login(token));
+            }
+
+        } catch (error) {
+
+            const normalizedError = error as NormalizedError; // Type assertion
+            setError("root", {
+                message: normalizedError.message,
+            });
+
+            for (const err in normalizedError.error_dict) {
+                // console.log(normalizedError.error_dict[err]);
+                setError(err as keyof productFormFields,{
+                    message: normalizedError.error_dict[err]
+                })
+            }
+
+
+            // console.log(normalizedError.message);
+            // console.log(normalizedError.status);
+        }
+
+    };
+
+    const hasVariants = watch("has_variants");
+    useEffect(() => {
+        const sku_len:number =  watch("skus", [])?.length??0;
+        if (hasVariants && sku_len ==0) {
+            addSku({
+                sku_code: "",
+                base_price: 0,
+                discount_price: null,
+                stock_quantity: 0,
+                variants: [],
+            })
+        }
+    }, [hasVariants]);
 
     return (
       <>
@@ -171,13 +246,13 @@ export default function AdminAddProductComponent() {
                     />
                     <div className="mt-4 flex text-sm/6 text-gray-600">
                       <label
-                        htmlFor="file-upload"
+                        htmlFor="main_image"
                         className="relative cursor-pointer rounded-md  font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
                       >
                         <span>Upload a file</span>
                         <input
-                          id="file-upload"
-                          name="file-upload"
+                          id="main_image"
+                          name="main_image"
                           type="file"
                           className="sr-only"
                         />
@@ -205,15 +280,16 @@ export default function AdminAddProductComponent() {
                     />
                     <div className="mt-4 flex text-sm/6 text-gray-600">
                       <label
-                        htmlFor="file-upload"
+                        htmlFor="extra_image"
                         className="relative cursor-pointer rounded-md  font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
                       >
                         <span>Upload a file</span>
                         <input
-                          id="file-upload"
-                          name="file-upload"
+                          id="extra_image"
+                          name="extra_image"
                           type="file"
                           className="sr-only"
+                          onChange={(event) => handleFileChange(event, true)}
                         />
                       </label>
                       <p className="pl-1">or drag and drop</p>
@@ -443,181 +519,132 @@ export default function AdminAddProductComponent() {
 
               {/*skus */}
 
-              <div className="col-span-5">
-                {skuFields.map((field, index) => (
-                    <div key={field.id}>
+                {hasVariants &&(<div className="col-span-5">
+                    {skuFields.map((field, index) => (
+                        <div key={field.id}>
 
 
 
-                      {/* Discount Price Field */}
-                      <div className="space-y-1">
-                        <label className="input-label">Price </label>
-                        <input
-                            {...register(`skus.${index}.base_price`, { valueAsNumber: true })}
-                            type="number"
-                            placeholder=" Price"
-                            className="input-field"
-                        />
-                        {errors.skus?.[index]?.base_price && (
-                            <div className="error-message ">
-                              {errors.skus?.[index]?.base_price.message}
-                            </div>
-                        )}
-                      </div>
-
-
-                      {/* Discount Price Field */}
-                      <div className="space-y-1">
-                        <label className="input-label">Discount Price </label>
-                        <input
-                            {...register(`skus.${index}.discount_price`, { valueAsNumber: true })}
-                            type="number"
-                            placeholder="Discount Price"
-                            className="input-field"
-                        />
-                        {errors.skus?.[index]?.discount_price && (
-                            <div className="error-message ">
-                              {errors.skus?.[index]?.discount_price.message}
-                            </div>
-                        )}
-                      </div>
-
-
-
-                      {/* Stock Quantity Field */}
-
-                      <div className="">
-                        <label className="input-label">Variant Stock Quantity </label>
-                        <input
-                            {...register(`skus.${index}.stock_quantity`, { valueAsNumber: true })}
-                            type="number"
-                            placeholder="Stock Quantity"
-                            className="input-field"
-                        />
-                        {errors.skus?.[index]?.stock_quantity && (
-                            <div className="error-message ">
-                              {errors.skus?.[index]?.stock_quantity.message}
-                            </div>
-                        )}
-                      </div>
-
-
-                        {/* select variant Field */}
-
-                        <h4>Variants</h4>
-
-
-                        {/*{contextData["variants"]?.map((variant, variantIndex) => (*/}
-
-
-                        {/*    <div key={variant.id} style={{ marginBottom: "20px" }}>*/}
-                        {/*        <label>{variant.name}:</label>*/}
-                        {/*        <Controller*/}
-                        {/*            name={`skus.${index}.variants`}*/}
-                        {/*            control={control}*/}
-                        {/*            render={({ field }) => (*/}
-                        {/*                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>*/}
-                        {/*                    {variant.values.map((value) => {*/}
-                        {/*                        const selectedValue = field.value?.[variant.id]; // Get selected value for this variant*/}
-                        {/*                        const isSelected = selectedValue === value.id;*/}
-
-                        {/*                        return (*/}
-                        {/*                            <button*/}
-                        {/*                                key={value.id}*/}
-                        {/*                                type="button"*/}
-                        {/*                                style={{*/}
-                        {/*                                    padding: "10px 20px",*/}
-                        {/*                                    border: "1px solid",*/}
-                        {/*                                    borderColor: isSelected ? "blue" : "#ccc",*/}
-                        {/*                                    backgroundColor: isSelected ? "lightblue" : "white",*/}
-                        {/*                                    color: isSelected ? "black" : "#333",*/}
-                        {/*                                    borderRadius: "5px",*/}
-                        {/*                                    cursor: "pointer",*/}
-                        {/*                                }}*/}
-                        {/*                                onClick={() => {*/}
-                        {/*                                    field.onChange({*/}
-                        {/*                                        ...field.value, // Preserve other selected variants*/}
-                        {/*                                        [variant.id]: value.id, // Update only this variant*/}
-                        {/*                                    });*/}
-
-                        {/*                                    console.log(watch())*/}
-                        {/*                                }}*/}
-                        {/*                            >*/}
-                        {/*                                {value.value}*/}
-                        {/*                            </button>*/}
-                        {/*                        );*/}
-                        {/*                    })}*/}
-                        {/*                </div>*/}
-                        {/*            )}*/}
-                        {/*        />*/}
-                        {/*        {errors?.skus?.[index]?.variants && (*/}
-                        {/*            <p  className="error-message ">{errors.skus[index]?.variants?.message}</p>*/}
-                        {/*        )}*/}
-                        {/*    </div>*/}
-                        {/*))}*/}
-
-
-                        {contextData["variants"]?.map((variant) => (
-                            <div key={variant.id} style={{ marginBottom: "20px" }}>
-                                <label>{variant.name}:</label>
-                                <Controller
-                                    name={`skus.${index}.variants`}
-                                    control={control}
-                                    render={({ field }) => (
-                                        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                                            {variant.values.map((value) => {
-                                                // Check if this value is selected in the array
-                                                const selectedVariant = field.value?.find(
-                                                    (v) => Object.keys(v)[0] === String(variant.id)
-                                                );
-                                                const isSelected = selectedVariant
-                                                    ? selectedVariant[variant.id] === value.id
-                                                    : false;
-
-                                                return (
-                                                    <button
-                                                        key={value.id}
-                                                        type="button"
-                                                        style={{
-                                                            padding: "10px 20px",
-                                                            border: "1px solid",
-                                                            borderColor: isSelected ? "blue" : "#ccc",
-                                                            backgroundColor: isSelected ? "lightblue" : "white",
-                                                            color: isSelected ? "black" : "#333",
-                                                            borderRadius: "5px",
-                                                            cursor: "pointer",
-                                                        }}
-                                                        onClick={() => {
-                                                            const updatedVariants = field.value ? [...field.value] : [];
-                                                            const existingIndex = updatedVariants.findIndex(
-                                                                (v) => Object.keys(v)[0] === String(variant.id)
-                                                            );
-
-                                                            if (existingIndex > -1) {
-                                                                // Replace the existing variant selection
-                                                                updatedVariants[existingIndex] = { [variant.id]: value.id };
-                                                            } else {
-                                                                // Add a new variant selection
-                                                                updatedVariants.push({ [variant.id]: value.id });
-                                                            }
-
-                                                            field.onChange(updatedVariants);
-
-                                                            console.log(watch()); // Log the current form data
-                                                        }}
-                                                    >
-                                                        {value.value}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                            {/* Discount Price Field */}
+                            <div className="space-y-1">
+                                <label className="input-label">Price </label>
+                                <input
+                                    {...register(`skus.${index}.base_price`, { valueAsNumber: true })}
+                                    type="number"
+                                    placeholder=" Price"
+                                    className="input-field"
                                 />
-                                {errors?.skus?.[index]?.variants && (
-                                    <p className="error-message">{errors.skus[index]?.variants?.message}</p>
+                                {errors.skus?.[index]?.base_price && (
+                                    <div className="error-message ">
+                                        {errors.skus?.[index]?.base_price.message}
+                                    </div>
                                 )}
                             </div>
-                        ))}
+
+
+                            {/* Discount Price Field */}
+                            <div className="space-y-1">
+                                <label className="input-label">Discount Price </label>
+                                <input
+                                    {...register(`skus.${index}.discount_price`, { valueAsNumber: true })}
+                                    type="number"
+                                    placeholder="Discount Price"
+                                    className="input-field"
+                                />
+                                {errors.skus?.[index]?.discount_price && (
+                                    <div className="error-message ">
+                                        {errors.skus?.[index]?.discount_price.message}
+                                    </div>
+                                )}
+                            </div>
+
+
+
+                            {/* Stock Quantity Field */}
+
+                            <div className="">
+                                <label className="input-label">Variant Stock Quantity </label>
+                                <input
+                                    {...register(`skus.${index}.stock_quantity`, { valueAsNumber: true })}
+                                    type="number"
+                                    placeholder="Stock Quantity"
+                                    className="input-field"
+                                />
+                                {errors.skus?.[index]?.stock_quantity && (
+                                    <div className="error-message ">
+                                        {errors.skus?.[index]?.stock_quantity.message}
+                                    </div>
+                                )}
+                            </div>
+
+
+                            {/* select variant Field */}
+
+                            <h4>Variants</h4>
+
+
+
+                            {contextData["variants"]?.map((variant) => (
+                                <div key={variant.id} style={{ marginBottom: "20px" }}>
+                                    <label>{variant.name}:</label>
+                                    <Controller
+                                        name={`skus.${index}.variants`}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                                                {variant.values.map((value) => {
+                                                    // Check if this value is selected in the array
+                                                    const selectedVariant = field.value?.find(
+                                                        (v) => Object.keys(v)[0] === String(variant.id)
+                                                    );
+                                                    const isSelected = selectedVariant
+                                                        ? selectedVariant[variant.id] === value.id
+                                                        : false;
+
+                                                    return (
+                                                        <button
+                                                            key={value.id}
+                                                            type="button"
+                                                            style={{
+                                                                padding: "10px 20px",
+                                                                border: "1px solid",
+                                                                borderColor: isSelected ? "blue" : "#ccc",
+                                                                backgroundColor: isSelected ? "lightblue" : "white",
+                                                                color: isSelected ? "black" : "#333",
+                                                                borderRadius: "5px",
+                                                                cursor: "pointer",
+                                                            }}
+                                                            onClick={() => {
+                                                                const updatedVariants = field.value ? [...field.value] : [];
+                                                                const existingIndex = updatedVariants.findIndex(
+                                                                    (v) => Object.keys(v)[0] === String(variant.id)
+                                                                );
+
+                                                                if (existingIndex > -1) {
+                                                                    // Replace the existing variant selection
+                                                                    updatedVariants[existingIndex] = { [variant.id]: value.id };
+                                                                } else {
+                                                                    // Add a new variant selection
+                                                                    updatedVariants.push({ [variant.id]: value.id });
+                                                                }
+
+                                                                field.onChange(updatedVariants);
+
+                                                                console.log(watch()); // Log the current form data
+                                                            }}
+                                                        >
+                                                            {value.value}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    />
+                                    {errors?.skus?.[index]?.variants && (
+                                        <p className="error-message">{errors.skus[index]?.variants?.message}</p>
+                                    )}
+                                </div>
+                            ))}
 
 
 
@@ -626,21 +653,23 @@ export default function AdminAddProductComponent() {
 
 
 
-                        <button type="button" onClick={() => removeSku(index)}>
-                        Remove SKU
-                      </button>
-                    </div>
-                ))}
-                <button type="button" onClick={() => addSku({
-                    sku_code: "",
-                    base_price: null,
-                    discount_price: null,
-                    stock_quantity: null,
-                    variants: [],
-                })}>
-                  Add SKU
-                </button>
-              </div>
+                            <button type="button" onClick={() => removeSku(index)}>
+                                Remove SKU
+                            </button>
+                        </div>
+                    ))}
+                    <button type="button" onClick={() => addSku({
+                        sku_code: "",
+                        base_price: 0,
+                        discount_price: null,
+                        stock_quantity: 0,
+                        variants: [],
+                    })}>
+                        Add SKU
+                    </button>
+                </div>)}
+
+
 
 
 

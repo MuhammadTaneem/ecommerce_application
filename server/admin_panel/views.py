@@ -169,8 +169,8 @@ def product_create_list_view(request):
 
                 product_images = request.data.get('images', [])
                 # import pdb; pdb.set_trace()
-                # product_serializer = ProductSerializer(data=product_data)
-                product_serializer = AdminProductListSerializer(data=product_data)
+                product_serializer = ProductSerializer(data=product_data)
+                # product_serializer = AdminProductListSerializer(data=product_data)
                 if product_serializer.is_valid():
                     product = product_serializer.save()
                     if product_data.get('has_variants', False):

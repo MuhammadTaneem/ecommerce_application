@@ -167,7 +167,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'base_price', 'stock_quantity', 'has_variants',
+        fields = ['id', 'name', 'description', 'base_price','discount_price', 'stock_quantity', 'has_variants',
                   'images', 'category', 'key_features', 'additional_info', 'brand', 'tags']
 
     # def validate_category(self, value):
