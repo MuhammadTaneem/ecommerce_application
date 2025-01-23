@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import React, {DragEvent, useEffect, useState} from "react";
 import axiosInstance, {NormalizedError} from "@/utilites/api.ts";
 import {z} from "zod"
 import {useAppSelector} from "@/core/store.ts";
@@ -6,6 +6,7 @@ import {Controller, SubmitHandler, useFieldArray, useForm} from "react-hook-form
 import {zodResolver} from "@hookform/resolvers/zod";
 import {PhotoIcon} from "@heroicons/react/16/solid";
 import {BrandType, CategoryType, ProductContextType} from "@/features/product_type.ts";
+import ImageUpload from "@/utilites/heloper_ui.tsx";
 
 
 export default function AdminAddProductComponent() {
@@ -16,7 +17,27 @@ export default function AdminAddProductComponent() {
         tags: [],
         variants: []
     });
-    const [file, setFile] = useState<File | null>(null);
+    const [images, setImages] = useState<string[]>([]);
+
+    const handleImageChange = (files: FileList) => {
+        const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
+        setImages((prevImages) => prevImages.concat(newImages));
+    };
+
+    const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        if (e.dataTransfer.files) {
+            handleImageChange(e.dataTransfer.files);
+        }
+    };
+
+    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+    };
+
+    const handleRemoveImage = (index: number) => {
+        setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+    };
     const token = useAppSelector(state => (state.auth.token));
 
     useEffect(() => {
@@ -126,52 +147,6 @@ export default function AdminAddProductComponent() {
     control,
     name: "skus",
   });
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, is_main:boolean = false) => {
-        const selectedFile = event.target.files?.[0];
-        console.log("changeging -------------")
-        if (selectedFile) {
-            console.log(is_main);
-            // Validate file type and size
-            const validTypes = ['image/png', 'image/jpeg', 'image/gif'];
-            const maxSize = 10 * 1024 * 1024; // 10MB
-
-            if (!validTypes.includes(selectedFile.type)) {
-                // setError('Invalid file type. Please upload a PNG, JPG, or GIF.');
-                setFile(null);
-                return;
-            }
-
-            if (selectedFile.size > maxSize) {
-                // setError('File size exceeds 10MB limit.');
-                setFile(null);
-                return;
-            }
-
-            setFile(selectedFile);
-            console.log(file);
-            // setError(null); // Clear any previous errors
-        }
-    };
-
-    const handleUpload = () => {
-        if (file) {
-            // Here you can handle the file upload logic, e.g., sending it to a server
-            console.log('Uploading file:', file);
-            // Example: Use FormData to send the file
-            const formData = new FormData();
-            formData.append('main_image', file);
-
-            // You can use fetch or axios to upload the file
-            // fetch('/upload', {
-            //     method: 'POST',
-            //     body: formData,
-            // })
-            // .then(response => response.json())
-            // .then(data => console.log(data))
-            // .catch(err => console.error(err));
-        }
-    };
-
 
 
     const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
@@ -231,75 +206,94 @@ export default function AdminAddProductComponent() {
             product add hobe ekhane
 
             <div className="image_upload grid grid-cols-4 auto-rows-max gap-4">
-              <div className=" col-span-1">
-                <label
-                  htmlFor="cover-photo"
-                  className="block text-sm/6 font-medium"
-                >
-                  Main photo
-                </label>
-                <div className="mt-2 flex justify-center rounded-lg border border-dashed  px-6 py-10">
-                  <div className="text-center">
-                    <PhotoIcon
-                      aria-hidden="true"
-                      className="mx-auto size-12 text-gray-300"
-                    />
-                    <div className="mt-4 flex text-sm/6 text-gray-600">
-                      <label
-                        htmlFor="main_image"
-                        className="relative cursor-pointer rounded-md  font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
-                      >
-                        <span>Upload a file</span>
+
+                {/*<classN ImageUpload />*/}
+                <div className="flex flex-col items-center col-span-5 ">
+                    <div
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4 w-full text-center cursor-pointer min-h-56"
+                    >
+                        <p className="text-gray-500">Drag & drop your images here or click to select</p>
                         <input
-                          id="main_image"
-                          name="main_image"
-                          type="file"
-                          className="sr-only"
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => e.target.files && handleImageChange(e.target.files)}
+                            className="hidden"
                         />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
                     </div>
-                    <p className="text-xs/5 text-gray-600">
-                      PNG, JPG, GIF up to 10MB
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className=" col-span-3">
-                <label
-                  htmlFor="cover-photo"
-                  className="block text-sm/6 font-medium"
-                >
-                  Optional photos
-                </label>
-                <div className="mt-2 flex justify-center rounded-lg border border-dashed  px-6 py-10">
-                  <div className="text-center">
-                    <PhotoIcon
-                      aria-hidden="true"
-                      className="mx-auto size-12 text-gray-300"
-                    />
-                    <div className="mt-4 flex text-sm/6 text-gray-600">
-                      <label
-                        htmlFor="extra_image"
-                        className="relative cursor-pointer rounded-md  font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
-                      >
-                        <span>Upload a file</span>
-                        <input
-                          id="extra_image"
-                          name="extra_image"
-                          type="file"
-                          className="sr-only"
-                          onChange={(event) => handleFileChange(event, true)}
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
+                    <div className="grid grid-cols-8 gap-4">
+                        {images.map((image, index) => (
+                            <div key={index} className="relative">
+                                <img src={image} alt={`preview ${index}`} className="w-full h-auto rounded" />
+                                <button
+                                    onClick={() => handleRemoveImage(index)}
+                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 m-1"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))}
                     </div>
-                    <p className="text-xs/5 text-gray-600">
-                      PNG, JPG, GIF up to 10MB
-                    </p>
-                  </div>
                 </div>
-              </div>
+
+
+                {/*<div className="col-span-1">*/}
+                {/*    <label*/}
+                {/*        htmlFor="cover-photo"*/}
+                {/*        className="block text-sm/6 font-medium"*/}
+                {/*    >*/}
+                {/*        Main photo*/}
+                {/*    </label>*/}
+                {/*    <div className="mt-2 flex justify-center rounded-lg border border-dashed px-6 py-10">*/}
+                {/*        <div className="text-center">*/}
+                {/*            {file ? (*/}
+                {/*                <div className="relative">*/}
+                {/*                    <img*/}
+                {/*                        src={file}*/}
+                {/*                        alt="Selected"*/}
+                {/*                        className="max-w-full h-auto rounded-lg mb-4"*/}
+                {/*                    />*/}
+                {/*                    <button*/}
+                {/*                        type="button"*/}
+                {/*                        onClick={removeImage}*/}
+                {/*                        className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs"*/}
+                {/*                    >*/}
+                {/*                        Remove*/}
+                {/*                    </button>*/}
+                {/*                </div>*/}
+                {/*            ) : (*/}
+                {/*                <>*/}
+                {/*                    <PhotoIcon*/}
+                {/*                        aria-hidden="true"*/}
+                {/*                        className="mx-auto size-12 text-gray-300"*/}
+                {/*                    />*/}
+                {/*                    <div className="mt-4 flex text-sm/6 text-gray-600">*/}
+                {/*                        <label*/}
+                {/*                            htmlFor="main_image"*/}
+                {/*                            className="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"*/}
+                {/*                        >*/}
+                {/*                            <span>Upload a file</span>*/}
+                {/*                            <input*/}
+                {/*                                id="main_image"*/}
+                {/*                                name="main_image"*/}
+                {/*                                type="file"*/}
+                {/*                                className="sr-only"*/}
+                {/*                                onChange={(event) => handleFileChange(event, true)}*/}
+                {/*                            />*/}
+                {/*                        </label>*/}
+                {/*                        <p className="pl-1">or drag and drop</p>*/}
+                {/*                    </div>*/}
+                {/*                    <p className="text-xs/5 text-gray-600">*/}
+                {/*                        PNG, JPG, GIF up to 10MB*/}
+                {/*                    </p>*/}
+                {/*                </>*/}
+                {/*            )}*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
+
             </div>
             <form
               className="my-8  grid grid-cols-5 auto-rows-min gap-4"
