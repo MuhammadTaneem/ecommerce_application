@@ -163,6 +163,9 @@ def product_create_list_view(request):
         try:
             with transaction.atomic():
 
+                print(request.data)
+                print(request.FILES)
+
                 product_data = request.data.get('product')
                 if product_data and type(product_data) is str:
                     product_data = json.loads(product_data)
@@ -191,6 +194,7 @@ def product_create_list_view(request):
                                 transaction.set_rollback(True)
                                 return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                     # images_data = request.data.get('images', [])
+                    print(product_images)
                     if product_images:
                         for image_data in product_images:
                             image_data['product'] = product.id
@@ -210,6 +214,9 @@ def product_create_list_view(request):
         products = Product.objects.all()
         product_serializer = ProductSerializer(products, many=True)
         return Response(product_serializer.data, status=status.HTTP_200_OK)
+
+
+
 
 
 @api_view(['GET', 'PUT', 'DELETE'])

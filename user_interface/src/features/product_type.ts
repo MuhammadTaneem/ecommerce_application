@@ -80,12 +80,12 @@ export type ProductType = {
 
 
 export type  ProductImageType = {
-    id: number;
-    product: number;
-    image: string;
+    id: number | null;
+    product: number|null;
+    image: string|File;
     is_main: boolean;
-    created_at: string;
-    updated_at: string;
+    created_at: string| null;
+    updated_at: string | null;
 }
 
 export type ProductListType = {

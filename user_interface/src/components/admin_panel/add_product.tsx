@@ -5,7 +5,7 @@ import {useAppSelector} from "@/core/store.ts";
 import {Controller, SubmitHandler, useFieldArray, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {PhotoIcon} from "@heroicons/react/16/solid";
-import {BrandType, CategoryType, ProductContextType} from "@/features/product_type.ts";
+import {BrandType, CategoryType, ProductContextType, ProductImageType} from "@/features/product_type.ts";
 import ImageUpload from "@/utilites/heloper_ui.tsx";
 
 
@@ -17,12 +17,47 @@ export default function AdminAddProductComponent() {
         tags: [],
         variants: []
     });
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<ProductImageType[]>([]);
+    const [previewImages, setPreviewImages] = useState<string[]>([]);
 
     const handleImageChange = (files: FileList) => {
         const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
-        setImages((prevImages) => prevImages.concat(newImages));
+        setPreviewImages((prevImages) => prevImages.concat(newImages));
+
+        if (files) {
+            const newImages: ProductImageType[] = Array.from(files).map((file) => ({
+                id: null,
+                product: null,
+                image: file,
+                is_main: false,
+                created_at: null,
+                updated_at: null,
+            }));
+            setImages((prevImages) => [...prevImages, ...newImages]);
+        }
+
+
     };
+
+    // const handleImageChange = (files: FileList) => {
+    //     const newImages: ProductImageType[] = Array.from(files).map((file, index) => ({
+    //         id: null, // ID will be assigned by the server after upload
+    //         product: null,
+    //         image: file, // Store the File object
+    //         is_main: images.length === 0, // First image is main
+    //         created_at: new Date().toISOString(),
+    //         updated_at: null,
+    //     }));
+    //
+    //     setImages(prevImages => {
+    //         const updatedImages = [...prevImages, ...newImages];
+    //         // Reset is_main flag
+    //         return updatedImages.map((img, idx) => ({
+    //             ...img,
+    //             is_main: idx === 0,
+    //         }));
+    //     });
+    // };
 
     const handleDrop = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -36,7 +71,7 @@ export default function AdminAddProductComponent() {
     };
 
     const handleRemoveImage = (index: number) => {
-        setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+        setPreviewImages((prevImages) => prevImages.filter((_, i) => i !== index));
     };
     const token = useAppSelector(state => (state.auth.token));
 
@@ -154,7 +189,31 @@ export default function AdminAddProductComponent() {
         const skusData = skus || [];
         try {
 
-            const response = await axiosInstance.post('admin/products/', {"product": productData,"skus":skusData});
+
+            const formData = new FormData();
+
+            // Append product data
+            formData.append('product', JSON.stringify({
+                ...productData,
+                has_variants: skusData.length > 0
+            }));
+
+            // Append SKUs
+            formData.append('skus', JSON.stringify(skusData));
+            // formData.append('images', images);
+
+
+            // images.forEach((image, index) => {
+            //     formData.append(`images[${index}][image]`, image.image); // Append the file
+            //     formData.append(`images[${index}][is_main]`, image.is_main); // Append is_main flag
+            //     // formData.append(`images[${index}][feature]`, image.feature.toString()); // Append feature flag
+            // });
+
+
+            console.log(formData.values());
+
+
+            const response = await axiosInstance.post('admin/products/', formData);
             if (response.status === 201) {
                 const response_product = response.data
                 console.log("response_product");
@@ -177,8 +236,6 @@ export default function AdminAddProductComponent() {
             }
 
 
-            // console.log(normalizedError.message);
-            // console.log(normalizedError.status);
         }
 
     };
@@ -212,19 +269,21 @@ export default function AdminAddProductComponent() {
                     <div
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4 w-full text-center cursor-pointer min-h-56"
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4 w-full text-center cursor-pointer min-h-56 flex items-center justify-center"
                     >
-                        <p className="text-gray-500">Drag & drop your images here or click to select</p>
+                        <label className="text-gray-500" htmlFor="image_input_field"  >Drag & drop your images here or <span className="text-blue-700">click to select</span> </label>
                         <input
                             type="file"
                             accept="image/*"
                             multiple
+                            id="image_input_field"
+                            name="image_input_field"
                             onChange={(e) => e.target.files && handleImageChange(e.target.files)}
                             className="hidden"
                         />
                     </div>
                     <div className="grid grid-cols-8 gap-4">
-                        {images.map((image, index) => (
+                        {previewImages.map((image, index) => (
                             <div key={index} className="relative">
                                 <img src={image} alt={`preview ${index}`} className="w-full h-auto rounded" />
                                 <button
