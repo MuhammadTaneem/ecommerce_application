@@ -121,9 +121,10 @@ class ProductImage(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
 
     image = models.ImageField(upload_to='product_images/',
-                              validators=[
-                                  FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
-                              ])
+                              # validators=[
+                              #     FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
+                              # ]
+                              )
     is_main = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

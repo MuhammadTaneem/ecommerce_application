@@ -19,45 +19,54 @@ export default function AdminAddProductComponent() {
     });
     const [images, setImages] = useState<ProductImageType[]>([]);
     const [previewImages, setPreviewImages] = useState<string[]>([]);
+    const formData = new FormData();
+    // const handleImageChange = (files: FileList) => {
+    //     const newImages = Array.from(files).map((file) => ({
+    //         image: file, // File object
+    //         is_main: false, // Default value for is_main
+    //     }));
+    //
+    //
+    //     const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
+    //     setPreviewImages((prevImages) => prevImages.concat(newImages));
+    //
+    //     images.forEach((image, index) => {
+    //         formData.append(`images[${index}][image]`, image.image); // Append the file
+    //         formData.append(`images[${index}][is_main]`, image.is_main.toString()); // Append is_main flag
+    //         // formData.append(`images[${index}][feature]`, image.feature.toString()); // Append feature flag
+    //     });
+    //
+    //     if (files) {
+    //         const newImages: ProductImageType[] = Array.from(files).map((file) => ({
+    //             id: null,
+    //             product: null,
+    //             image: file as File,
+    //             is_main: false,
+    //             created_at: null,
+    //             updated_at: null,
+    //         }));
+    //         setImages((prevImages) => [...prevImages, ...newImages]);
+    //     }
+    //
+    //
+    // };
 
     const handleImageChange = (files: FileList) => {
+        // Generate new image preview URLs
         const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
         setPreviewImages((prevImages) => prevImages.concat(newImages));
 
-        if (files) {
-            const newImages: ProductImageType[] = Array.from(files).map((file) => ({
-                id: null,
-                product: null,
-                image: file,
-                is_main: false,
-                created_at: null,
-                updated_at: null,
-            }));
-            setImages((prevImages) => [...prevImages, ...newImages]);
-        }
-
-
+        // Add images to the images state
+        const newImagesArray: ProductImageType[] = Array.from(files).map((file) => ({
+            id: null,
+            product: null,
+            image: file, // Ensure this is a File object
+            is_main: false,
+            created_at: null,
+            updated_at: null,
+        }));
+        setImages((prevImages) => [...prevImages, ...newImagesArray]);
     };
-
-    // const handleImageChange = (files: FileList) => {
-    //     const newImages: ProductImageType[] = Array.from(files).map((file, index) => ({
-    //         id: null, // ID will be assigned by the server after upload
-    //         product: null,
-    //         image: file, // Store the File object
-    //         is_main: images.length === 0, // First image is main
-    //         created_at: new Date().toISOString(),
-    //         updated_at: null,
-    //     }));
-    //
-    //     setImages(prevImages => {
-    //         const updatedImages = [...prevImages, ...newImages];
-    //         // Reset is_main flag
-    //         return updatedImages.map((img, idx) => ({
-    //             ...img,
-    //             is_main: idx === 0,
-    //         }));
-    //     });
-    // };
 
     const handleDrop = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -190,7 +199,7 @@ export default function AdminAddProductComponent() {
         try {
 
 
-            const formData = new FormData();
+
 
             // Append product data
             formData.append('product', JSON.stringify({
@@ -203,17 +212,18 @@ export default function AdminAddProductComponent() {
             // formData.append('images', images);
 
 
-            // images.forEach((image, index) => {
-            //     formData.append(`images[${index}][image]`, image.image); // Append the file
-            //     formData.append(`images[${index}][is_main]`, image.is_main); // Append is_main flag
-            //     // formData.append(`images[${index}][feature]`, image.feature.toString()); // Append feature flag
-            // });
+            images.forEach((image, index) => {
+                formData.append(`images[${index}][image]`, image.image); // Append the file
+                formData.append(`images[${index}][is_main]`, image.is_main.toString()); // Append the boolean flag
+            });
 
 
-            console.log(formData.values());
 
-
-            const response = await axiosInstance.post('admin/products/', formData);
+            const response = await axiosInstance.post('admin/products/', formData, {
+                headers:{
+                    "Content-Type": "multipart/form-data",
+                }
+            });
             if (response.status === 201) {
                 const response_product = response.data
                 console.log("response_product");

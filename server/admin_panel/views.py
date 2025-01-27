@@ -162,18 +162,11 @@ def product_create_list_view(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-
-                print(request.data)
-                print(request.FILES)
-
-                product_data = request.data.get('product')
+                product_data = request.nested_data.get('product')
                 if product_data and type(product_data) is str:
                     product_data = json.loads(product_data)
 
-                product_images = request.data.get('images', [])
-                # import pdb; pdb.set_trace()
                 product_serializer = ProductSerializer(data=product_data)
-                # product_serializer = AdminProductListSerializer(data=product_data)
                 if product_serializer.is_valid():
                     product = product_serializer.save()
                     if product_data.get('has_variants', False):
@@ -193,17 +186,16 @@ def product_create_list_view(request):
                             else:
                                 transaction.set_rollback(True)
                                 return Response(sku_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                    # images_data = request.data.get('images', [])
-                    print(product_images)
-                    if product_images:
-                        for image_data in product_images:
-                            image_data['product'] = product.id
-                            image_serializer = ProductImageSerializer(data=image_data)
-                            if image_serializer.is_valid():
-                                image_serializer.save()
-                            else:
-                                transaction.set_rollback(True)
-                                return Response(image_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                    product_images = request.nested_data.get('images', [])
+                    for index, image_data in enumerate(product_images):
+                        image_data["product"] = product.id
+                        image_serializer = ProductImageSerializer(data=image_data)
+                        if image_serializer.is_valid():
+                            image_serializer.save()
+                        else:
+                            transaction.set_rollback(True)
+                            return Response(image_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
                     return Response(product_serializer.data, status=status.HTTP_201_CREATED)
                 else:
