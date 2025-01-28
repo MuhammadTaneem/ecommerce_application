@@ -1,44 +1,263 @@
+from django.db import transaction
 from rest_framework import serializers
-# from social_core.utils import slugify
+from .models import Product, ProductImage, SKU, VariantValue, VariantAttribute, Category, Brand, Tag
 
-from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU, Brand, Tag
-from django.conf import settings
+# from rest_framework import serializers
 
+
+# # from social_core.utils import slugify
+#
+# from .models import VariantAttribute, VariantValue, Category, Product, ProductImage, SKU, Brand, Tag
+# from django.conf import settings
+#
+#
+# class BrandSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Brand
+#         fields = ['id', 'name', 'description', 'created_at', 'updated_at']
+#
+#
+# class TagSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Tag
+#         fields = ['id', 'name', 'slug', 'created_at', 'updated_at']
+#
+#
+# class VariantAttributeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = VariantAttribute
+#         fields = ['id', 'name', 'slug']
+#
+#
+# class VariantDetailAttributeSerializer(VariantAttributeSerializer):
+#     values = serializers.SerializerMethodField()
+#
+#     class Meta(VariantAttributeSerializer.Meta):
+#         fields = VariantAttributeSerializer.Meta.fields + ['values']
+#
+#     def get_values(self, obj):
+#         if obj.values.exists():
+#             return VariantValueSerializer(obj.values, many=True).data
+#         return []
+#
+#
+# class VariantValueSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = VariantValue
+#         fields = ['id', 'attribute', 'value']
+#
+#
+#
+
+
+#
+#
+# class ProductImageSerializer(serializers.ModelSerializer):
+#     # image_url = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = ProductImage
+#         fields = ['id', 'product', 'image', 'is_main', 'created_at', 'updated_at']
+#
+#     def get_image(self, obj):
+#         request = self.context.get('request')
+#         if request and obj.image:
+#             return request.build_absolute_uri(obj.image.url)
+#         return None
+#
+#
+# class SKUSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SKU
+#         fields = ['id', 'product', 'sku_code', 'price', 'stock_quantity', 'variants_dict', 'variants']
+#
+#     def run_validation(self, data):
+#         variants_data = data.get('variants')
+#         if isinstance(variants_data, list):
+#             data['variants'] = [list(variant.values())[0] for variant in variants_data]
+#         return super().run_validation(data)
+#
+#     def validate(self, data):
+#         variants_list = []
+#         variants_data = data.get('variants')
+#         for variant in variants_data:
+#             if variant.attribute.name in variants_list:
+#                 raise serializers.ValidationError({
+#                     'variants': f"{variant.attribute.name} is added multiple times."
+#                 })
+#             variants_list.append(variant.attribute.name)
+#         return data
+#
+#
+# class ProductSerializer(serializers.ModelSerializer):
+#     images = ProductImageSerializer(many=True, read_only=True)
+#
+#     class Meta:
+#         model = Product
+#         fields = ['id', 'name', 'description', 'base_price','discount_price', 'stock_quantity', 'has_variants',
+#                   'images', 'category', 'key_features', 'additional_info', 'brand', 'tags']
+#
+#     # def validate_category(self, value):
+#     #     # import pdb;pdb.set_trace()
+#     #     if not value or value == '':
+#     #         raise serializers.ValidationError("Category is required.")
+#     #     return value
+#
+#     def validate(self, attrs):
+#         if 'category' not in attrs or not attrs['category']:
+#             raise serializers.ValidationError({"category": "Category is required."})
+#         return attrs
+#
+#
+# class ProductListSerializer(serializers.ModelSerializer):
+#     image = serializers.SerializerMethodField(read_only=True)
+#
+#     class Meta:
+#         model = Product
+#         fields = ['id', 'name', 'base_price', 'image', 'has_variants']
+#
+#     def get_image(self, obj):
+#         request = self.context.get('request')
+#         image = obj.images.filter(is_main=True).first() or obj.images.first()
+#
+#         if image and request:
+#             return request.build_absolute_uri(image.image.url)
+#         elif image and not request:
+#             return image.image.url
+#         return None
+#
+#
+# class AdminProductListSerializer(ProductListSerializer):
+#     class Meta(ProductListSerializer.Meta):
+#         fields = ProductListSerializer.Meta.fields + ['stock_quantity', 'created_at']
+#
+#
+# class ProductDetailsSerializer(serializers.ModelSerializer):
+#     images = ProductImageSerializer(many=True, read_only=True)
+#     skus = SKUSerializer(many=True)
+#
+#     class Meta:
+#         model = Product
+#         fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'is_deleted', 'additional_info',
+#                   'short_description', 'discount_price', 'category', 'key_features', 'description', 'images', 'skus',
+#                   'brand', 'tags']
+#
+#     def validate(self, attrs):
+#         if 'category' not in attrs or not attrs['category']:
+#             raise serializers.ValidationError({"category": "Category is required."})
+#         return attrs
+#
+#     def create(self, validated_data):
+#         # import pdb; pdb.set_trace()
+#         skus_data = self.initial_data.get('skus', None)
+#         product = Product.objects.create(**validated_data)
+#         for sku_data in skus_data:
+#             SKU.objects.create(product=product, **sku_data)
+#         return product
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    subcategories = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ['id', 'label', 'slug', 'parent', 'description', 'image', 'subcategories']
+
+    def get_subcategories(self, obj):
+        subcategories = Category.objects.filter(parent=obj)
+        if subcategories.exists():
+            return CategorySerializer(subcategories, many=True).data
+        return []
+
+
+class FlatCategorySerializer(CategorySerializer):
+    label = serializers.SerializerMethodField()
+
+    class Meta(CategorySerializer.Meta):
+        fields = [field for field in CategorySerializer.Meta.fields if field != 'subcategories']
+
+    def get_label(self, obj):
+        return obj.slug.replace('_', ' > ')
+
+class VariantValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VariantValue
+        fields = ['id', 'attribute', 'value']
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
         fields = ['id', 'name', 'description', 'created_at', 'updated_at']
 
-
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'name', 'slug', 'created_at', 'updated_at']
 
-
-class VariantAttributeSerializer(serializers.ModelSerializer):
+class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VariantAttribute
-        fields = ['id', 'name', 'slug']
+        model = ProductImage
+        fields = ['id', 'image', 'created_at', 'updated_at']
 
+class SKUSerializer(serializers.ModelSerializer):
+    variants = VariantValueSerializer(many=True)
 
-class VariantDetailAttributeSerializer(VariantAttributeSerializer):
-    values = serializers.SerializerMethodField()
-
-    class Meta(VariantAttributeSerializer.Meta):
-        fields = VariantAttributeSerializer.Meta.fields + ['values']
-
-    def get_values(self, obj):
-        if obj.values.exists():
-            return VariantValueSerializer(obj.values, many=True).data
-        return []
-
-
-class VariantValueSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VariantValue
-        fields = ['id', 'attribute', 'value']
+        model = SKU
+        fields = ['id', 'sku_code', 'price', 'discount_price', 'stock_quantity', 'variants']
+
+class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+    skus = SKUSerializer(many=True, read_only=True)
+    category = CategorySerializer(read_only=True)
+    brand = BrandSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'short_description',
+            'discount_price', 'category', 'key_features', 'description', 'additional_info','thumbnail',
+            'brand', 'tags', 'created_at', 'updated_at', 'is_active', 'is_deleted', 'images', 'skus'
+        ]
+
+    def validate_stock_quantity(self, value):
+        if value is None or value < 0:
+            raise serializers.ValidationError({
+                "product": {
+                    "stock_quantity": "This field is required, please enter the available stock."
+                }
+            })
+        return value
+
+    def validate(self, data):
+        stock_quantity = data.get('stock_quantity')
+        if stock_quantity is None or stock_quantity < 0:
+            raise serializers.ValidationError({
+                "product": {
+                    "stock_quantity": "This field is required, please enter the available stock."
+                }
+            })
+        return data
+
+    def create(self, validated_data):
+        try:
+            with transaction.atomic():
+                product = Product.objects.create(**validated_data)
+                images_data = self.context.get('request').FILES.getlist('images')
+                for image_data in images_data:
+                    ProductImage.objects.create(product=product, image=image_data)
+                skus_data = validated_data.pop('skus', [])
+                for sku_data in skus_data:
+                    sku = SKU.objects.create(product=product, **sku_data)
+                    variants_data = sku_data.pop('variants', [])
+                    for variant_data in variants_data:
+                        VariantValue.objects.create(sku=sku, **variant_data)
+                return product
+        except Exception as e:
+            raise serializers.ValidationError({
+                "error": f"An error occurred while creating the product: {str(e)}"
+            })
 
 
 class VariantSerializer(serializers.ModelSerializer):
@@ -99,131 +318,3 @@ class VariantSerializer(serializers.ModelSerializer):
         instance.values.all().delete()
         instance.delete()
         return instance
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    subcategories = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Category
-        fields = ['id', 'label', 'slug', 'parent', 'description', 'image', 'subcategories']
-
-    def get_subcategories(self, obj):
-        subcategories = Category.objects.filter(parent=obj)
-        if subcategories.exists():
-            return CategorySerializer(subcategories, many=True).data
-        return []
-
-
-class FlatCategorySerializer(CategorySerializer):
-    label = serializers.SerializerMethodField()
-
-    class Meta(CategorySerializer.Meta):
-        fields = [field for field in CategorySerializer.Meta.fields if field != 'subcategories']
-
-    def get_label(self, obj):
-        return obj.slug.replace('_', ' > ')
-
-
-class ProductImageSerializer(serializers.ModelSerializer):
-    # image_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ProductImage
-        fields = ['id', 'product', 'image', 'is_main', 'created_at', 'updated_at']
-
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if request and obj.image:
-            return request.build_absolute_uri(obj.image.url)
-        return None
-
-
-class SKUSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SKU
-        fields = ['id', 'product', 'sku_code', 'price', 'stock_quantity', 'variants_dict', 'variants']
-
-    def run_validation(self, data):
-        variants_data = data.get('variants')
-        if isinstance(variants_data, list):
-            data['variants'] = [list(variant.values())[0] for variant in variants_data]
-        return super().run_validation(data)
-
-    def validate(self, data):
-        variants_list = []
-        variants_data = data.get('variants')
-        for variant in variants_data:
-            if variant.attribute.name in variants_list:
-                raise serializers.ValidationError({
-                    'variants': f"{variant.attribute.name} is added multiple times."
-                })
-            variants_list.append(variant.attribute.name)
-        return data
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Product
-        fields = ['id', 'name', 'description', 'base_price','discount_price', 'stock_quantity', 'has_variants',
-                  'images', 'category', 'key_features', 'additional_info', 'brand', 'tags']
-
-    # def validate_category(self, value):
-    #     # import pdb;pdb.set_trace()
-    #     if not value or value == '':
-    #         raise serializers.ValidationError("Category is required.")
-    #     return value
-
-    def validate(self, attrs):
-        if 'category' not in attrs or not attrs['category']:
-            raise serializers.ValidationError({"category": "Category is required."})
-        return attrs
-
-
-class ProductListSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = Product
-        fields = ['id', 'name', 'base_price', 'image', 'has_variants']
-
-    def get_image(self, obj):
-        request = self.context.get('request')
-        image = obj.images.filter(is_main=True).first() or obj.images.first()
-
-        if image and request:
-            return request.build_absolute_uri(image.image.url)
-        elif image and not request:
-            return image.image.url
-        return None
-
-
-class AdminProductListSerializer(ProductListSerializer):
-    class Meta(ProductListSerializer.Meta):
-        fields = ProductListSerializer.Meta.fields + ['stock_quantity', 'created_at']
-
-
-class ProductDetailsSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
-    skus = SKUSerializer(many=True)
-
-    class Meta:
-        model = Product
-        fields = ['id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'is_deleted', 'additional_info',
-                  'short_description', 'discount_price', 'category', 'key_features', 'description', 'images', 'skus',
-                  'brand', 'tags']
-
-    def validate(self, attrs):
-        if 'category' not in attrs or not attrs['category']:
-            raise serializers.ValidationError({"category": "Category is required."})
-        return attrs
-
-    def create(self, validated_data):
-        # import pdb; pdb.set_trace()
-        skus_data = self.initial_data.get('skus', None)
-        product = Product.objects.create(**validated_data)
-        for sku_data in skus_data:
-            SKU.objects.create(product=product, **sku_data)
-        return product

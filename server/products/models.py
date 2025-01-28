@@ -90,6 +90,11 @@ class Product(models.Model):
     brand = models.ForeignKey(Brand, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name='products', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    thumbnail = models.ImageField(upload_to='product_thumbnail/',
+                              validators=[
+                                  FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
+                              ]
+                              )
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
@@ -121,11 +126,10 @@ class ProductImage(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='images')
 
     image = models.ImageField(upload_to='product_images/',
-                              # validators=[
-                              #     FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
-                              # ]
+                              validators=[
+                                  FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
+                              ]
                               )
-    is_main = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
