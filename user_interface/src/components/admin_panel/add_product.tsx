@@ -133,12 +133,13 @@ export default function AdminAddProductComponent() {
             })
         ]).nullable(),
         tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
-        key_features: z.array(
-            z.object({
-                key: z.string().min(1, "Key is required"),
-                value: z.string().min(1, "Value is required"),
-            })
-        ).optional(),
+        // key_features: z.array(
+        //     z.object({
+        //         key: z.string().min(1, "Key is required"),
+        //         value: z.string().min(1, "Value is required"),
+        //     })
+        // ).optional(),
+        key_features:z.record(z.string(),z.string()),
         description: z.record(z.string(), z.string()).optional(),
         additional_info: z.record(z.string(), z.string()).optional(),
         skus: z.array(
@@ -175,17 +176,17 @@ export default function AdminAddProductComponent() {
         defaultValues: {
             base_price: 0,
             has_variants: false,
-            key_features: [],
+            key_features: {},
             brand: null
         },
         resolver: zodResolver(productSchema),
     });
 
 
-    const {fields: keyFeatureFields, append: addKeyFeature, remove: removeKeyFeature} = useFieldArray({
-        control,
-        name: "key_features",
-    });
+    // const {fields: keyFeatureFields, append: addKeyFeature, remove: removeKeyFeature} = useFieldArray({
+    //     control,
+    //     name: "key_features",
+    // });
 
   const { fields: skuFields, append: addSku, remove: removeSku } = useFieldArray({
     control,
@@ -502,7 +503,9 @@ export default function AdminAddProductComponent() {
                   Key Features
                   <button
                     type="button"
-                    onClick={() => addKeyFeature({ key: "", value: "" })}
+                    onClick={(() => {
+                        console.log("worked")
+                    })}
                     className="p-2 rounded"
                   >
                     +
