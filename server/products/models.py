@@ -91,10 +91,11 @@ class Product(models.Model):
     tags = models.ManyToManyField(Tag, related_name='products', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     thumbnail = models.ImageField(upload_to='product_thumbnail/',
-                              validators=[
-                                  FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
-                              ]
-                              )
+                                  validators=[
+                                      FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
+                                  ],
+                                  default='default_thumbnail.jpg'
+                                  )
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
@@ -134,7 +135,7 @@ class ProductImage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-is_main', 'created_at']
+        ordering = ['created_at']
 
     def __str__(self):
         return f"{self.product.name} - {self.image.name}"

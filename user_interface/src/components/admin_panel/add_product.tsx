@@ -17,9 +17,8 @@ export default function AdminAddProductComponent() {
         tags: [],
         variants: []
     });
-    const [images, setImages] = useState<ProductImageType[]>([]);
-    const [previewImages, setPreviewImages] = useState<string[]>([]);
-    const formData = new FormData();
+    const [images, setImages] = useState<File[]>([]);
+    // const [previewImages, setPreviewImages] = useState<string[]>([]);
     // const handleImageChange = (files: FileList) => {
     //     const newImages = Array.from(files).map((file) => ({
     //         image: file, // File object
@@ -51,36 +50,22 @@ export default function AdminAddProductComponent() {
     //
     // };
 
-    const handleImageChange = (files: FileList) => {
-        // Generate new image preview URLs
-        const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
-        setPreviewImages((prevImages) => prevImages.concat(newImages));
-
-        // Add images to the images state
-        const newImagesArray: ProductImageType[] = Array.from(files).map((file) => ({
-            id: null,
-            product: null,
-            image: file, // Ensure this is a File object
-            is_main: false,
-            created_at: null,
-            updated_at: null,
-        }));
-        setImages((prevImages) => [...prevImages, ...newImagesArray]);
+    const handleImageChange = (files: File[]) => {
+        setImages(prevImages => [...prevImages, ...Array.from(files)]);
     };
 
     const handleDrop = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         if (e.dataTransfer.files) {
-            handleImageChange(e.dataTransfer.files);
+            handleImageChange([...e.dataTransfer.files]);
         }
     };
-
     const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
     };
 
     const handleRemoveImage = (index: number) => {
-        setPreviewImages((prevImages) => prevImages.filter((_, i) => i !== index));
+        setImages((prevImages) => prevImages.filter((_, i) => i !== index));
     };
     const token = useAppSelector(state => (state.auth.token));
 
@@ -133,13 +118,12 @@ export default function AdminAddProductComponent() {
             })
         ]).nullable(),
         tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
-        // key_features: z.array(
-        //     z.object({
-        //         key: z.string().min(1, "Key is required"),
-        //         value: z.string().min(1, "Value is required"),
-        //     })
-        // ).optional(),
-        key_features:z.record(z.string(),z.string()),
+        key_features: z.array(
+            z.object({
+                key: z.string().min(1, "Key is required"),
+                value: z.string().min(1, "Value is required"),
+            })
+        ).optional(),
         description: z.record(z.string(), z.string()).optional(),
         additional_info: z.record(z.string(), z.string()).optional(),
         skus: z.array(
@@ -156,9 +140,8 @@ export default function AdminAddProductComponent() {
                     })
                 ]).nullable(),
                 stock_quantity: z.number(),
-                // variants: z.record(z.string(), z.number()),
                 variants: z.array(
-                    z.record(z.string(), z.number()) // Array of objects with string keys and number values
+                    z.record(z.string(), z.number())
                 ),
             })
         ).optional(),
@@ -175,18 +158,19 @@ export default function AdminAddProductComponent() {
     } = useForm<productFormFields>({
         defaultValues: {
             base_price: 0,
+            discount_price: 0,
             has_variants: false,
-            key_features: {},
-            brand: null
+            key_features: [],
+            brand: 0
         },
         resolver: zodResolver(productSchema),
     });
 
 
-    // const {fields: keyFeatureFields, append: addKeyFeature, remove: removeKeyFeature} = useFieldArray({
-    //     control,
-    //     name: "key_features",
-    // });
+    const {fields: keyFeatureFields, append: addKeyFeature, remove: removeKeyFeature} = useFieldArray({
+        control,
+        name: "key_features",
+    });
 
   const { fields: skuFields, append: addSku, remove: removeSku } = useFieldArray({
     control,
@@ -195,32 +179,47 @@ export default function AdminAddProductComponent() {
 
 
     const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
-        const { skus, ...productData } = data;
-        const skusData = skus || [];
+        // const { skus, ...productData } = data;
+        // const skusData = skus || [];
+
+        console.log(data);
         try {
 
 
+          const formData = new FormData();
+
+          Object.entries(data).forEach(([key, value]) => {
+            formData.append(key,  JSON.stringify(value));
+          })
+
+          images.forEach((image) => {
+            formData.append("images", image);
+          })
+
+          // formData.append("has_variants", JSON.stringify(skusData.length > 0));
 
 
-            // Append product data
-            formData.append('product', JSON.stringify({
-                ...productData,
-                has_variants: skusData.length > 0
-            }));
 
-            // Append SKUs
-            formData.append('skus', JSON.stringify(skusData));
+
+            // // // Append product data
+            // formData.append('product', JSON.stringify({
+            //     ...productData,
+            //     has_variants: skusData.length > 0
+            // }));
+            //
+            // // Append SKUs
+            // formData.append('skus', JSON.stringify(skusData));
             // formData.append('images', images);
 
 
-            images.forEach((image, index) => {
-                formData.append(`images[${index}][image]`, image.image); // Append the file
-                formData.append(`images[${index}][is_main]`, image.is_main.toString()); // Append the boolean flag
-            });
+            // images.forEach((image, index) => {
+            //     formData.append(`images[${index}][image]`, image.image); // Append the file
+            //     formData.append(`images[${index}][is_main]`, image.is_main.toString()); // Append the boolean flag
+            // });
 
 
 
-            const response = await axiosInstance.post('admin/products/', formData, {
+            const response = await axiosInstance.post('products/products/', formData, {
                 headers:{
                     "Content-Type": "multipart/form-data",
                 }
@@ -289,21 +288,35 @@ export default function AdminAddProductComponent() {
                             multiple
                             id="image_input_field"
                             name="image_input_field"
-                            onChange={(e) => e.target.files && handleImageChange(e.target.files)}
+                            onChange={(e) => e.target.files && handleImageChange([...e.target.files])}
                             className="hidden"
                         />
                     </div>
                     <div className="grid grid-cols-8 gap-4">
-                        {previewImages.map((image, index) => (
+                        {/*{images.map((image, index) => (*/}
+                        {/*    <div key={index} className="relative">*/}
+                        {/*        <img src={URL.createObjectURL(image)} alt={`preview ${index}`} className="w-full h-auto rounded" />*/}
+                        {/*        <button*/}
+                        {/*            onClick={() => handleRemoveImage(index)}*/}
+                        {/*            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 m-1"*/}
+                        {/*        >*/}
+                        {/*            &times;*/}
+                        {/*        </button>*/}
+                        {/*    </div>*/}
+                        {/*))}*/}
+                        {images.map((image, index) => (
                             <div key={index} className="relative">
-                                <img src={image} alt={`preview ${index}`} className="w-full h-auto rounded" />
+                                <img src={URL.createObjectURL(image)} alt={`preview ${index}`} className="w-20 h-20 rounded" />
                                 <button
                                     onClick={() => handleRemoveImage(index)}
-                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 m-1"
+                                    className="absolute top-0 right-0 bg-red-400 text-white rounded-md px-1 m-1"
                                 >
                                     &times;
                                 </button>
                             </div>
+                            // <div key={index}>
+                            //     <img src={URL.createObjectURL(image)} alt={`Preview ${index}`} className="w-20 h-20" />
+                            // </div>
                         ))}
                     </div>
                 </div>
