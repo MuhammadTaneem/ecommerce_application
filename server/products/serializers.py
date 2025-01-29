@@ -1,5 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.utils import json
+
 from .models import Product, ProductImage, SKU, VariantValue, VariantAttribute, Category, Brand, Tag
 
 
@@ -101,7 +103,13 @@ class ProductSerializer(serializers.ModelSerializer):
         try:
             with transaction.atomic():
                 skus_data = self.initial_data.get('skus', [])
+                tags_data = validated_data.pop('tags', [])  # Extract tags from validated data
                 product = Product.objects.create(**validated_data)
+
+                if skus_data and type(skus_data) is str:
+                    skus_data = json.loads(skus_data)
+                if tags_data:
+                    product.tags.set(tags_data)
 
                 # Step 2: Handle images
                 images_data = self.context.get('request').FILES.getlist('images')

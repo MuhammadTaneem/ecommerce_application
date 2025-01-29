@@ -157,11 +157,11 @@ export default function AdminAddProductComponent() {
         formState: {errors, isSubmitting},
     } = useForm<productFormFields>({
         defaultValues: {
-            base_price: 0,
-            discount_price: 0,
+            // base_price: 0,
+            // discount_price: 0,
             has_variants: false,
             key_features: [],
-            brand: 0
+            // brand: 0
         },
         resolver: zodResolver(productSchema),
     });
@@ -188,11 +188,18 @@ export default function AdminAddProductComponent() {
 
           const formData = new FormData();
 
-          Object.entries(data).forEach(([key, value]) => {
-            formData.append(key,  JSON.stringify(value));
-          })
+            Object.entries(data).forEach(([key, value]) => {
+                if (value === null) {
+                    formData.append(key, "");  // Send empty string for null values
+                } else if (typeof value === "object" && !(value instanceof File)) {
+                    formData.append(key, JSON.stringify(value));  // Convert objects/arrays to JSON
+                } else {
+                    formData.append(key, value.toString());  // Convert other types to strings
+                }
+            });
 
-          images.forEach((image) => {
+
+            images.forEach((image) => {
             formData.append("images", image);
           })
 
