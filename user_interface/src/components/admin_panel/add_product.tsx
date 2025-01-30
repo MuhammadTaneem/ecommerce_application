@@ -1,12 +1,10 @@
-import React, {DragEvent, useEffect, useState} from "react";
+import {DragEvent, useEffect, useState} from "react";
 import axiosInstance, {NormalizedError} from "@/utilites/api.ts";
 import {z} from "zod"
 import {useAppSelector} from "@/core/store.ts";
 import {Controller, SubmitHandler, useFieldArray, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {PhotoIcon} from "@heroicons/react/16/solid";
-import {BrandType, CategoryType, ProductContextType, ProductImageType} from "@/features/product_type.ts";
-import ImageUpload from "@/utilites/heloper_ui.tsx";
+import {BrandType, CategoryType, ProductContextType} from "@/features/product_type.ts";
 
 
 export default function AdminAddProductComponent() {
@@ -18,38 +16,6 @@ export default function AdminAddProductComponent() {
         variants: []
     });
     const [images, setImages] = useState<File[]>([]);
-    // const [previewImages, setPreviewImages] = useState<string[]>([]);
-    // const handleImageChange = (files: FileList) => {
-    //     const newImages = Array.from(files).map((file) => ({
-    //         image: file, // File object
-    //         is_main: false, // Default value for is_main
-    //     }));
-    //
-    //
-    //     const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
-    //     setPreviewImages((prevImages) => prevImages.concat(newImages));
-    //
-    //     images.forEach((image, index) => {
-    //         formData.append(`images[${index}][image]`, image.image); // Append the file
-    //         formData.append(`images[${index}][is_main]`, image.is_main.toString()); // Append is_main flag
-    //         // formData.append(`images[${index}][feature]`, image.feature.toString()); // Append feature flag
-    //     });
-    //
-    //     if (files) {
-    //         const newImages: ProductImageType[] = Array.from(files).map((file) => ({
-    //             id: null,
-    //             product: null,
-    //             image: file as File,
-    //             is_main: false,
-    //             created_at: null,
-    //             updated_at: null,
-    //         }));
-    //         setImages((prevImages) => [...prevImages, ...newImages]);
-    //     }
-    //
-    //
-    // };
-
     const handleImageChange = (files: File[]) => {
         setImages(prevImages => [...prevImages, ...Array.from(files)]);
     };
@@ -179,8 +145,7 @@ export default function AdminAddProductComponent() {
 
 
     const onSubmitProduct: SubmitHandler<productFormFields> = async (data) => {
-        // const { skus, ...productData } = data;
-        // const skusData = skus || [];
+
 
         console.log(data);
         try {
@@ -203,27 +168,6 @@ export default function AdminAddProductComponent() {
             formData.append("images", image);
           })
 
-          // formData.append("has_variants", JSON.stringify(skusData.length > 0));
-
-
-
-
-            // // // Append product data
-            // formData.append('product', JSON.stringify({
-            //     ...productData,
-            //     has_variants: skusData.length > 0
-            // }));
-            //
-            // // Append SKUs
-            // formData.append('skus', JSON.stringify(skusData));
-            // formData.append('images', images);
-
-
-            // images.forEach((image, index) => {
-            //     formData.append(`images[${index}][image]`, image.image); // Append the file
-            //     formData.append(`images[${index}][is_main]`, image.is_main.toString()); // Append the boolean flag
-            // });
-
 
 
             const response = await axiosInstance.post('products/products/', formData, {
@@ -233,9 +177,7 @@ export default function AdminAddProductComponent() {
             });
             if (response.status === 201) {
                 const response_product = response.data
-                console.log("response_product");
                 console.log(response_product);
-                // dispatch(login(token));
             }
 
         } catch (error) {
@@ -246,7 +188,6 @@ export default function AdminAddProductComponent() {
             });
 
             for (const err in normalizedError.error_dict) {
-                // console.log(normalizedError.error_dict[err]);
                 setError(err as keyof productFormFields,{
                     message: normalizedError.error_dict[err]
                 })
