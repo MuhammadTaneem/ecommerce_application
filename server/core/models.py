@@ -1,32 +1,15 @@
-import uuid
-
 from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin, AbstractUser
+from django.contrib.auth.models import PermissionsMixin, AbstractUser, Group
 from django.db import models
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 
-class Role(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    permissions = models.JSONField(default=list)
-    description = models.TextField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def permission_list(self):
-        return self.permissions or []
-
-
 class Usermanager(BaseUserManager):
-    def create_user(self, email, phone,password=None, **extra_fields):
+    def create_user(self, email, phone, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
-        user = self.model(email=email, phone=phone,**extra_fields)
+        user = self.model(email=email, phone=phone, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -51,12 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_login = models.DateTimeField(null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     permissions = models.JSONField(default=list)
-    role = models.ForeignKey(
-        Role,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='users'
-    )
+    role = models.ManyToManyField(Group, related_name="users", blank=True)
     username = None
     objects = Usermanager()
 
@@ -75,15 +53,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
-
-    # def get_short_name(self):
-    #     return self.first_name
-
-    # def has_perm(self, perm, obj=None):
-    #     return self.is_superuser
-    #
-    # def has_module_perms(self, app_label):
-    #     return self.is_superuser
 
     def has_permission(self, permission):
         return permission in self.role.permissions
