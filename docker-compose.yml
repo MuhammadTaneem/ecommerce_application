@@ -149,8 +149,8 @@ services:
     command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       - db
-      # - redis
-      # - celery_worker
+      - redis
+      - celery_worker
     env_file:
       - .env
     environment:
@@ -172,22 +172,22 @@ services:
     stdin_open: true  # Enable STDIN for pdb
     tty: true        # Enable TTY for pdb
 
-  # celery_worker:
-  #   build:
-  #     context: ./server
-  #     dockerfile: Dockerfile
-  #   command: celery -A server worker --loglevel=info
-  #   volumes:
-  #     - ./server:/app
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - CELERY_BROKER_URL=${CELERY_BROKER_URL}
-  #     - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
-  #     - PYTHONUNBUFFERED=1
-  #   restart: always
-  #   networks:
-  #     - ecommerce_network 
+  celery_worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    command: celery -A server worker --loglevel=info
+    volumes:
+      - ./server:/app
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - PYTHONUNBUFFERED=1
+    restart: always
+    networks:
+      - ecommerce_network 
 
   # celery_beat:
   #   build:
@@ -221,20 +221,20 @@ services:
     networks:
       - ecommerce_network 
 
-  # redis:
-  #   image: redis:alpine
-  #   container_name: redis_container
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - CACHES_LOCATION=${CACHES_LOCATION}
-  #   networks:
-  #     - ecommerce_network 
+  redis:
+    image: redis:alpine
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - CACHES_LOCATION=${CACHES_LOCATION}
+    networks:
+      - ecommerce_network 
 
   frontend:
     build:
