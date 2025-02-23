@@ -72,7 +72,7 @@ export default function AdminProductComponent() {
                         <table className="bg-white border border-gray-200  w-full">
                             <thead className="">
                             <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                                <th className="py-3 px-6 text-left">Name&avator</th>
+                                <th className="py-3 px-6 text-left">Name& avator</th>
                                 <th className="py-3 px-6 text-left">Base Price</th>
                                 <th className="py-3 px-6 text-left">has variants</th>
                                 <th className="py-3 px-6 text-left">stock quantity</th>

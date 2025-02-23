@@ -17,13 +17,22 @@ class CartViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_authenticated:
             return Cart.objects.filter(user=self.request.user)
-        return Cart.objects.filter(session_id=self.request.session.session_key)
+        return Cart.objects.none()
 
-    def perform_create(self, serializer):
-        if self.request.user.is_authenticated:
-            serializer.save(user=self.request.user)
-        else:
-            serializer.save(session_id=self.request.session.session_key)
+    def get_cart(self):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        return cart
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Override the default retrieve method to ensure a cart is always returned.
+        """
+        cart = self.get_cart()
+        if not cart:
+            return Response({"detail": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = self.get_serializer(cart)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def add_item(self, request, pk=None):

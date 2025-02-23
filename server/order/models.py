@@ -10,7 +10,6 @@ User = get_user_model()
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    session_id = models.CharField(max_length=255, null=True, blank=True)  # For anonymous users
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -23,7 +22,7 @@ class Cart(models.Model):
         return sum(item.quantity for item in self.items.all())
 
     def __str__(self):
-        return f"Cart {self.id} - {'User: ' + str(self.user) if self.user else 'Session: ' + str(self.session_id)}"
+        return f"Cart {self.id} - {'User: ' + str(self.user)}"
 
 
 class CartItem(models.Model):
