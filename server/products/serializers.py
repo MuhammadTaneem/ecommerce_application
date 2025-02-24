@@ -117,14 +117,18 @@ class ProductSerializer(serializers.ModelSerializer):
                     ProductImage.objects.create(product=product, image=image_data)
 
                 # Step 3: Validate and create SKUs separately
+                # import pdb;pdb.set_trace()
 
-                if product.has_variants:
+                if product.has_variants and skus_data:
                     for sku_data in skus_data:
                         sku_data['product'] = product.id
                         sku_serializer = SKUSerializer(data=sku_data)
 
                         if sku_serializer.is_valid(raise_exception=True):
                             sku_serializer.save()
+                else:
+                    product.has_variants = False
+                product.save()
 
                 return product
         except Exception as e:

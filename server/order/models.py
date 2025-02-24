@@ -25,6 +25,45 @@ class Cart(models.Model):
         return f"Cart {self.id} - {'User: ' + str(self.user)}"
 
 
+# class CartItem(models.Model):
+#     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+#     sku = models.ForeignKey(SKU, on_delete=models.CASCADE, null=True, blank=True)
+#     quantity = models.PositiveIntegerField(default=1)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#
+#     class Meta:
+#         unique_together = [['cart', 'product', 'sku']]
+#
+#     @property
+#     def unit_price(self):
+#         if self.sku:
+#             return self.sku.discount_price or self.sku.price or self.product.base_price
+#         return self.product.discount_price or self.product.base_price
+#
+#     @property
+#     def subtotal(self):
+#         return self.unit_price * self.quantity
+#
+#     def clean(self):
+#         if self.product.has_variants and not self.sku:
+#             raise ValidationError("Select a variant")
+#         available_stock = self.sku.stock_quantity if self.sku else self.product.stock_quantity
+#         if self.quantity > available_stock:
+#             raise ValidationError(f"Not enough stock. Available: {available_stock}")
+#
+#     def save(self, *args, **kwargs):
+#         self.clean()
+#         super().save(*args, **kwargs)
+#
+#     def __str__(self):
+#         if self.sku:
+#             return f"{self.product.name} - {self.sku.sku_code} (x{self.quantity})"
+#         return f"{self.product.name} (x{self.quantity})"
+
+
+
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -38,29 +77,33 @@ class CartItem(models.Model):
 
     @property
     def unit_price(self):
+        """
+        Calculate the unit price based on SKU or product.
+        """
         if self.sku:
             return self.sku.discount_price or self.sku.price or self.product.base_price
         return self.product.discount_price or self.product.base_price
 
     @property
     def subtotal(self):
+        """
+        Calculate the subtotal for the cart item.
+        """
         return self.unit_price * self.quantity
 
     def clean(self):
+        """
+        Custom validation for the CartItem model.
+        """
+        # Ensure SKU is provided if the product has variants
         if self.product.has_variants and not self.sku:
-            raise ValidationError("Select a variant")
+            raise ValidationError("SKU is required for products with variants.")
+
+        # Validate stock availability
         available_stock = self.sku.stock_quantity if self.sku else self.product.stock_quantity
         if self.quantity > available_stock:
             raise ValidationError(f"Not enough stock. Available: {available_stock}")
 
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        if self.sku:
-            return f"{self.product.name} - {self.sku.sku_code} (x{self.quantity})"
-        return f"{self.product.name} (x{self.quantity})"
 
 
 class Order(models.Model):

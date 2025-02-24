@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Cart, CartItem, Order, OrderItem
 from .serializers import (
-    CartSerializer, CartItemSerializer,
-    OrderSerializer, OrderItemSerializer,
-    CartItemCreateSerializer
+    CartSerializer, CartItemCreateSerializer,
+    OrderSerializer, OrderItemSerializer, CartItemSerializer,
+
 )
 
 
@@ -34,29 +34,24 @@ class CartViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(cart)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
-    def add_item(self, request, pk=None):
-        cart = self.get_object()
-        serializer = CartItemCreateSerializer(data=request.data)
+    @action(detail=False, methods=['post'])
+    def add_item(self, request):
+        """
+        Add an item to the cart or update its quantity if it already exists.
+        """
+        cart = self.get_cart()
 
+        # Pass the cart instance to the serializer context
+        serializer = CartItemCreateSerializer(data=request.data, context={'cart': cart})
         if serializer.is_valid():
-            try:
-                cart_item = CartItem.objects.get(
-                    cart=cart,
-                    product_id=serializer.validated_data['product_id'],
-                    sku_id=serializer.validated_data.get('sku_id')
-                )
-                cart_item.quantity += serializer.validated_data['quantity']
-                cart_item.save()
-            except CartItem.DoesNotExist:
-                CartItem.objects.create(cart=cart, **serializer.validated_data)
+            serializer.save()
+            return Response({'status': 'Item added to cart'}, status=status.HTTP_200_OK)
 
-            return Response({'status': 'Item added to cart'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
-    def update_item(self, request, pk=None):
-        cart = self.get_object()
+    @action(detail=False, methods=['post'])
+    def update_item(self, request):
+        cart = self.get_cart()
         cart_item = get_object_or_404(
             CartItem,
             cart=cart,
@@ -69,9 +64,9 @@ class CartViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
-    def remove_item(self, request, pk=None):
-        cart = self.get_object()
+    @action(detail=False, methods=['post'])
+    def remove_item(self, request):
+        cart = self.get_cart()
         cart_item = get_object_or_404(
             CartItem,
             cart=cart,
@@ -80,9 +75,9 @@ class CartViewSet(viewsets.ModelViewSet):
         cart_item.delete()
         return Response({'status': 'Item removed from cart'})
 
-    @action(detail=True, methods=['post'])
-    def clear(self, request, pk=None):
-        cart = self.get_object()
+    @action(detail=False, methods=['post'])
+    def clear(self, request):
+        cart = self.get_cart()
         cart.items.all().delete()
         return Response({'status': 'Cart cleared'})
 
@@ -140,4 +135,3 @@ class OrderViewSet(viewsets.ModelViewSet):
             {'error': 'Cannot cancel order in current status'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
