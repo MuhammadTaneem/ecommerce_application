@@ -2,7 +2,7 @@ import re
 from rest_framework import serializers
 from core.config import ConfData
 from core.enum import PermissionEnum
-from core.models import Role
+from core.models import Role, AddressBook
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -153,3 +153,58 @@ class ActiveUserSerializer(BaseUserSerializer):
     def update(self, instance, validated_data):
         validated_data['is_active'] = True
         return super().update(instance, validated_data)
+
+
+class AddressBookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddressBook
+        fields = [
+            'id',
+            'name',
+            'address_type',
+            'shipping_city',
+            'shipping_area',
+            'shipping_address',
+            'is_default',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate(self, attrs):
+        """
+        Ensure only one default address per user.
+        """
+        user = self.context['request'].user
+        attrs['user'] = user
+
+        existing_default = AddressBook.objects.filter(user=user, is_default=True).exists()
+
+        if (existing_default and attrs.get('is_default') is True) or not existing_default:
+            attrs['is_default'] = True
+        return attrs
+
+    # def create(self, validated_data):
+    #     address = AddressBook.objects.create(**validated_data)
+    #     return address
+
+    # def update(self, instance, validated_data):
+    #     """
+    #     Update an existing address and handle default address logic.
+    #     """
+    #     is_default = validated_data.get('is_default', False)
+    #
+    #     # If setting as default, update other addresses
+    #     if is_default:
+    #         AddressBook.objects.filter(user=instance.user, is_default=True).exclude(id=instance.id).update(is_default=False)
+    #
+    #     # Update the instance
+    #     instance.name = validated_data.get('name', instance.name)
+    #     instance.address_type = validated_data.get('address_type', instance.address_type)
+    #     instance.shipping_city = validated_data.get('shipping_city', instance.shipping_city)
+    #     instance.shipping_area = validated_data.get('shipping_area', instance.shipping_area)
+    #     instance.shipping_address = validated_data.get('shipping_address', instance.shipping_address)
+    #     instance.is_default = is_default
+    #     instance.save()
+    #
+    #     return instance

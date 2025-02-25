@@ -21,13 +21,12 @@ class Role(models.Model):
         return self.permissions or []
 
 
-
 class Usermanager(BaseUserManager):
-    def create_user(self, email, phone,password=None, **extra_fields):
+    def create_user(self, email, phone, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
-        user = self.model(email=email, phone=phone,**extra_fields)
+        user = self.model(email=email, phone=phone, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -77,6 +76,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'.strip()
 
+    @property
+    def get_default_address(self):
+        return self.addresses.filter(is_default=True).first()
 
     def has_permission(self, permission):
         return permission in self.role.permissions
@@ -86,3 +88,32 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class AddressBook(models.Model):
+    ADDRESS_TYPE_CHOICES = (
+        ('Billing Address', 'billing_address'),
+        ('Shipping Address', 'shipping_address'),
+    )
+
+    name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='addresses')
+    address_type = models.CharField(max_length=20, choices=ADDRESS_TYPE_CHOICES, default='PENDING')
+    shipping_city = models.CharField(max_length=100)
+    shipping_area = models.CharField(max_length=100)
+    shipping_address = models.TextField()
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            AddressBook.objects.filter(user=self.user, is_default=True).update(is_default=False)
+        super(AddressBook, self).save(*args, **kwargs)
+
+    @property
+    def get_default_address(self):
+        return AddressBook.objects.filter(user=self.user, is_default=True).first()
+
+    def __str__(self):
+        return self.name

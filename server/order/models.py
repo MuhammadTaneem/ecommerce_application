@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 class Cart(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -63,7 +63,6 @@ class Cart(models.Model):
 #         return f"{self.product.name} (x{self.quantity})"
 
 
-
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -105,7 +104,6 @@ class CartItem(models.Model):
             raise ValidationError(f"Not enough stock. Available: {available_stock}")
 
 
-
 class Order(models.Model):
     STATUS_CHOICES = (
         ('PENDING', 'Pending'),
@@ -129,11 +127,9 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
 
     # Shipping Information
-    shipping_address = models.TextField()
     shipping_city = models.CharField(max_length=100)
-    shipping_state = models.CharField(max_length=100)
-    shipping_country = models.CharField(max_length=100)
-    shipping_postal_code = models.CharField(max_length=20)
+    shipping_area = models.CharField(max_length=100)
+    shipping_address = models.TextField()
 
     # Contact Information
     contact_email = models.EmailField()

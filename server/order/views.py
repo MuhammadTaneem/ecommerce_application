@@ -13,6 +13,7 @@ from .serializers import (
 
 class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -22,6 +23,11 @@ class CartViewSet(viewsets.ModelViewSet):
     def get_cart(self):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
         return cart
+
+    def create(self, request, *args, **kwargs):
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(cart)
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         """

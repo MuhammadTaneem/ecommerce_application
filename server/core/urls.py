@@ -1,8 +1,16 @@
 # auth_api/urls.py
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
 from core.views import *
 
 app_name = 'core'
+
+
+router = DefaultRouter()
+router.register(r'', AddressBookViewSet, basename='address')
+
+
 urlpatterns = [
     path('login/', user_login, name='login'),  # checked
     path('logout/', user_logout, name='logout'),  # can improve
@@ -15,4 +23,5 @@ urlpatterns = [
     path('change_password/', change_password, name='change-password'),
     path('reset_password/', send_reset_password_email, name='send_reset_password_email'),  # checked
     path('reset_password_confirm/', reset_password_confirm, name='reset_password_confirm'),  # checked
+    path('address/', include(router.urls)),
 ]
