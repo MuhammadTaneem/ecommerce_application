@@ -2,10 +2,57 @@ import time
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from products.models import Product, SKU
 
 User = get_user_model()
+
+
+class Voucher(models.Model):
+    DISCOUNT_TYPE_CHOICES = (
+        ('PERCENTAGE', 'Percentage'),
+        ('FIXED', 'Fixed Amount'),
+    )
+
+    code = models.CharField(max_length=50, unique=True)
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    max_discount_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Maximum discount amount if using percentage-based discounts."
+    )
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    usage_limit = models.PositiveIntegerField(null=True, blank=True,
+                                              help_text="Maximum number of times the voucher can be used.")
+    times_used = models.PositiveIntegerField(default=0)
+
+    def is_valid(self):
+        """
+        Check if the voucher is valid based on date and usage limits.
+        """
+        now = timezone.now()
+        if now < self.valid_from or now > self.valid_to:
+            return False
+        if self.usage_limit and self.times_used >= self.usage_limit:
+            return False
+        return True
+
+    def calculate_discount(self, subtotal):
+        """
+        Calculate the discount amount based on the subtotal.
+        """
+        if self.discount_type == 'PERCENTAGE':
+            discount = (subtotal * self.discount_value) / 100
+            if self.max_discount_amount:
+                discount = min(discount, self.max_discount_amount)
+        else:  # Fixed amount
+            discount = self.discount_value
+        return discount
+
+    def __str__(self):
+        return f"{self.code} ({self.get_discount_type_display()})"
 
 
 class Cart(models.Model):
@@ -113,16 +160,14 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
         ('REFUNDED', 'Refunded'),
     )
-
     PAYMENT_STATUS_CHOICES = (
         ('PENDING', 'Pending'),
         ('PAID', 'Paid'),
         ('FAILED', 'Failed'),
         ('REFUNDED', 'Refunded'),
     )
-
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    order_number = models.CharField(max_length=50, unique=True)
+    order_number = models.CharField(max_length=50, unique=True, auto_created=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
 
@@ -139,7 +184,15 @@ class Order(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Discount applied via voucher/coupon."
+    )
     total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+
+    # Voucher/Coupon
+    voucher = models.ForeignKey(Voucher, on_delete=models.SET_NULL, null=True, blank=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -155,8 +208,16 @@ class Order(models.Model):
             timestamp = int(time.time())
             self.order_number = f"ORD-{timestamp}-{self.user.id}"
 
+        # Apply voucher discount if applicable
+        if self.voucher and self.voucher.is_valid():
+            self.discount_amount = self.voucher.calculate_discount(self.subtotal)
+            self.voucher.times_used += 1
+            self.voucher.save()
+        else:
+            self.discount_amount = 0
+
         # Calculate total
-        self.total = self.subtotal + self.shipping_cost + self.tax
+        self.total = self.subtotal + self.shipping_cost + self.tax - self.discount_amount
 
         super().save(*args, **kwargs)
 

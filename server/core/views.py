@@ -230,3 +230,9 @@ def reset_password_confirm(request):
 class AddressBookViewSet(viewsets.ModelViewSet):
     serializer_class = AddressBookSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        address_book = AddressBook.objects.filter(user_id=user.id)
+        return address_book
+

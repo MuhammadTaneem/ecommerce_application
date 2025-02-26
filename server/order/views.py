@@ -3,10 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderItem, Voucher
 from .serializers import (
     CartSerializer, CartItemCreateSerializer,
-    OrderSerializer, OrderItemSerializer, CartItemSerializer,
+    OrderSerializer, OrderItemSerializer, CartItemSerializer, VoucherSerializer,
 
 )
 
@@ -141,3 +141,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             {'error': 'Cannot cancel order in current status'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class VoucherViewSet(viewsets.ModelViewSet):
+    serializer_class = VoucherSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        vouchers = Voucher.objects.all()
+        return vouchers
+

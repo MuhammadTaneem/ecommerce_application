@@ -2,7 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from products.models import Product
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderItem, Voucher
 
 from rest_framework import serializers
 from .models import Product, SKU, CartItem
@@ -122,15 +122,45 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+    voucher_code = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = Order
         fields = [
-            'id', 'order_number', 'user', 'status', 'payment_status',
-            'shipping_address', 'shipping_city', 'shipping_state',
-            'shipping_country', 'shipping_postal_code', 'contact_email',
-            'contact_phone', 'subtotal', 'shipping_cost', 'tax', 'total',
-            'notes', 'tracking_number', 'items', 'created_at', 'updated_at'
+            'id', 'order_number', 'status', 'payment_status', 'shipping_city', 'shipping_area',
+            'shipping_address', 'contact_email', 'contact_phone', 'subtotal', 'shipping_cost',
+            'tax', 'discount_amount', 'total', 'voucher_code', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['order_number', 'user', 'subtotal', 'total']
+        read_only_fields = ['id', 'order_number', 'discount_amount', 'total', 'created_at', 'updated_at']
+
+    def validate_voucher_code(self, value):
+        """
+        Validate the voucher code and ensure it is valid.
+        """
+        try:
+            voucher = Voucher.objects.get(code=value)
+        except Voucher.DoesNotExist:
+            raise serializers.ValidationError("Invalid voucher code.")
+
+        if not voucher.is_valid():
+            raise serializers.ValidationError("This voucher is either expired or has reached its usage limit.")
+
+        return voucher
+
+    def create(self, validated_data):
+        """
+        Create an order and apply the voucher if provided.
+        """
+        voucher_code = validated_data.pop('voucher_code', None)
+        if voucher_code:
+            voucher = self.validate_voucher_code(voucher_code)
+            validated_data['voucher'] = voucher
+
+        order = Order.objects.create(**validated_data)
+        return order
+
+class VoucherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Voucher
+        fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'usage_limit', 'times_used']
+
