@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.utils import json
@@ -56,15 +58,21 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class SKUSerializer(serializers.ModelSerializer):
     class Meta:
         model = SKU
-        fields = ['id', 'product', 'sku_code', 'price', 'stock_quantity', 'variants_dict', 'variants']
+        fields = ['id', 'product', 'sku_code', 'price','discount_price', 'stock_quantity', 'variants_dict', 'variants']
 
     def run_validation(self, data):
         variants_data = data.get('variants')
         if isinstance(variants_data, list):
             data['variants'] = [list(variant.values())[0] for variant in variants_data]
+
+        price = data.get('price')
+        if type(price) is not int or price <= 0:
+            data['price'] = 0
+
         return super().run_validation(data)
 
     def validate(self, data):
+
         variants_list = []
         variants_data = data.get('variants')
         for variant in variants_data:
@@ -73,6 +81,11 @@ class SKUSerializer(serializers.ModelSerializer):
                     'variants': f"{variant.attribute.name} is added multiple times."
                 })
             variants_list.append(variant.attribute.name)
+        data['sku_code'] = str(uuid.uuid4())
+        price = data.get('price')
+        product = data.get('product')
+        if not price:
+            data['price'] = product.base_price
         return data
 
 
@@ -94,6 +107,8 @@ class ProductSerializer(serializers.ModelSerializer):
             errors["stock_quantity"] = "This field is required, please enter the available stock."
         if not data.get('category'):
             errors["category"] = "This field is required, please enter the available category."
+
+
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -127,6 +142,7 @@ class ProductSerializer(serializers.ModelSerializer):
                         if sku_serializer.is_valid(raise_exception=True):
                             sku_serializer.save()
                 else:
+                    transaction.rollback()
                     product.has_variants = False
                 product.save()
 

@@ -100,6 +100,10 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
 
+    @property
+    def get_price(self):
+        return self.discount_price if self.discount_price else self.base_price
+
     def is_in_stock(self):
         if self.has_variants:
             return self.skus.filter(stock_quantity__gt=0).exists()
@@ -109,6 +113,7 @@ class Product(models.Model):
         if self.has_variants:
             return sum(sku.stock_quantity for sku in self.skus.all())
         return self.stock_quantity
+
 
     def low_stock_alert(self):
         if self.has_variants:
@@ -151,14 +156,17 @@ class ProductImage(models.Model):
 class SKU(models.Model):
     product = models.ForeignKey('Product', related_name='skus', on_delete=models.CASCADE)
     sku_code = models.CharField(max_length=255, unique=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=None, null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     variants = models.ManyToManyField(VariantValue)
 
     def __str__(self):
         return self.sku_code
 
+    @property
+    def get_price(self):
+        return self.discount_price if self.discount_price else self.price
     @property
     def variants_dict(self):
         variants_dict = {}

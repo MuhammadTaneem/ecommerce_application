@@ -95,7 +95,7 @@ export default function AdminAddProductComponent() {
         skus: z.array(
             z.object({
                 sku_code: z.string().optional(),
-                base_price: z.number().positive("Price must be positive"),
+                price: z.number().positive("Price must be positive"),
                 discount_price: z.union([
                     z.number(),
                     z.string().transform((val) => {
@@ -170,7 +170,7 @@ export default function AdminAddProductComponent() {
 
 
 
-            const response = await axiosInstance.post('products/products/', formData, {
+            const response = await axiosInstance.post('products/', formData, {
                 headers:{
                     "Content-Type": "multipart/form-data",
                 }
@@ -204,7 +204,7 @@ export default function AdminAddProductComponent() {
         if (hasVariants && sku_len ==0) {
             addSku({
                 sku_code: "",
-                base_price: 0,
+                price: 0,
                 discount_price: null,
                 stock_quantity: 0,
                 variants: [],
@@ -556,14 +556,14 @@ export default function AdminAddProductComponent() {
                             <div className="space-y-1">
                                 <label className="input-label">Price </label>
                                 <input
-                                    {...register(`skus.${index}.base_price`, { valueAsNumber: true })}
+                                    {...register(`skus.${index}.price`, { valueAsNumber: true })}
                                     type="number"
                                     placeholder=" Price"
                                     className="input-field"
                                 />
-                                {errors.skus?.[index]?.base_price && (
+                                {errors.skus?.[index]?.price && (
                                     <div className="error-message ">
-                                        {errors.skus?.[index]?.base_price.message}
+                                        {errors.skus?.[index]?.price.message}
                                     </div>
                                 )}
                             </div>
@@ -687,7 +687,7 @@ export default function AdminAddProductComponent() {
                     ))}
                     <button type="button" onClick={() => addSku({
                         sku_code: "",
-                        base_price: 0,
+                        price: 0,
                         discount_price: null,
                         stock_quantity: 0,
                         variants: [],

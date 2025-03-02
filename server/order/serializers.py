@@ -16,12 +16,6 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = ['id', 'product', 'sku', 'quantity', 'unit_price', 'subtotal']
 
-
-class CartItemCreateSerializer(serializers.Serializer):
-    product = serializers.IntegerField()
-    sku = serializers.IntegerField(required=False, allow_null=True)
-    quantity = serializers.IntegerField(min_value=1)
-
     def validate(self, attrs):
         """
         Custom validation to ensure sku is provided if the product has variants.
@@ -29,24 +23,14 @@ class CartItemCreateSerializer(serializers.Serializer):
         product = attrs.get('product')
         sku = attrs.get('sku')
 
-        try:
-            product = Product.objects.get(id=product)
-            attrs['product'] = product
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({"product": "Product does not exist."})
-
-        # Check if the product has variants and sku is required
-        # import pdb;pdb.set_trace()
         if product.has_variants and not sku:
             raise serializers.ValidationError({"sku": "SKU ID is required for products with variants."})
 
+        # import pdb;
+        # pdb.set_trace()
         # Validate SKU exists if provided
-        if sku:
-            try:
-                sku = SKU.objects.get(id=sku, product=product)
-                attrs['sku'] = sku
-            except SKU.DoesNotExist:
-                raise serializers.ValidationError({"sku": "Invalid SKU for the selected product."})
+        if sku.product != product:
+            raise serializers.ValidationError({"sku": "Invalid SKU for the selected product."})
 
         return attrs
 
@@ -74,6 +58,65 @@ class CartItemCreateSerializer(serializers.Serializer):
             cart_item.save()
 
         return cart_item
+
+
+# class CartItemCreateSerializer(serializers.Serializer):
+#     product = serializers.IntegerField()
+#     sku = serializers.IntegerField(required=False, allow_null=True)
+#     quantity = serializers.IntegerField(min_value=1)
+#
+#     def validate(self, attrs):
+#         """
+#         Custom validation to ensure sku is provided if the product has variants.
+#         """
+#         product = attrs.get('product')
+#         sku = attrs.get('sku')
+#
+#         try:
+#             product = Product.objects.get(id=product)
+#             attrs['product'] = product
+#         except Product.DoesNotExist:
+#             raise serializers.ValidationError({"product": "Product does not exist."})
+#
+#         # Check if the product has variants and sku is required
+#         # import pdb;pdb.set_trace()
+#         if product.has_variants and not sku:
+#             raise serializers.ValidationError({"sku": "SKU ID is required for products with variants."})
+#
+#         # Validate SKU exists if provided
+#         if sku:
+#             try:
+#                 sku = SKU.objects.get(id=sku, product=product)
+#                 attrs['sku'] = sku
+#             except SKU.DoesNotExist:
+#                 raise serializers.ValidationError({"sku": "Invalid SKU for the selected product."})
+#
+#         return attrs
+#
+#     def create(self, validated_data):
+#         """
+#         Create a new CartItem instance.
+#         """
+#         product = validated_data['product']
+#         sku = validated_data.get('sku')
+#         quantity = validated_data['quantity']
+#
+#         # Get or create the cart item
+#
+#         # import pdb;
+#         # pdb.set_trace()
+#         cart_item, created = CartItem.objects.get_or_create(
+#             cart=self.context['cart'],
+#             product=product,
+#             sku=sku,
+#             defaults={'quantity': quantity}
+#         )
+#
+#         if not created:
+#             cart_item.quantity = quantity
+#             cart_item.save()
+#
+#         return cart_item
 
 
 # class CartItemCreateSerializer(serializers.Serializer):
@@ -159,8 +202,8 @@ class OrderSerializer(serializers.ModelSerializer):
         order = Order.objects.create(**validated_data)
         return order
 
+
 class VoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voucher
         fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'usage_limit', 'times_used']
-

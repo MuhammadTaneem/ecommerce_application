@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Cart, CartItem, Order, OrderItem, Voucher
 from .serializers import (
-    CartSerializer, CartItemCreateSerializer,
+    CartSerializer,
     OrderSerializer, OrderItemSerializer, CartItemSerializer, VoucherSerializer,
 
 )
@@ -48,7 +48,7 @@ class CartViewSet(viewsets.ModelViewSet):
         cart = self.get_cart()
 
         # Pass the cart instance to the serializer context
-        serializer = CartItemCreateSerializer(data=request.data, context={'cart': cart})
+        serializer = CartItemSerializer(data=request.data, context={'cart': cart})
         if serializer.is_valid():
             serializer.save()
             return Response({'status': 'Item added to cart'}, status=status.HTTP_200_OK)
