@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -95,40 +96,82 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
 
-    @action(detail=False, methods=['post'])
-    def create_from_cart(self, request):
-        cart = get_object_or_404(Cart, user=request.user)
+    def create(self, request, *args, **kwargs):
+        """
+        Create an order from the user's cart within a database transaction.
+        """
+        # Start a database transaction
+        with transaction.atomic():
+            # Get the user's cart
+            cart = get_object_or_404(Cart, user=request.user)
 
-        if not cart.items.exists():
-            return Response(
-                {'error': 'Cannot create order from empty cart'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        serializer = OrderSerializer(data=request.data)
-        if serializer.is_valid():
-            # Create order
-            order = serializer.save(
-                user=request.user,
-                subtotal=cart.total_amount
-            )
-
-            # Create order items from cart items
-            for cart_item in cart.items.all():
-                OrderItem.objects.create(
-                    order=order,
-                    product=cart_item.product,
-                    sku=cart_item.sku,
-                    quantity=cart_item.quantity,
-                    unit_price=cart_item.unit_price,
-                    subtotal=cart_item.subtotal
+            # Ensure the cart is not empty
+            if not cart.items.exists():
+                return Response(
+                    {'error': 'Cannot create order from an empty cart'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Clear the cart
-            cart.items.all().delete()
+            # Validate and create the order using the serializer
+            # import pdb;pdb.set_trace()
+            serializer = self.get_serializer(data=request.data, context={'user': request.user})
+            if serializer.is_valid():
+                # Save the order with subtotal from the cart
+                order = serializer.save(
+                    user=request.user,
+                    subtotal=cart.total_amount
+                )
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                # Create order items from cart items
+                for cart_item in cart.items.all():
+                    OrderItem.objects.create(
+                        order=order,
+                        product=cart_item.product,
+                        sku=cart_item.sku,
+                        quantity=cart_item.quantity,
+                        unit_price=cart_item.unit_price,
+                        subtotal=cart_item.subtotal
+                    )
+
+                # Clear the cart after creating the order
+                cart.items.all().delete()
+
+                # Return the created order
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            # If the serializer is invalid, return validation errors
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Update an existing order. Supports both full and partial updates.
+        """
+        # Start a database transaction
+        with transaction.atomic():
+            # Get the order instance
+            instance = self.get_object()
+
+            # Check if the order can be updated (e.g., not completed or canceled)
+            if instance.status in ['completed', 'canceled']:
+                return Response(
+                    {'error': 'This order cannot be updated because it is already completed or canceled.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+
+            # Validate the updated data
+            serializer = self.get_serializer(instance, data=request.data, partial=True, context={'user': request.user})
+            if serializer.is_valid():
+                # Save the updated order
+                order = serializer.save()
+
+                # Optionally handle updates to order items here
+                # For example, you could allow adding/removing/modifying order items
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            # Return validation errors if the serializer is invalid
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def cancel_order(self, request, pk=None):
@@ -150,4 +193,14 @@ class VoucherViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         vouchers = Voucher.objects.all()
         return vouchers
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

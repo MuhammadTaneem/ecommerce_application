@@ -15,7 +15,7 @@ class Voucher(models.Model):
         ('FIXED', 'Fixed Amount'),
     )
 
-    code = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=50, unique=True, db_index=True)
     discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES)
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     max_discount_amount = models.DecimalField(

@@ -114,7 +114,6 @@ class Product(models.Model):
             return sum(sku.stock_quantity for sku in self.skus.all())
         return self.stock_quantity
 
-
     def low_stock_alert(self):
         if self.has_variants:
             for sku in self.skus.all():
@@ -167,6 +166,7 @@ class SKU(models.Model):
     @property
     def get_price(self):
         return self.discount_price if self.discount_price else self.price
+
     @property
     def variants_dict(self):
         variants_dict = {}

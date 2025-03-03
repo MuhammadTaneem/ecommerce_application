@@ -1,6 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
+from core.models import AddressBook
 from products.models import Product
 from .models import Cart, CartItem, Order, OrderItem, Voucher
 
@@ -29,7 +30,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         # import pdb;
         # pdb.set_trace()
         # Validate SKU exists if provided
-        if sku.product != product:
+        if sku and sku.product != product:
             raise serializers.ValidationError({"sku": "Invalid SKU for the selected product."})
 
         return attrs
@@ -172,33 +173,55 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'order_number', 'status', 'payment_status', 'shipping_city', 'shipping_area',
             'shipping_address', 'contact_email', 'contact_phone', 'subtotal', 'shipping_cost',
-            'tax', 'discount_amount', 'total', 'voucher_code', 'created_at', 'updated_at'
+            'tax', 'discount_amount', 'total', 'voucher', 'voucher_code', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'order_number', 'discount_amount', 'total', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'shipping_city': {'required': False},  # Make shipping_city optional
+            'shipping_area': {'required': False},  # Make shipping_area optional
+            'shipping_address': {'required': False},  # Make shipping_address optional
+            'contact_email': {'required': False},  # Make contact_email optional
+            'contact_phone': {'required': False},  # Make contact_phone optional
+            'subtotal': {'required': False},  # Make subtotal optional
+        }
 
-    def validate_voucher_code(self, value):
-        """
-        Validate the voucher code and ensure it is valid.
-        """
+    def validate(self, attrs):
+        # import pdb;pdb.set_trace()
+        address_id = attrs.get('address_id', None)
+        user = self.context['user']
+        if address_id:
+            try:
+                address = AddressBook.objects.get(id=address_id, user=user)
+            except AddressBook.DoesNotExist:
+                raise serializers.ValidationError("Address does not exist.")
+        else:
+            address = AddressBook.objects.filter(user=user, is_default=True).first()
+            if not address:
+                raise serializers.ValidationError("No default address found for the user.")
+
+        attrs['shipping_city'] = address.shipping_city
+        attrs['shipping_area'] = address.shipping_area
+        attrs['shipping_address'] = address.shipping_address
+        if user.phone:
+            attrs['contact_phone'] = user.phone_number
+        if user.email:
+            attrs['contact_email'] = user.email
+
+        voucher_code = attrs.pop('voucher_code', None)
+        if voucher_code:
+            attrs['voucher'] = self.voucher_code_to_id(voucher_code)
+        return attrs
+
+    def voucher_code_to_id(self, value):
         try:
-            voucher = Voucher.objects.get(code=value)
+            voucher = Voucher.objects.only('id').get(code=value)
         except Voucher.DoesNotExist:
-            raise serializers.ValidationError("Invalid voucher code.")
-
-        if not voucher.is_valid():
-            raise serializers.ValidationError("This voucher is either expired or has reached its usage limit.")
-
+            raise serializers.ValidationError({"voucher_code": "Invalid voucher code."})
         return voucher
 
-    def create(self, validated_data):
-        """
-        Create an order and apply the voucher if provided.
-        """
-        voucher_code = validated_data.pop('voucher_code', None)
-        if voucher_code:
-            voucher = self.validate_voucher_code(voucher_code)
-            validated_data['voucher'] = voucher
 
+
+    def create(self, validated_data):
         order = Order.objects.create(**validated_data)
         return order
 
@@ -206,4 +229,5 @@ class OrderSerializer(serializers.ModelSerializer):
 class VoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voucher
-        fields = ['code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'usage_limit', 'times_used']
+        fields = ['id', 'code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'usage_limit',
+                  'times_used']

@@ -163,7 +163,7 @@ CORS_ORIGIN_WHITELIST = (
 TAUTH = {
     'login_field': 'email',
     'algorithm': 'HS256',
-    'access_token_life_time': timedelta(minutes=120),
+    'access_token_life_time': timedelta(minutes=1200),
     'active_token_life_time': timedelta(minutes=10),
     'reset_token_life_time': timedelta(minutes=10),
     'is_active_required': False,

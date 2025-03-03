@@ -139,11 +139,13 @@ class ProductSerializer(serializers.ModelSerializer):
                         sku_data['product'] = product.id
                         sku_serializer = SKUSerializer(data=sku_data)
 
-                        if sku_serializer.is_valid(raise_exception=True):
+                        if sku_serializer.is_valid():
                             sku_serializer.save()
+                        else:
+                            transaction.rollback()
                 else:
-                    transaction.rollback()
                     product.has_variants = False
+                    # transaction.rollback()
                 product.save()
 
                 return product
