@@ -58,7 +58,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class SKUSerializer(serializers.ModelSerializer):
     class Meta:
         model = SKU
-        fields = ['id', 'product', 'sku_code', 'price','discount_price', 'stock_quantity', 'variants_dict', 'variants']
+        fields = ['id', 'product', 'sku_code', 'price', 'discount_price', 'stock_quantity', 'variants_dict', 'variants']
 
     def run_validation(self, data):
         variants_data = data.get('variants')
@@ -98,7 +98,8 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'short_description',
             'discount_price', 'category', 'key_features', 'description', 'additional_info', 'thumbnail',
-            'brand', 'tags', 'created_at', 'updated_at', 'is_active', 'is_deleted', 'images', 'skus'
+            'brand', 'tags', 'created_at', 'updated_at', 'is_active', 'is_deleted', 'images', 'skus', 'average_rating',
+            'rating_count'
         ]
 
     def validate(self, data):
@@ -107,8 +108,6 @@ class ProductSerializer(serializers.ModelSerializer):
             errors["stock_quantity"] = "This field is required, please enter the available stock."
         if not data.get('category'):
             errors["category"] = "This field is required, please enter the available category."
-
-
 
         if errors:
             raise serializers.ValidationError(errors)

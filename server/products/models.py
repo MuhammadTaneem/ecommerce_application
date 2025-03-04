@@ -104,6 +104,17 @@ class Product(models.Model):
     def get_price(self):
         return self.discount_price if self.discount_price else self.base_price
 
+    @property
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return reviews.aggregate(models.Avg('rating'))['rating__avg']
+        return 0
+
+    @property
+    def rating_count(self):
+        return self.reviews.count()
+
     def is_in_stock(self):
         if self.has_variants:
             return self.skus.filter(stock_quantity__gt=0).exists()

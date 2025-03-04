@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'products',
     'core',
     'order',
+    'products.review'
 
 ]
 
