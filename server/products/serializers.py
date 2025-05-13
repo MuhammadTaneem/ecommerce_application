@@ -40,19 +40,20 @@ class VariantValueSerializer(serializers.ModelSerializer):
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ['id', 'name', 'description', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'description']
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'slug', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'slug']
+
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'created_at', 'updated_at']
+        fields = ['id', 'image']
 
 
 class SKUSerializer(serializers.ModelSerializer):
@@ -140,8 +141,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
                         if sku_serializer.is_valid():
                             sku_serializer.save()
+                        # else:
+                        #     import pdb;pdb.set_trace()
+                        #     transaction.rollback()
                         else:
-                            transaction.rollback()
+                            # Raise ValidationError instead of manual rollback
+                            raise serializers.ValidationError({
+                                'sku_errors': sku_serializer.errors
+                            })
                 else:
                     product.has_variants = False
                     # transaction.rollback()

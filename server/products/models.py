@@ -46,7 +46,12 @@ class Category(models.Model):
             slug_prefix = self.parent.slug + '_'
         # import pdb; pdb.set_trace()
         self.slug = slugify(slug_prefix + self.label)
-        if Category.objects.filter(slug=self.slug).exists():
+        slug_exists_qs = Category.objects.filter(slug=self.slug)
+        if self.id:
+            slug_exists_qs = slug_exists_qs.exclude(id=self.id)
+
+        if slug_exists_qs.exists():
+            # if Category.objects.filter(slug=self.slug).exists():
             raise ValidationError(f"A Category '{self.slug}' already exists.")
 
         super(Category, self).save(*args, **kwargs)

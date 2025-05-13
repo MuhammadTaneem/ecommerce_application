@@ -1,13 +1,13 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
-from .models import Product, ProductImage, SKU, Category, Brand, Tag
+from .models import Product, ProductImage, SKU, Category, Brand, Tag, VariantAttribute
 from .review.models import Review
 from .review.serializers import ReviewSerializer
 from .serializers import (
     ProductSerializer, ProductImageSerializer, SKUSerializer, CategorySerializer,
-    BrandSerializer, TagSerializer
+    BrandSerializer, TagSerializer, VariantSerializer, FlatCategorySerializer
 )
 
 
@@ -54,7 +54,7 @@ class SKUViewSet(viewsets.ModelViewSet):
 
 # Category ViewSet
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(parent=None).all()
     serializer_class = CategorySerializer
 
 
@@ -68,3 +68,34 @@ class BrandViewSet(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+
+
+# Variant ViewSet
+class VariantViewSet(viewsets.ModelViewSet):
+    queryset = VariantAttribute.objects.all()
+    serializer_class = VariantSerializer
+
+
+
+@api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+def product_context(request):
+    if request.method == 'GET':
+        categories = Category.objects.all()
+        category_serializer = FlatCategorySerializer(categories, many=True)
+        variants = VariantAttribute.objects.all()
+        variant_serializer = VariantSerializer(variants, many=True)
+
+        brands = Brand.objects.all()
+        brand_serializer = BrandSerializer(brands, many=True)
+        tags = Tag.objects.all()
+        tag_serializer = TagSerializer(tags, many=True)
+
+        return Response(
+            {'categories': category_serializer.data,
+             'variants': variant_serializer.data,
+             'brands': brand_serializer.data,
+             'tags': tag_serializer.data,
+             },
+            status=status.HTTP_200_OK)

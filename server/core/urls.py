@@ -8,7 +8,7 @@ app_name = 'core'
 
 
 router = DefaultRouter()
-router.register(r'', AddressBookViewSet, basename='address')
+# router.register(r'', AddressBookViewSet, basename='address')
 
 
 urlpatterns = [
