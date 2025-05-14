@@ -191,7 +191,8 @@ class SKU(models.Model):
         return variants_dict
 
     def save(self, *args, **kwargs):
-        self.sku_code = str(uuid.uuid4())
+        if not self.sku_code:
+            self.sku_code = str(uuid.uuid4())
         super().save(*args, **kwargs)
     #
     # def generate_sku_code(self):

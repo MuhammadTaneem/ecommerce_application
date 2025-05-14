@@ -43,7 +43,7 @@ export default function AdminAddProductComponent() {
     const get_context = async () => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get(`admin/products/context/`,
+            const response = await axiosInstance.get(`context/`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,

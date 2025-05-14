@@ -1,9 +1,4 @@
-import uuid
-
-from django.db import transaction
 from rest_framework import serializers
-from rest_framework.utils import json
-
 from .models import Product, ProductImage, SKU, VariantValue, VariantAttribute, Category, Brand, Tag
 
 
@@ -82,17 +77,97 @@ class SKUSerializer(serializers.ModelSerializer):
                     'variants': f"{variant.attribute.name} is added multiple times."
                 })
             variants_list.append(variant.attribute.name)
-        data['sku_code'] = str(uuid.uuid4())
-        price = data.get('price')
+        
+        # Check if the variant combination already exists for this product
         product = data.get('product')
-        if not price:
+        existing_skus = SKU.objects.filter(product=product)
+        
+        if self.instance:
+            existing_skus = existing_skus.exclude(id=self.instance.id)
+        
+        for sku in existing_skus:
+            if set([v.id for v in variants_data]) == set([v.id for v in sku.variants.all()]):
+                raise serializers.ValidationError({
+                    'variants': "This variant combination already exists for this product."
+                })
+
+
+        data['price'] = data.get('price', 0)
+        product = data.get('product')
+        if not data['price']:
             data['price'] = product.base_price
         return data
 
 
+# class ProductSerializer(serializers.ModelSerializer):
+#     images = ProductImageSerializer(many=True, read_only=True)
+#     skus = SKUSerializer(many=True, read_only=True)
+#
+#     class Meta:
+#         model = Product
+#         fields = [
+#             'id', 'name', 'base_price', 'stock_quantity', 'has_variants', 'short_description',
+#             'discount_price', 'category', 'key_features', 'description', 'additional_info', 'thumbnail',
+#             'brand', 'tags', 'created_at', 'updated_at', 'is_active', 'is_deleted', 'images', 'skus', 'average_rating',
+#             'rating_count'
+#         ]
+#
+#     def validate(self, data):
+#         errors = {}
+#         if data.get('stock_quantity') is None or data['stock_quantity'] < 0:
+#             errors["stock_quantity"] = "This field is required, please enter the available stock."
+#         if not data.get('category'):
+#             errors["category"] = "This field is required, please enter the available category."
+#
+#         if errors:
+#             raise serializers.ValidationError(errors)
+#         return data
+#
+#     def create(self, validated_data):
+#         try:
+#             with transaction.atomic():
+#                 skus_data = self.initial_data.get('skus', [])
+#                 tags_data = validated_data.pop('tags', [])  # Extract tags from validated data
+#                 product = Product.objects.create(**validated_data)
+#
+#                 if skus_data and type(skus_data) is str:
+#                     skus_data = json.loads(skus_data)
+#                 if tags_data:
+#                     product.tags.set(tags_data)
+#
+#                 # Step 2: Handle images
+#                 images_data = self.context.get('request').FILES.getlist('images')
+#                 for image_data in images_data:
+#                     ProductImage.objects.create(product=product, image=image_data)
+#
+#                 # Step 3: Validate and create SKUs separately
+#                 # import pdb;pdb.set_trace()
+#
+#                 if product.has_variants and skus_data:
+#                     for sku_data in skus_data:
+#                         sku_data['product'] = product.id
+#                         sku_serializer = SKUSerializer(data=sku_data)
+#
+#                         if sku_serializer.is_valid():
+#                             sku_serializer.save()
+#                         else:
+#                             raise serializers.ValidationError({
+#                                 'sku_errors': sku_serializer.errors
+#                             })
+#                 else:
+#                     product.has_variants = False
+#                 product.save()
+#
+#                 return product
+#         except Exception as e:
+#             raise serializers.ValidationError({
+#                 "error": f"An error occurred while creating the product: {str(e)}"
+#             })
+
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     skus = SKUSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -113,52 +188,6 @@ class ProductSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return data
-
-    def create(self, validated_data):
-        try:
-            with transaction.atomic():
-                skus_data = self.initial_data.get('skus', [])
-                tags_data = validated_data.pop('tags', [])  # Extract tags from validated data
-                product = Product.objects.create(**validated_data)
-
-                if skus_data and type(skus_data) is str:
-                    skus_data = json.loads(skus_data)
-                if tags_data:
-                    product.tags.set(tags_data)
-
-                # Step 2: Handle images
-                images_data = self.context.get('request').FILES.getlist('images')
-                for image_data in images_data:
-                    ProductImage.objects.create(product=product, image=image_data)
-
-                # Step 3: Validate and create SKUs separately
-                # import pdb;pdb.set_trace()
-
-                if product.has_variants and skus_data:
-                    for sku_data in skus_data:
-                        sku_data['product'] = product.id
-                        sku_serializer = SKUSerializer(data=sku_data)
-
-                        if sku_serializer.is_valid():
-                            sku_serializer.save()
-                        # else:
-                        #     import pdb;pdb.set_trace()
-                        #     transaction.rollback()
-                        else:
-                            # Raise ValidationError instead of manual rollback
-                            raise serializers.ValidationError({
-                                'sku_errors': sku_serializer.errors
-                            })
-                else:
-                    product.has_variants = False
-                    # transaction.rollback()
-                product.save()
-
-                return product
-        except Exception as e:
-            raise serializers.ValidationError({
-                "error": f"An error occurred while creating the product: {str(e)}"
-            })
 
 
 class VariantSerializer(serializers.ModelSerializer):
