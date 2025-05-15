@@ -15,7 +15,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    @action(detail=True, methods=['get', 'post'])
+    @action(detail=True, methods=['get', 'post'], url_name='images')
     def images(self, request, pk=None):
         product = self.get_object()
 
@@ -52,13 +52,37 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'data': serializer.data
             }, status=status.HTTP_201_CREATED)
 
-        elif request.method == 'DELETE':
-            image_id = request.data.get('id')
-            if not image_id:
-                return Response({'message':'Product ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-            ProductImage.objects.filter(id=image_id, product=product).delete()
-            return Response({'message':'Product Image delete successfully'},status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['get', 'put', 'delete'], url_path='image/(?P<image_id>[^/.]+)', url_name='image_detail')
+    def image_detail(self, request, pk=None,image_id=None):
+        product = self.get_object()
+        try:
+            image = ProductImage.objects.get(id=image_id, product=product)
+        except ProductImage.DoesNotExist:
+            return Response({'message': 'Image not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            serializer = ProductImageSerializer(image)
+            return Response({
+                'message': 'Product image retrieved successfully',
+                'data': serializer.data
+            })
+
+        elif request.method == 'PUT':
+            image.image = request.FILES.get('image', image.image)
+            image.save()
+            serializer = ProductImageSerializer(image)
+            return Response({
+                'message': 'Product image updated successfully',
+                'data': serializer.data
+            })
+
+        elif request.method == 'DELETE':
+            image.delete()
+            return Response({'message': 'Product image deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'post', 'put'])
     def skus(self, request, pk=None):
@@ -117,14 +141,58 @@ class ProductViewSet(viewsets.ModelViewSet):
                     'errors': serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
             except SKU.DoesNotExist:
-
                 return Response({
-
                     'status': 'error',
-
                     'message': f'SKU with id {sku_id} not found'
 
                 }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get', 'put', 'delete'], url_path='skus/(?P<sku_id>[^/.]+)', url_name='sku_detail')
+    def sku_detail(self, request, pk=None, sku_id=None):
+        product = self.get_object()
+        try:
+            sku = SKU.objects.get(id=sku_id, product=product)
+        except SKU.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': f'SKU with id {sku_id} not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            serializer = SKUSerializer(sku)
+            return Response({
+                'message': 'SKU retrieved successfully',
+                'data': serializer.data
+            })
+
+        elif request.method == 'PUT':
+            data = request.data.copy()
+            data['product'] = pk
+            serializer = SKUSerializer(
+                instance=sku,
+                data=data,
+                partial=True,
+                context={'request': request}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message': 'SKU updated successfully',
+                    'data': serializer.data
+                })
+            return Response({
+                'status': 'error',
+                'message': 'Invalid SKU data',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.method == 'DELETE':
+            sku.delete()
+            return Response({
+                'message': 'SKU deleted successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'post', 'delete'])
     def tags(self, request, pk=None):
@@ -173,10 +241,36 @@ class ProductViewSet(viewsets.ModelViewSet):
                 return Response({
                     'message': f'All {count} tags removed successfully'
                 }, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get', 'put', 'delete'], url_path='tags/(?P<tag_id>[^/.]+)', url_name='tag_detail')
+    def tag_detail(self, request, pk=None, tag_id=None):
+        product = self.get_object()
+        try:
+            tag = product.tags.get(id=tag_id)
+        except Tag.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': f'Tag with id {tag_id} not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            serializer = TagSerializer(tag)
+            return Response({
+                'message': 'Tag retrieved successfully',
+                'data': serializer.data
+            })
+
+        elif request.method == 'DELETE':
+            product.tags.remove(tag)
+            return Response({
+                'message': 'Tag removed successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'post'])
     def reviews(self, request, pk=None):
-        product = self.get_object()  # Get the product instance based on `pk`
+        product = self.get_object()
 
         if request.method == 'GET':
             # Retrieve all reviews for the product
@@ -191,6 +285,65 @@ class ProductViewSet(viewsets.ModelViewSet):
                 serializer.save(user=request.user, product=product)  # Associate review with user and product
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get', 'put', 'delete'], url_path='reviews/(?P<review_id>[^/.]+)',
+            url_name='review_detail')
+    def review_detail(self, request, pk=None, review_id=None):
+        product = self.get_object()
+        try:
+            review = Review.objects.get(id=review_id, product=product)
+        except Review.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': f'Review with id {review_id} not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            serializer = ReviewSerializer(review)
+            return Response({
+                'message': 'Review retrieved successfully',
+                'data': serializer.data
+            })
+
+        elif request.method == 'PUT':
+            if review.user != request.user:
+                return Response({
+                    'status': 'error',
+                    'message': 'You can only update your own reviews'
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            serializer = ReviewSerializer(
+                instance=review,
+                data=request.data,
+                partial=True,
+                context={'request': request}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message': 'Review updated successfully',
+                    'data': serializer.data
+                })
+            return Response({
+                'status': 'error',
+                'message': 'Invalid review data',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.method == 'DELETE':
+            if review.user != request.user:
+                return Response({
+                    'status': 'error',
+                    'message': 'You can only delete your own reviews'
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            review.delete()
+            return Response({
+                'message': 'Review deleted successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Product Image ViewSet

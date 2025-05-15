@@ -105,6 +105,7 @@ services:
     build:
       context: ./user_interface
       dockerfile: Dockerfile
+    container_name: frontend_container
     volumes:
       - ./user_interface:/app
       - /app/node_modules
