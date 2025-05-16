@@ -34,59 +34,61 @@ class CartViewSet(viewsets.ModelViewSet):
         """
         Override the default retrieve method to ensure a cart is always returned.
         """
-        cart = self.get_cart()
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
         if not cart:
             return Response({"detail": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.get_serializer(cart)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
-    def add_item(self, request):
-        """
-        Add an item to the cart or update its quantity if it already exists.
-        """
+    @action(detail=False, methods=['post','get','delete'])
+    def item(self, request):
         cart = self.get_cart()
 
-        # Pass the cart instance to the serializer context
-        serializer = CartItemSerializer(data=request.data, context={'cart': cart})
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'status': 'Item added to cart'}, status=status.HTTP_200_OK)
+        if request.method == 'POST':
+            serializer = CartItemSerializer(data=request.data, context={'cart': cart})
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'detail': 'Item added to cart'}, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['post'])
-    def update_item(self, request):
-        cart = self.get_cart()
-        cart_item = get_object_or_404(
-            CartItem,
-            cart=cart,
-            id=request.data.get('cart_item_id')
-        )
-
-        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif request.method == 'GET':
+            cart_items = cart.items.all()
+            serializer = CartItemSerializer(cart_items, many=True)
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif request.method == 'DELETE':
+            cart.items.all().delete()
+            return Response({'detail': 'All items removed from cart'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(detail=False, methods=['post'])
-    def remove_item(self, request):
+    @action(detail=True, methods=['put','delete'], url_path='item/(?P<item_id>[^/.]+)')
+    def item_detail(self, request, pk=None):
         cart = self.get_cart()
-        cart_item = get_object_or_404(
-            CartItem,
-            cart=cart,
-            id=request.data.get('cart_item_id')
-        )
-        cart_item.delete()
-        return Response({'status': 'Item removed from cart'})
+        if request.method == 'PUT':
+            cart_item = get_object_or_404(
+                CartItem,
+                cart=cart,
+                id=item_id
+            )
+            serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'])
-    def clear(self, request):
-        cart = self.get_cart()
-        cart.items.all().delete()
-        return Response({'status': 'Cart cleared'})
+        elif request.method == 'DELETE':
+    
+            cart_item = get_object_or_404(
+                CartItem,
+                cart=cart,
+                id=item_id
+            )
+            cart_item.delete()
+            return Response({'status': 'Item removed from cart'})
+
+        return Response({'detail': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
 
 
 class OrderViewSet(viewsets.ModelViewSet):

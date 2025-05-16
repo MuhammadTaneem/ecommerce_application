@@ -136,13 +136,13 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
 
     # Shipping Information
-    shipping_city = models.CharField(max_length=100)
-    shipping_area = models.CharField(max_length=100)
-    shipping_address = models.TextField()
+    city = models.CharField(max_length=100)
+    area = models.CharField(max_length=100)
+    address_line1 = models.CharField(max_length=255)
+    address_line2 = models.CharField(max_length=255, blank=True, default="")
 
     # Contact Information
-    contact_email = models.EmailField()
-    contact_phone = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20)
 
     # Amounts
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])

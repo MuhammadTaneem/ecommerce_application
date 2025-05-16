@@ -16,5 +16,5 @@ urlpatterns = [
     # path('skus/', views.sku_list_create_view, name='sku-list-create'),
     # path('skus/<int:pk>/', views.SKUDetailView.as_view(), name='sku-detail'),
     # path('skus/<int:pk>/', views.SKUDetailView.as_view(), name='sku-detail'),
-    path('products/context/', views.product_context, name='product-context'),
+    # path('products/context/', views.product_context, name='product-context'),
 ]

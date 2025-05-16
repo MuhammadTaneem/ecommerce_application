@@ -67,8 +67,8 @@ class TAuthJWTAuthentication(BaseAuthentication):
                 raise AuthenticationFailed('This token is not valid for Authentication.')
         except jwt.ExpiredSignatureError:
             raise AuthenticationFailed('Token has expired.')
-        except jwt.DecodeError:
-            raise AuthenticationFailed('Token is invalid.')
+        except jwt.DecodeError as e:
+            raise AuthenticationFailed(f'Token is invalid.{e}')
         return get_user_from_token(payload), None
 
 

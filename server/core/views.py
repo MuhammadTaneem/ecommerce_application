@@ -1,15 +1,5 @@
-from functools import lru_cache
-
-from django.contrib.auth.decorators import permission_required
-from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
-import jwt
-import datetime
-
-from django.conf import settings
-from django.template.loader import render_to_string
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import check_password
@@ -227,12 +217,30 @@ def reset_password_confirm(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AddressBookViewSet(viewsets.ModelViewSet):
-    serializer_class = AddressBookSerializer
+class AddressViewSet(viewsets.ModelViewSet):
+    serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        address_book = AddressBook.objects.filter(user_id=user.id)
+        address_book = Address.objects.filter(user_id=user.id)
         return address_book
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def default(self, request):
+        """
+        Get the user's default address.
+        """
+        default_address = Address.get_default_for_user(request.user)
+
+        if default_address:
+            serializer = self.get_serializer(default_address)
+            return Response(serializer.data)
+
+        return Response(
+            {"detail": "No default address found."},
+            status=status.HTTP_404_NOT_FOUND
+        )

@@ -5,7 +5,7 @@ from django.contrib.auth.models import PermissionsMixin, AbstractUser
 from django.db import models
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-
+from django.conf import settings
 
 class Role(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -89,31 +89,89 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
+#
+# class Address(models.Model):
+#
+#     name = models.CharField(max_length=100)
+#     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='addresses')
+#     address_line1 = models.CharField( max_length=255)
+#     address_line2 = models.CharField( default= '', max_length=255, blank=True)
+#     city = models.CharField(max_length=100)
+#     is_default = models.BooleanField(default=False)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#
+#     def create(self, validated_data):
+#         user = validated_data['user']
+#         if not validated_data.get('name'):
+#             count = Address.objects.filter(user=user).count() + 1
+#             validated_data['name'] = f"Address {count}"
+#         return super().create(validated_data)
+#
+#
+#     def save(self, *args, **kwargs):
+#         if self.is_default:
+#             Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
+#         super(Address, self).save(*args, **kwargs)
+#
+#     @property
+#     def get_default_address(self):
+#         return Address.objects.filter(user=self.user, is_default=True).first()
+#
+#     def __str__(self):
+#         return self.name
 
-class AddressBook(models.Model):
-    ADDRESS_TYPE_CHOICES = (
-        ('Billing Address', 'billing_address'),
-        ('Shipping Address', 'shipping_address'),
+class Address(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='addresses'
     )
-
     name = models.CharField(max_length=100)
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='addresses')
-    address_type = models.CharField(max_length=20, choices=ADDRESS_TYPE_CHOICES, default='PENDING')
-    shipping_city = models.CharField(max_length=100)
-    shipping_area = models.CharField(max_length=100)
-    shipping_address = models.TextField()
     is_default = models.BooleanField(default=False)
+    address_line1 = models.CharField(max_length=255)
+    address_line2 = models.CharField(max_length=255, blank=True, default="")
+    city = models.CharField(max_length=100, blank=True)
+    area = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=20)
+
+    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        if self.is_default:
-            AddressBook.objects.filter(user=self.user, is_default=True).update(is_default=False)
-        super(AddressBook, self).save(*args, **kwargs)
+    class Meta:
+        ordering = ['-is_default', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_default']),
+        ]
 
-    @property
-    def get_default_address(self):
-        return AddressBook.objects.filter(user=self.user, is_default=True).first()
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        if not self.name and is_new:
+            count = Address.objects.filter(user=self.user).count() + 1
+            self.name = f"Address {count}"
+
+        if self.is_default:
+            Address.objects.filter(
+                user=self.user,
+                is_default=True
+            ).exclude(pk=self.pk or -1).update(is_default=False)
+
+        super().save(*args, **kwargs)
+
+        if is_new and not self.is_default:
+            default_exists = Address.objects.filter(
+                user=self.user,
+                is_default=True
+            ).exists()
+            if not default_exists:
+                self.is_default = True
+                Address.objects.filter(pk=self.pk).update(is_default=True)
+
+    @classmethod
+    def get_default_for_user(cls, user):
+        return cls.objects.filter(user=user, is_default=True).first()
 
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.address_line1}, {self.city}"

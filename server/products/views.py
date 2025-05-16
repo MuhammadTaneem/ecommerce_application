@@ -54,7 +54,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['get', 'put', 'delete'], url_path='image/(?P<image_id>[^/.]+)', url_name='image_detail')
+    @action(detail=True, methods=['get','delete'], url_path='images/(?P<image_id>[^/.]+)', url_name='image_detail')
     def image_detail(self, request, pk=None,image_id=None):
         product = self.get_object()
         try:
@@ -66,15 +66,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             serializer = ProductImageSerializer(image)
             return Response({
                 'message': 'Product image retrieved successfully',
-                'data': serializer.data
-            })
-
-        elif request.method == 'PUT':
-            image.image = request.FILES.get('image', image.image)
-            image.save()
-            serializer = ProductImageSerializer(image)
-            return Response({
-                'message': 'Product image updated successfully',
                 'data': serializer.data
             })
 
@@ -199,48 +190,52 @@ class ProductViewSet(viewsets.ModelViewSet):
         product = self.get_object()
 
         if request.method == 'GET':
-            serializer = TagSerializer(product.tags.all(), many=True)
+
+            tags = product.tags.all()
+            serializer = TagSerializer(tags, many=True)
             return Response({
                 'message': 'Tags retrieved successfully',
                 'data': serializer.data
             })
 
+
         elif request.method == 'POST':
             tag_ids = request.data.get('tag_ids', [])
-            if not tag_ids:
+            
+            try:
+                # Handle string input (comma-separated)
+                if isinstance(tag_ids, str):
+                    tag_ids = list(map(int, map(str.strip, tag_ids.split(','))))
+                # Handle list input
+                elif isinstance(tag_ids, list):
+                    tag_ids = list(map(int, map(str, tag_ids)))
+                    
+                if not tag_ids:
+                    return Response({
+                        'status': 'error',
+                        'message': 'No tags provided'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                tags = Tag.objects.filter(id__in=tag_ids)
+                if not tags:
+                    return Response({
+                        'status': 'error',
+                        'message': 'No valid tags found'
+                    }, status=status.HTTP_404_NOT_FOUND)
+
+                product.tags.add(*tags)
+                serializer = TagSerializer(product.tags.all(), many=True)
+                return Response({
+                    'message': f'{len(tags)} tags added successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+                
+            except (ValueError, TypeError):
                 return Response({
                     'status': 'error',
-                    'message': 'No tags provided'
+                    'message': 'Invalid tag ID format. Please provide numbers separated by commas.'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            tags = Tag.objects.filter(id__in=tag_ids)
-            if not tags:
-                return Response({
-                    'status': 'error',
-                    'message': 'No valid tags found'
-                }, status=status.HTTP_404_NOT_FOUND)
-
-            product.tags.add(*tags)
-            serializer = TagSerializer(product.tags.all(), many=True)
-            return Response({
-                'message': f'{len(tags)} tags added successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-
-        elif request.method == 'DELETE':
-            tag_ids = request.data.get('tag_ids', [])
-            if tag_ids:
-                removed_count = product.tags.filter(id__in=tag_ids).count()
-                product.tags.remove(*tag_ids)
-                return Response({
-                    'message': f'{removed_count} tags removed successfully'
-                }, status=status.HTTP_204_NO_CONTENT)
-            else:
-                count = product.tags.count()
-                product.tags.clear()
-                return Response({
-                    'message': f'All {count} tags removed successfully'
-                }, status=status.HTTP_204_NO_CONTENT)
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'put', 'delete'], url_path='tags/(?P<tag_id>[^/.]+)', url_name='tag_detail')
