@@ -61,8 +61,8 @@ class CartViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'All items removed from cart'}, status=status.HTTP_200_OK)
         return Response({'detail': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(detail=True, methods=['put','delete'], url_path='item/(?P<item_id>[^/.]+)')
-    def item_detail(self, request, pk=None):
+    @action(detail=False, methods=['put','delete'], url_path='item_details/(?P<item_id>[^/.]+)')
+    def item_details(self, request, pk=None,item_id=None):
         cart = self.get_cart()
         if request.method == 'PUT':
             cart_item = get_object_or_404(
@@ -146,37 +146,31 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """
-        Update an existing order. Supports both full and partial updates.
+        Updates an existing order. Supports both full and partial updates.
+        Currently supports only updating top-level fields (e.g., status).
         """
-        # Start a database transaction
         with transaction.atomic():
-            # Get the order instance
-            instance = self.get_object()
+            order = self.get_object()
 
-            # Check if the order can be updated (e.g., not completed or canceled)
-            if instance.status in ['completed', 'canceled']:
+            # Example: Only allow updates to editable fields
+            allowed_fields = ['status']
+            invalid_keys = set(request.data.keys()) - set(allowed_fields)
+            if invalid_keys:
                 return Response(
-                    {'error': 'This order cannot be updated because it is already completed or canceled.'},
+                    {"error": f"Updating the following fields is not allowed: {', '.join(invalid_keys)}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Validate and partially update
+            serializer = self.get_serializer(order, data=request.data, partial=True, context={'user': request.user})
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # Validate the updated data
-            serializer = self.get_serializer(instance, data=request.data, partial=True, context={'user': request.user})
-            if serializer.is_valid():
-                # Save the updated order
-                order = serializer.save()
-
-                # Optionally handle updates to order items here
-                # For example, you could allow adding/removing/modifying order items
-
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-            # Return validation errors if the serializer is invalid
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            updated_order = serializer.save()
+            return Response(self.get_serializer(updated_order).data, status=status.HTTP_200_OK)
+            
     @action(detail=True, methods=['post'])
-    def cancel_order(self, request, pk=None):
+    def cancel(self, request, pk=None):
         order = self.get_object()
         if order.status == 'PENDING':
             order.status = 'CANCELLED'

@@ -398,3 +398,4 @@ def product_context(request):
              'tags': tag_serializer.data,
              },
             status=status.HTTP_200_OK)
+    return None

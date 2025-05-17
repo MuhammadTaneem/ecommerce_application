@@ -2,6 +2,8 @@ import uuid
 
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -194,9 +196,19 @@ class SKU(models.Model):
         if not self.sku_code:
             self.sku_code = str(uuid.uuid4())
         super().save(*args, **kwargs)
-    #
-    # def generate_sku_code(self):
-    #     # Create SKU code based on the product name and variant values
-    #     variant_values = [f"{variant.attribute.name}:{variant.value}" for variant in self.variants.all()]
-    #     variant_string = "-".join(variant_values)
-    #     return f"{self.product.name}-{variant_string}"  # You can customize this format as needed
+
+        # if not self.product.has_variants:
+        #     self.product.has_variants = True
+        #     self.product.save(update_fields=["has_variants"])
+@receiver(post_save, sender=SKU)
+def update_has_variants_on_create(sender, instance, created, **kwargs):
+    if created:
+        product = instance.product
+        product.has_variants = product.skus.exists()
+        product.save(update_fields=['has_variants'])
+
+@receiver(post_delete, sender=SKU)
+def update_has_variants_on_delete(sender, instance, **kwargs):
+    product = instance.product
+    product.has_variants = product.skus.exists()
+    product.save(update_fields=['has_variants'])

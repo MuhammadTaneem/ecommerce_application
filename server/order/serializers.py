@@ -1,3 +1,5 @@
+import pdb
+
 from django.db import transaction
 from rest_framework import serializers
 
@@ -18,12 +20,25 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'sku', 'quantity', 'unit_price', 'subtotal']
 
     def validate(self, attrs):
-        product = attrs.get('product')
-        sku = attrs.get('sku')
+        # Get the instance if this is an update operation
+        instance = getattr(self, 'instance', None)
+        
+        # For update operations, use existing values if not provided
+        product = attrs.get('product', getattr(instance, 'product', None))
+        sku = attrs.get('sku', getattr(instance, 'sku', None))
+
+        # Skip validation if only quantity is being updated
+        if instance and not (attrs.get('product') or attrs.get('sku')):
+            return attrs
+
+        if not product:
+            raise serializers.ValidationError({"product": "Product is required."})
+
+        if not product.has_variants:
+            return attrs
 
         if product.has_variants and not sku:
             raise serializers.ValidationError({"sku": "SKU ID is required for products with variants."})
-
 
         if sku and sku.product != product:
             raise serializers.ValidationError({"sku": "Invalid SKU for the selected product."})
@@ -48,6 +63,13 @@ class CartItemSerializer(serializers.ModelSerializer):
             cart_item.save()
 
         return cart_item
+
+    def update(self, instance, validated_data):
+        # Only update quantity if that's all that was provided
+        quantity = validated_data.get('quantity', instance.quantity)
+        instance.quantity = quantity
+        instance.save()
+        return instance
 
 
 
@@ -109,12 +131,15 @@ class OrderSerializer(serializers.ModelSerializer):
         attrs['phone_number'] = address.phone_number
         voucher_code = attrs.pop('voucher_code', None)
         if voucher_code:
-            attrs['voucher'] = self.voucher_code_to_id(voucher_code)
+            voucher = self.voucher_code_to_id(voucher_code)
+            if not voucher.is_valid():
+                raise serializers.ValidationError({"voucher_code": "Invalid or expired voucher code."})
+            attrs['voucher'] = voucher
         return attrs
 
     def voucher_code_to_id(self, value):
         try:
-            voucher = Voucher.objects.only('id').get(code=value)
+            voucher = Voucher.objects.get(code=value)
         except Voucher.DoesNotExist:
             raise serializers.ValidationError({"voucher_code": "Invalid voucher code."})
         return voucher

@@ -107,7 +107,7 @@ class CartItem(models.Model):
         """
         # Ensure SKU is provided if the product has variants
         if self.product.has_variants and not self.sku:
-            raise ValidationError("SKU is required for products with variants.")
+            raise ValidationError("SKU is required for products with variants. model")
 
         # Validate stock availability
         available_stock = self.sku.stock_quantity if self.sku else self.product.stock_quantity
@@ -172,17 +172,23 @@ class Order(models.Model):
             timestamp = int(time.time())
             self.order_number = f"ORD-{timestamp}-{self.user.id}"
 
-        # Apply voucher discount if applicable
-        if self.voucher and self.voucher.is_valid():
-            self.discount_amount = self.voucher.calculate_discount(self.subtotal)
-            self.voucher.times_used += 1
-            self.voucher.save()
+        # Calculate discount if voucher exists and is valid
+        if self.voucher:
+            if self.voucher.is_valid():
+                self.discount_amount = self.voucher.calculate_discount(self.subtotal)
+                # Increment usage count only for new orders
+                if not self.pk:
+                    self.voucher.times_used += 1
+                    self.voucher.save()
+            else:
+                # Don't automatically remove invalid voucher, let serializer handle it
+                self.discount_amount = 0
         else:
             self.discount_amount = 0
 
-        # Calculate total
+        # Calculate final total
         self.total = self.subtotal + self.shipping_cost + self.tax - self.discount_amount
-
+        
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -177,6 +177,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'brand', 'tags', 'created_at', 'updated_at', 'is_active', 'is_deleted', 'images', 'skus', 'average_rating',
             'rating_count'
         ]
+        read_only_fields = ['created_at', 'updated_at','has_variants']
 
     def validate(self, data):
         errors = {}

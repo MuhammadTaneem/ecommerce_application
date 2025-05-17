@@ -58,6 +58,7 @@ def sign_up(request):
             # print(f"execution time: {end_time - start_time}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
 
 @api_view(['GET'])
@@ -66,6 +67,7 @@ def get_profile(request):
     if request.method == 'GET':
         serializer = ReadWriteUserSerializer(request.user)
         return Response(serializer.data)
+    return None
 
 
 @api_view(['PUT'])
@@ -80,6 +82,7 @@ def change_password(request):
             user.save()
             return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
 
 @api_view(['PUT'])
@@ -93,6 +96,7 @@ def update_profile(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
 
 @api_view(['PUT'])
@@ -111,6 +115,7 @@ def update_email(request):
                 return Response({'message': 'Send Activation email field.'}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
 
 # def token_generator(user_id, token_type):
@@ -215,6 +220,7 @@ def reset_password_confirm(request):
             user.save()
             return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
 
 class AddressViewSet(viewsets.ModelViewSet):
@@ -231,9 +237,6 @@ class AddressViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def default(self, request):
-        """
-        Get the user's default address.
-        """
         default_address = Address.get_default_for_user(request.user)
 
         if default_address:
