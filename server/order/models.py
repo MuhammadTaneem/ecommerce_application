@@ -8,6 +8,21 @@ from products.models import Product, SKU
 
 User = get_user_model()
 
+class OrderStatusChoices(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    PROCESSING = 'PROCESSING', 'Processing'
+    SHIPPED = 'SHIPPED', 'Shipped'
+    DELIVERED = 'DELIVERED', 'Delivered'
+    CANCELLED = 'CANCELLED', 'Cancelled'
+    REFUNDED = 'REFUNDED', 'Refunded'
+
+
+class PaymentStatusChoices(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    PAID = 'PAID', 'Paid'
+    FAILED = 'FAILED', 'Failed'
+    REFUNDED = 'REFUNDED', 'Refunded'
+
 
 class Voucher(models.Model):
     DISCOUNT_TYPE_CHOICES = (
@@ -116,24 +131,11 @@ class CartItem(models.Model):
 
 
 class Order(models.Model):
-    STATUS_CHOICES = (
-        ('PENDING', 'Pending'),
-        ('PROCESSING', 'Processing'),
-        ('SHIPPED', 'Shipped'),
-        ('DELIVERED', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-        ('REFUNDED', 'Refunded'),
-    )
-    PAYMENT_STATUS_CHOICES = (
-        ('PENDING', 'Pending'),
-        ('PAID', 'Paid'),
-        ('FAILED', 'Failed'),
-        ('REFUNDED', 'Refunded'),
-    )
+
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     order_number = models.CharField(max_length=50, unique=True, auto_created=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=OrderStatusChoices, default=OrderStatusChoices.PENDING)
+    payment_status = models.CharField(max_length=20, choices=PaymentStatusChoices, default=PaymentStatusChoices.PENDING)
 
     # Shipping Information
     city = models.CharField(max_length=100)

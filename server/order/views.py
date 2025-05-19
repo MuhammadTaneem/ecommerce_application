@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from .models import Cart, CartItem, Order, OrderItem, Voucher
+from .models import Cart, CartItem, Order, OrderItem, Voucher, OrderStatusChoices
 from .serializers import (
     CartSerializer,
     OrderSerializer, OrderItemSerializer, CartItemSerializer, VoucherSerializer,
@@ -88,9 +88,6 @@ class CartViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
-
-
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
@@ -172,15 +169,14 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
-        if order.status == 'PENDING':
-            order.status = 'CANCELLED'
+        if order.status == OrderStatusChoices.PENDING:
+            order.status = OrderStatusChoices.CANCELED
             order.save()
             return Response({'status': 'Order cancelled'})
         return Response(
             {'error': 'Cannot cancel order in current status'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
 
 class VoucherViewSet(viewsets.ModelViewSet):
     serializer_class = VoucherSerializer

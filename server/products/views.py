@@ -1,6 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
+
+from core.authentication import has_permissions
+from core.enum import PermissionEnum
 from .models import Product, ProductImage, SKU, Category, Brand, Tag, VariantAttribute
 from .review.models import Review
 from .review.serializers import ReviewSerializer
@@ -14,6 +17,30 @@ from .serializers import (
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    # def get_permissions(self):
+    #     """
+    #     Override get_permissions to handle different permission requirements
+    #     """
+    #     if self.action in ['list', 'retrieve']:
+    #         permission_classes = [IsAuthenticated]
+    #     else:
+    #         permission_classes = [IsAuthenticated]
+    #     return [permission() for permission in permission_classes]
+
+    @has_permissions(PermissionEnum.PRODUCT_CREATE)
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @has_permissions(PermissionEnum.PRODUCT_UPDATE)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @has_permissions(PermissionEnum.PRODUCT_DELETE)
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
 
     @action(detail=True, methods=['get', 'post'], url_name='images')
     def images(self, request, pk=None):
@@ -325,18 +352,6 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'message': 'Invalid review data',
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        elif request.method == 'DELETE':
-            if review.user != request.user:
-                return Response({
-                    'status': 'error',
-                    'message': 'You can only delete your own reviews'
-                }, status=status.HTTP_403_FORBIDDEN)
-
-            review.delete()
-            return Response({
-                'message': 'Review deleted successfully'
-            }, status=status.HTTP_204_NO_CONTENT)
 
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

@@ -55,7 +55,6 @@ INSTALLED_APPS = [
     'core',
     'order',
     'products.review'
-
 ]
 
 MIDDLEWARE = [
