@@ -18,10 +18,10 @@ default_roles = [
         'permissions':
             [
                 # Product
-                PermissionEnum.PRODUCT_LIST, PermissionEnum.PRODUCT_DETAILS, PermissionEnum.PRODUCT_CREATE,
-                PermissionEnum.PRODUCT_DETAILS,
+                PermissionEnum.product_list, PermissionEnum.product_details, PermissionEnum.product_create,
+                PermissionEnum.product_details,
                 # category
-                PermissionEnum.CATEGORY_LIST_VIEW, PermissionEnum.CATEGORY_CREATE, PermissionEnum.CATEGORY_UPDATE
+                PermissionEnum.category_list_view, PermissionEnum.category_create, PermissionEnum.category_update
 
             ],
         'description': 'Man ',
@@ -32,10 +32,10 @@ default_roles = [
         'permissions':
             [
                 # Product
-                PermissionEnum.PRODUCT_LIST, PermissionEnum.PRODUCT_DETAILS, PermissionEnum.PRODUCT_CREATE,
-                PermissionEnum.PRODUCT_DETAILS,
+                PermissionEnum.product_list, PermissionEnum.product_details, PermissionEnum.product_create,
+                PermissionEnum.product_details,
                 # category
-                PermissionEnum.CATEGORY_LIST_VIEW
+                PermissionEnum.category_list_view
             ],
         'description': 'Man ',
         'is_active': True
@@ -45,9 +45,9 @@ default_roles = [
         'permissions':
             [
                 # Product
-                PermissionEnum.PRODUCT_LIST, PermissionEnum.PRODUCT_DETAILS,
+                PermissionEnum.product_list, PermissionEnum.product_details,
                 # category
-                PermissionEnum.CATEGORY_LIST_VIEW,
+                PermissionEnum.category_list_view,
 
             ],
         'description': 'Man ',

@@ -5,10 +5,10 @@ import jwt
 from django.template.loader import render_to_string
 from rest_framework.response import Response
 from rest_framework import status
-from core.config import ConfData
+from core.Utiilties.config import ConfData
 import logging
 from celery import shared_task
-from core.enum import TokenType
+from core.Utiilties.enum import TokenType
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
