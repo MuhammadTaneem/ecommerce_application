@@ -1,13 +1,16 @@
 from django.db import transaction
-from rest_framework import viewsets, status, generics
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+
+from core.Utiilties.permission_chacker import HasPermissionMixin
+from core.Utiilties.enum import PermissionEnum
 from .models import Cart, CartItem, Order, OrderItem, Voucher, OrderStatusChoices
 from .serializers import (
     CartSerializer,
-    OrderSerializer, OrderItemSerializer, CartItemSerializer, VoucherSerializer,
+    OrderSerializer, CartItemSerializer, VoucherSerializer, OrderDetailSerializer,
 
 )
 
@@ -93,7 +96,12 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        return Order.objects.filter(user=self.request.user).prefetch_related('items')
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return OrderDetailSerializer
+        return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         """
@@ -178,9 +186,17 @@ class OrderViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-class VoucherViewSet(viewsets.ModelViewSet):
+
+
+class VoucherViewSet(HasPermissionMixin, viewsets.ModelViewSet):
     serializer_class = VoucherSerializer
     permission_classes = [IsAuthenticated]
+
+    method_permissions = {
+        'PUT': PermissionEnum.voucher_update,
+        'DELETE': PermissionEnum.voucher_delete,
+        'POST': PermissionEnum.voucher_create
+    }
 
     def get_queryset(self):
         vouchers = Voucher.objects.all()

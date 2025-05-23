@@ -1,7 +1,7 @@
 import re
 from rest_framework import serializers
-from core.config import ConfData
-from core.enum import PermissionEnum
+from core.Utiilties.config import ConfData
+from core.Utiilties.enum import PermissionEnum
 from core.models import Role, Address
 from django.contrib.auth import get_user_model
 

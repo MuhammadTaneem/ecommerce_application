@@ -149,8 +149,31 @@ AUTH_USER_MODEL = 'core.User'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'core.authentication.TAuthJWTAuthentication',
+        'core.Utiilties.authentication.TAuthJWTAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    # 'DEFAULT_RENDERER_CLASSES': (
+    #     'rest_framework.renderers.JSONRenderer',
+    #     # 'rest_framework.renderers.BrowsableAPIRenderer',
+    # ),
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ),
+    # 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.AnonRateThrottle',
+    #     'rest_framework.throttling.UserRateThrottle',
+    # ],
+    # 'DEFAULT_THROTTLE_RATES': {
+    #     'anon': '1000/day',
+    #     'user': '1000/day',
+    #     'low': '10/minute',
+    #     'medium': '20/minute',
+    #     'high': '30/minute',
+    # },
+
+    
+    # 'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -173,11 +196,11 @@ TAUTH = {
     'reset_password_url': 'http://localhost:4200/reset/?token=',
     'password_min_length': 6,
     'password': {
-            'min_length': 6,
-            'is_capital': False,
-            'is_special': False,
-            'is_digit': False,
-        },
+        'min_length': 6,
+        'is_capital': False,
+        'is_special': False,
+        'is_digit': False,
+    },
 }
 # static & media
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -203,7 +226,7 @@ EMAIL_HOST_PASSWORD = 'zzdjlscpwsggtrdl'  # Your email password
 # CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 # CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL'),
-CELERY_RESULT_BACKEND =  os.getenv('CELERY_RESULT_BACKEND'),
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND'),
 CELERY_TIMEZONE = TIME_ZONE
 # CELERY_BROKER_POOL_LIMIT = 100
 # CELERY_BROKER_CONNECTION_TIMEOUT = 3
@@ -229,7 +252,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
         # 'LOCATION': 'redis://127.0.0.1:6379/1',
-        'LOCATION':  os.getenv('CACHES_LOCATION'),
+        'LOCATION': os.getenv('CACHES_LOCATION'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },

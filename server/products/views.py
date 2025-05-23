@@ -1,9 +1,10 @@
-from rest_framework import viewsets, status
+from rest_framework.viewsets import ModelViewSet
+from rest_framework import status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
-from core.authentication import has_permissions
-from core.enum import PermissionEnum
+from core.Utiilties.permission_chacker import has_permissions, HasPermissionMixin
+from core.Utiilties.enum import PermissionEnum
 from .models import Product, ProductImage, SKU, Category, Brand, Tag, VariantAttribute
 from .review.models import Review
 from .review.serializers import ReviewSerializer
@@ -14,7 +15,7 @@ from .serializers import (
 
 
 # Product ViewSet
-class ProductViewSet(viewsets.ModelViewSet):
+class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -28,21 +29,24 @@ class ProductViewSet(viewsets.ModelViewSet):
     #         permission_classes = [IsAuthenticated]
     #     return [permission() for permission in permission_classes]
 
-    @has_permissions(PermissionEnum.PRODUCT_CREATE)
+    @has_permissions(PermissionEnum.product_create)
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @has_permissions(PermissionEnum.PRODUCT_UPDATE)
+    @has_permissions(PermissionEnum.product_update)
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @has_permissions(PermissionEnum.PRODUCT_DELETE)
+    @has_permissions(PermissionEnum.product_delete)
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-
-
     @action(detail=True, methods=['get', 'post'], url_name='images')
+    @has_permissions(
+        method_permissions={
+            'POST': PermissionEnum.product_create
+        }
+    )
     def images(self, request, pk=None):
         product = self.get_object()
 
@@ -81,8 +85,13 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['get','delete'], url_path='images/(?P<image_id>[^/.]+)', url_name='image_detail')
-    def image_detail(self, request, pk=None,image_id=None):
+    @action(detail=True, methods=['get', 'delete'], url_path='images/(?P<image_id>[^/.]+)', url_name='image_detail')
+    @has_permissions(
+        method_permissions={
+            'DELETE': PermissionEnum.product_delete
+        }
+    )
+    def image_detail(self, request, pk=None, image_id=None):
         product = self.get_object()
         try:
             image = ProductImage.objects.get(id=image_id, product=product)
@@ -103,6 +112,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'post', 'put'])
+    @has_permissions(
+        method_permissions={
+            'PUT': PermissionEnum.product_update,
+            'POST': PermissionEnum.product_create,
+        }
+    )
     def skus(self, request, pk=None):
         product = self.get_object()
 
@@ -167,6 +182,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'put', 'delete'], url_path='skus/(?P<sku_id>[^/.]+)', url_name='sku_detail')
+    @has_permissions(
+        method_permissions={
+            'PUT': PermissionEnum.product_update,
+            'DELETE': PermissionEnum.product_delete,
+        }
+    )
     def sku_detail(self, request, pk=None, sku_id=None):
         product = self.get_object()
         try:
@@ -213,6 +234,13 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'post', 'delete'])
+    @has_permissions(
+        method_permissions={
+            'PUT': PermissionEnum.product_update,
+            'POST': PermissionEnum.product_create,
+            'DELETE': PermissionEnum.product_delete,
+        }
+    )
     def tags(self, request, pk=None):
         product = self.get_object()
 
@@ -228,7 +256,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         elif request.method == 'POST':
             tag_ids = request.data.get('tag_ids', [])
-            
+
             try:
                 # Handle string input (comma-separated)
                 if isinstance(tag_ids, str):
@@ -236,7 +264,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 # Handle list input
                 elif isinstance(tag_ids, list):
                     tag_ids = list(map(int, map(str, tag_ids)))
-                    
+
                 if not tag_ids:
                     return Response({
                         'status': 'error',
@@ -256,7 +284,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                     'message': f'{len(tags)} tags added successfully',
                     'data': serializer.data
                 }, status=status.HTTP_201_CREATED)
-                
+
             except (ValueError, TypeError):
                 return Response({
                     'status': 'error',
@@ -266,6 +294,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Internal server error', }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get', 'put', 'delete'], url_path='tags/(?P<tag_id>[^/.]+)', url_name='tag_detail')
+    @has_permissions(
+        method_permissions={
+            'PUT': PermissionEnum.product_update,
+            'DELETE': PermissionEnum.product_delete,
+        }
+    )
     def tag_detail(self, request, pk=None, tag_id=None):
         product = self.get_object()
         try:
@@ -357,43 +391,72 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 # Product Image ViewSet
-class ProductImageViewSet(viewsets.ModelViewSet):
-    queryset = ProductImage.objects.all()
-    serializer_class = ProductImageSerializer
+
+# class ProductImageViewSet(viewsets.ModelViewSet):
+#     queryset = ProductImage.objects.all()
+#     serializer_class = ProductImageSerializer
 
 
 # SKU ViewSet
-class SKUViewSet(viewsets.ModelViewSet):
-    queryset = SKU.objects.all()
-    serializer_class = SKUSerializer
+# class SKUViewSet(viewsets.ModelViewSet):
+#     queryset = SKU.objects.all()
+#     serializer_class = SKUSerializer
 
 
 # Category ViewSet
-class CategoryViewSet(viewsets.ModelViewSet):
+# @has_permissions(
+#         method_permissions={
+#             'PUT': PermissionEnum.category_update,
+#             'DELETE':PermissionEnum.category_delete,
+#             'POST':PermissionEnum.category_create
+#         }
+#     )
+class CategoryViewSet(HasPermissionMixin, ModelViewSet):
     queryset = Category.objects.filter(parent=None).all()
     serializer_class = CategorySerializer
 
+    method_permissions = {
+        'PUT': PermissionEnum.category_update,
+        'DELETE': PermissionEnum.category_delete,
+        'POST': PermissionEnum.category_create
+    }
+
 
 # Brand ViewSet
-class BrandViewSet(viewsets.ModelViewSet):
+
+class BrandViewSet(HasPermissionMixin, ModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
 
+    method_permissions = {
+        'PUT': PermissionEnum.brand_update,
+        'DELETE': PermissionEnum.brand_delete,
+        'POST': PermissionEnum.brand_create
+    }
+
 
 # Tag ViewSet
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(HasPermissionMixin, ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-
+    method_permissions = {
+        'PUT': PermissionEnum.tag_update,
+        'DELETE': PermissionEnum.tag_delete,
+        'POST': PermissionEnum.tag_create
+    }
 
 # Variant ViewSet
-class VariantViewSet(viewsets.ModelViewSet):
+class VariantViewSet(HasPermissionMixin, ModelViewSet):
     queryset = VariantAttribute.objects.all()
     serializer_class = VariantSerializer
+    method_permissions = {
+        'PUT': PermissionEnum.variant_update,
+        'DELETE': PermissionEnum.variant_delete,
+        'POST': PermissionEnum.variant_create
+    }
 
 
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
 def product_context(request):
     if request.method == 'GET':
         categories = Category.objects.all()

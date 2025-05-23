@@ -192,6 +192,7 @@ class SKU(models.Model):
             variants_dict[variant.attribute.name] = variant.value
         return variants_dict
 
+
     def save(self, *args, **kwargs):
         if not self.sku_code:
             self.sku_code = str(uuid.uuid4())

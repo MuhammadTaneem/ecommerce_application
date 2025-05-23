@@ -1,4 +1,4 @@
-from core.enum import PermissionEnum
+from core.Utiilties.enum import PermissionEnum
 
 default_roles = [
     {

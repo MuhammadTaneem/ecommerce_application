@@ -151,6 +151,12 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
 
+class OrderDetailSerializer(OrderSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta(OrderSerializer.Meta):
+        fields = OrderSerializer.Meta.fields + ['items']
+
 class VoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voucher

@@ -3,10 +3,11 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import check_password
-from core.authentication import t_auth_active_token_verify, t_auth_reset_token_verify, has_permissions
-from core.utilities import token_generator, activation_email_sender, reset_password_email_sender
+from core.Utiilties.authentication import t_auth_active_token_verify, t_auth_reset_token_verify
+from core.Utiilties.permission_chacker import has_permissions
+from core.Utiilties.utilities_functions import token_generator, activation_email_sender, reset_password_email_sender
 from core.serializers import *
-from core.enum import TokenType
+from core.Utiilties.enum import TokenType
 
 config_data = ConfData.get_data()
 
@@ -40,7 +41,7 @@ def user_login(request):
 @api_view(['POST'])
 # @permission_classes([IsAuthenticated])
 # @permission_required('product_details', raise_exception=True, login_url='/auth/login')
-@has_permissions(PermissionEnum.PRODUCT_DELETE)
+@has_permissions(PermissionEnum.product_delete)
 def user_logout(self):
     return Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
 

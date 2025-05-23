@@ -5,7 +5,7 @@ from django.urls import path, include
 app_name = 'order'
 
 router = DefaultRouter()
-router.register(r'order', OrderViewSet, basename='order')
+router.register(r'order', OrderViewSet, basename='order-view')
 router.register(r'cart', CartViewSet, basename='cart')
 router.register(r'voucher', VoucherViewSet, basename='voucher')
 

@@ -206,18 +206,24 @@ class OrderItem(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
 
     # Store variant information at the time of order
-    variant_info = models.JSONField(default=dict, blank=True)
+    # variant_info = models.JSONField(default=dict, blank=True)
 
     class Meta:
         unique_together = [['order', 'product', 'sku']]
+
+    @property
+    def variant_info(self):
+        if self.sku:
+            return  self.sku.variants_dict
+        return None
 
     def save(self, *args, **kwargs):
         # Calculate subtotal
         self.subtotal = self.quantity * self.unit_price
 
         # Store variant information if SKU exists
-        if self.sku:
-            self.variant_info = self.sku.variants_dict
+        # if self.sku:
+        #     self.variant_info = self.sku.variants_dict
 
         super().save(*args, **kwargs)
 

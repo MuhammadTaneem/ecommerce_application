@@ -220,8 +220,8 @@ views
 #
 # @api_view(['GET'])
 # # @permission_classes([require_permissions(PermissionEnum.VIEW_USER)])
-# # @require_permissions([PermissionEnum.PRODUCT_LIST, PermissionEnum.CATEGORY_DELETE])
-# # @require_permissions(PermissionEnum.PRODUCT_LIST)
+# # @require_permissions([PermissionEnum.product_list, PermissionEnum.category_delete])
+# # @require_permissions(PermissionEnum.product_list)
 # def products_list(request):
 #     products = product_filter(request)
 #     categories = Category.objects.filter(parent__isnull=True)
