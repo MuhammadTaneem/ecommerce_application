@@ -5,6 +5,7 @@ pillow==10.4.0
 psycopg2-binary==2.9.9
 PyJWT==2.9.0
 python-dotenv==1.0.1
+drf-spectacular==0.28.0
 celery
 redis
 django-redis

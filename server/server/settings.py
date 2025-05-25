@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     # 'djoser',
+    # docs
+    'drf_spectacular',
 
     'products',
     'core',
@@ -152,6 +154,7 @@ REST_FRAMEWORK = {
         'core.Utiilties.authentication.TAuthJWTAuthentication',
     ),
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # 'DEFAULT_RENDERER_CLASSES': (
     #     'rest_framework.renderers.JSONRenderer',
     #     # 'rest_framework.renderers.BrowsableAPIRenderer',
@@ -171,7 +174,6 @@ REST_FRAMEWORK = {
     #     'high': '30/minute',
     # },
 
-    
     # 'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 
 }
@@ -257,4 +259,13 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
     }
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Ecommerce API',
+    'DESCRIPTION': 'API documentation for Ecommerce application',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
 }

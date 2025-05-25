@@ -1,0 +1,1244 @@
+openapi: 3.0.0
+info:
+  title: Authentication & User Management Module API
+  description: T Auth Pack - Authentication, Profile, Password, Address, Role & Permission Management
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8000/api/auth/
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # User Schemas
+    UserCreateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        user_type:
+          type: string
+        username:
+          type: string
+          nullable: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+        - email
+        - password
+        - first_name
+        - phone
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        user_type:
+          type: string
+        role:
+          $ref: '#/components/schemas/RoleResponse'
+        is_active:
+          type: boolean
+        date_joined:
+          type: string
+          format: date-time
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        new_password:
+          type: string
+        confirm_new_password:
+          type: string
+      required:
+        - password
+        - new_password
+        - confirm_new_password
+
+    ResetPasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        new_password:
+          type: string
+        confirm_new_password:
+          type: string
+      required:
+        - token
+        - new_password
+        - confirm_new_password
+
+    EmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+
+    TokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+
+    # Address Schemas
+    AddressRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        city:
+          type: string
+        area:
+          type: string
+        phone_number:
+          type: string
+        is_default:
+          type: boolean
+      required:
+        - name
+        - address_line1
+        - city
+        - area
+        - phone_number
+
+    PatchedAddressRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        city:
+          type: string
+        area:
+          type: string
+        phone_number:
+          type: string
+        is_default:
+          type: boolean
+      additionalProperties: false
+
+    AddressResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        city:
+          type: string
+        area:
+          type: string
+        phone_number:
+          type: string
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # Role Schemas
+    RoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+      required:
+        - name
+        - permissions
+
+    RoleResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserRoleUpdateRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        role_id:
+          type: integer
+      required:
+        - user_id
+        - role_id
+
+    UserPermissionRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        permission:
+          type: array
+          items:
+            type: string
+      required:
+        - user_id
+        - permission
+
+    UserPermissionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        permissions:
+          type: array
+          items:
+            type: string
+
+  responses:
+    UnauthorizedError:
+      description: Authentication credentials were not provided.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Authentication credentials were not provided."
+
+paths:
+  /login/:
+    post:
+      summary: Authenticate user and return JWT token
+      description: Logs in a user by validating their email and password. Returns a JWT access token upon successful authentication.
+      operationId: auth_login_create
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "password123"
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Successfully logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: "JWT access token"
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxx"
+        '400':
+          description: Invalid credentials or account disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid credentials"
+
+  /sign_up/:
+    post:
+      summary: Register a new user
+      description: Creates a new user account and sends an activation email.
+      operationId: auth_sign_up_create
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+
+  /profile/:
+    get:
+      summary: Get user profile details
+      description: Retrieve the currently authenticated user's profile information.
+      operationId: auth_profile_retrieve
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /update_profile/:
+    put:
+      summary: Update user profile
+      description: Modify the authenticated user's profile details.
+      operationId: auth_update_profile_update
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /change_password/:
+    put:
+      summary: Change user password
+      description: Allows the user to change their password after confirming the current one.
+      operationId: auth_change_password_update
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Password changed successfully."
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Passwords do not match."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /update_email/:
+    put:
+      summary: Update user email
+      description: Change the user’s email address and send a new activation email.
+      operationId: auth_update_email_update
+      tags:
+        - profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '200':
+          description: Email updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Your email is updated. Please check your email"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Email already taken."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /reset_password/:
+    post:
+      summary: Request password reset
+      description: Sends a password reset email to the user.
+      operationId: auth_reset_password_create
+      tags:
+        - password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+      responses:
+        '200':
+          description: Reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Reset Password email sent. Please check your email"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found."
+
+  /reset_password_confirm/:
+    put:
+      summary: Confirm password reset
+      description: Sets a new password using a valid token.
+      operationId: auth_reset_password_confirm_update
+      tags:
+        - password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Password updated successfully."
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Token expired or invalid."
+
+  /re_send_activation_email/:
+    post:
+      summary: Resend activation email
+      description: Sends a new activation email to the user.
+      operationId: auth_re_send_activation_email_create
+      tags:
+        - activation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+      responses:
+        '200':
+          description: Activation email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Activation email sent. Please check your email"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found."
+
+  /active_user/:
+    post:
+      summary: Activate user account
+      description: Activates the user using a valid token.
+      operationId: auth_active_user_create
+      tags:
+        - activation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Account activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Your account is activated. Please login"
+                  login_url:
+                    type: string
+                    example: "/api/auth/login/"
+        '400':
+          description: Token invalid or expired
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Token expired or invalid."
+
+  /addresses/:
+    get:
+      summary: List all addresses
+      description: Retrieve a paginated list of all addresses associated with the authenticated user.
+      operationId: auth_address_list
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results per page
+          schema:
+            type: integer
+            example: 10
+        - name: offset
+          in: query
+          description: Starting index
+          schema:
+            type: integer
+            example: 0
+      responses:
+        '200':
+          description: Paginated list of addresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AddressResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create a new address
+      description: Add a new address for the authenticated user.
+      operationId: auth_address_create
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /addresses/{id}/:
+    get:
+      summary: Get address details
+      description: Retrieve information about a specific address by ID.
+      operationId: auth_address_retrieve
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Address details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Not found."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      summary: Update entire address
+      description: Replace the contents of an existing address.
+      operationId: auth_address_update
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      summary: Partially update address
+      description: Modify only specified fields of an existing address.
+      operationId: auth_address_partial_update
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      summary: Delete an address
+      description: Remove a specific address from the system.
+      operationId: auth_address_destroy
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successfully deleted
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Not found."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /addresses/default/:
+    get:
+      summary: Get default address
+      description: Retrieve the default address set by the user.
+      operationId: auth_address_default_retrieve
+      tags:
+        - address
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Default address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '404':
+          description: No default address found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "No default address found."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /roles/:
+    get:
+      summary: List all roles
+      description: Retrieve a list of all available roles.
+      operationId: auth_role_list
+      tags:
+        - role
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create a new role
+      description: Adds a new role with specified permissions.
+      operationId: auth_role_create
+      tags:
+        - role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+      responses:
+        '201':
+          description: Role created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /roles/{id}/:
+    get:
+      summary: Get role details
+      description: Retrieve information about a specific role by ID.
+      operationId: auth_role_retrieve
+      tags:
+        - role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '404':
+          description: Role not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Not found."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      summary: Update a role
+      description: Replace the contents of an existing role.
+      operationId: auth_role_update
+      tags:
+        - role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+      responses:
+        '200':
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field_name:
+                    type: array
+                    items:
+                      type: string
+                    example: ["This field is required."]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      summary: Delete a role
+      description: Remove a specific role from the system.
+      operationId: auth_role_destroy
+      tags:
+        - role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successfully deleted
+        '404':
+          description: Role not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Not found."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /user_role/:
+    put:
+      summary: Assign role to a user
+      description: Updates the role assigned to a specific user.
+      operationId: auth_user_role_update
+      tags:
+        - user-management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleUpdateRequest'
+      responses:
+        '200':
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User role updated successfully"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Role ID and User ID are required"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Role or user not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Role not found"
+  /view_user/:
+    get:
+      summary: Retrieve user details by email or phone number
+      description: Fetches the user profile using either email or phone number. Requires appropriate permissions.
+      operationId: auth_view_user_retrieve
+      tags:
+        - user-management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: email
+          in: query
+          description: Email of the user
+          required: false
+          schema:
+            type: string
+            example: "user@example.com"
+        - name: phone_number
+          in: query
+          description: Phone number of the user
+          required: false
+          schema:
+            type: string
+            example: "+8801712345678"
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Either email or phone number must be provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Either email or phone number must be provided"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "No user found with email: invalid@example.com"
+
+  /user_permissions/:
+    get:
+      summary: Get user permissions
+      description: Retrieve the permissions assigned to a user.
+      operationId: auth_user_permissions_retrieve
+      tags:
+        - user-management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPermissionResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User ID is required"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found"
+
+    put:
+      summary: Update user permissions
+      description: Modify the permissions assigned to a specific user.
+      operationId: auth_user_permissions_update
+      tags:
+        - user-management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPermissionRequest'
+      responses:
+        '200':
+          description: Permissions updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPermissionResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User ID and permission are required"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User not found"

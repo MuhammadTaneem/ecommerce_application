@@ -6,4 +6,7 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        pass
+        try:
+            import core.signals
+        except Exception as e:
+            print(f"Error registering signals: {e}")

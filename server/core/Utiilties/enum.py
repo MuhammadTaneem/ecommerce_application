@@ -79,12 +79,23 @@ class PermissionEnum(str, Enum):
     delete_user = 'delete_user'
 
 
+
     #voucher
     voucher_create = 'voucher_create'
     voucher_update = 'voucher_update'
     voucher_delete = 'voucher_delete'
     voucher_details = 'voucher_details'
 
+    # Roles
+    roles_create = 'roles_create'
+    roles_update = 'roles_update'
+    roles_delete = 'roles_delete'
+    roles_details = 'roles_details'
+    roles_list = 'roles_list'
+
+    # Permissions
+    user_role_update = 'user_role_update'
+    user_permissions_update = 'user_permissions_update'
 
     @classmethod
     def choices(cls):

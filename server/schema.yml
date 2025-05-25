@@ -1,0 +1,2787 @@
+openapi: 3.0.3
+info:
+  title: Ecommerce API
+  version: 1.0.0
+  description: API documentation for Ecommerce application
+paths:
+  /api/auth/active_user/:
+    post:
+      operationId: auth_active_user_create
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/address/:
+    get:
+      operationId: auth_address_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAddressList'
+          description: ''
+    post:
+      operationId: auth_address_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+          description: ''
+  /api/auth/address/{id}/:
+    get:
+      operationId: auth_address_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this address.
+        required: true
+      tags:
+      - auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+          description: ''
+    put:
+      operationId: auth_address_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this address.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+          description: ''
+    patch:
+      operationId: auth_address_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this address.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAddressRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+          description: ''
+    delete:
+      operationId: auth_address_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this address.
+        required: true
+      tags:
+      - auth
+      responses:
+        '204':
+          description: No response body
+  /api/auth/address/default/:
+    get:
+      operationId: auth_address_default_retrieve
+      tags:
+      - auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+          description: ''
+  /api/auth/change_password/:
+    put:
+      operationId: auth_change_password_update
+      tags:
+      - auth
+      responses:
+        '200':
+          description: No response body
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      tags:
+      - auth
+      responses:
+        '200':
+          description: No response body
+  /api/auth/re_send_activation_email/:
+    post:
+      operationId: auth_re_send_activation_email_create
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/reset_password/:
+    post:
+      operationId: auth_reset_password_create
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/reset_password_confirm/:
+    put:
+      operationId: auth_reset_password_confirm_update
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/sign_up/:
+    post:
+      operationId: auth_sign_up_create
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/update_email/:
+    put:
+      operationId: auth_update_email_update
+      tags:
+      - auth
+      responses:
+        '200':
+          description: No response body
+  /api/auth/update_profile/:
+    put:
+      operationId: auth_update_profile_update
+      tags:
+      - auth
+      responses:
+        '200':
+          description: No response body
+  /api/cart/:
+    get:
+      operationId: cart_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - cart
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCartList'
+          description: ''
+    post:
+      operationId: cart_create
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/cart/{id}/:
+    get:
+      operationId: cart_retrieve
+      description: Override the default retrieve method to ensure a cart is always
+        returned.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cart.
+        required: true
+      tags:
+      - cart
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    put:
+      operationId: cart_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cart.
+        required: true
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    patch:
+      operationId: cart_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cart.
+        required: true
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCartRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: cart_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cart.
+        required: true
+      tags:
+      - cart
+      responses:
+        '204':
+          description: No response body
+  /api/cart/item/:
+    get:
+      operationId: cart_item_retrieve
+      tags:
+      - cart
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    post:
+      operationId: cart_item_create
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: cart_item_destroy
+      tags:
+      - cart
+      responses:
+        '204':
+          description: No response body
+  /api/cart/item_details/{item_id}/:
+    put:
+      operationId: cart_item_details_update
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: cart_item_details_destroy
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - cart
+      responses:
+        '204':
+          description: No response body
+  /api/categories/:
+    get:
+      operationId: categories_list
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - categories
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: categories_create
+      description: Mixin for class-based views with proper error handling
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: categories_update
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: categories_destroy
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/context/:
+    get:
+      operationId: context_retrieve
+      tags:
+      - context
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/order/:
+    get:
+      operationId: order_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - order
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+    post:
+      operationId: order_create
+      description: Create an order from the user's cart within a database transaction.
+      tags:
+      - order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/order/{id}/:
+    get:
+      operationId: order_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+    put:
+      operationId: order_update
+      description: |-
+        Updates an existing order. Supports both full and partial updates.
+        Currently supports only updating top-level fields (e.g., status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    patch:
+      operationId: order_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    delete:
+      operationId: order_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order
+      responses:
+        '204':
+          description: No response body
+  /api/order/{id}/cancel/:
+    post:
+      operationId: order_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/products/:
+    get:
+      operationId: products_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: products_create
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/{id}/:
+    get:
+      operationId: products_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: products_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: products_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/products/{id}/images/:
+    get:
+      operationId: products_images_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    post:
+      operationId: products_images_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/{id}/images/{image_id}/:
+    get:
+      operationId: products_images_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_images_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: image_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/products/{id}/reviews/:
+    get:
+      operationId: products_reviews_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    post:
+      operationId: products_reviews_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/{id}/reviews/{review_id}/:
+    get:
+      operationId: products_reviews_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: products_reviews_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_reviews_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/products/{id}/skus/:
+    get:
+      operationId: products_skus_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    post:
+      operationId: products_skus_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: products_skus_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/{id}/skus/{sku_id}/:
+    get:
+      operationId: products_skus_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: sku_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: products_skus_update_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: sku_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_skus_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: sku_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/products/{id}/tags/:
+    get:
+      operationId: products_tags_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    post:
+      operationId: products_tags_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_tags_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/products/{id}/tags/{tag_id}/:
+    get:
+      operationId: products_tags_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: tag_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: products_tags_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: tag_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_tags_destroy_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product.
+        required: true
+      - in: path
+        name: tag_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/voucher/:
+    get:
+      operationId: voucher_list
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - voucher
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVoucherList'
+          description: ''
+    post:
+      operationId: voucher_create
+      description: Mixin for class-based views with proper error handling
+      tags:
+      - voucher
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VoucherRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VoucherRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+          description: ''
+  /api/voucher/{id}/:
+    get:
+      operationId: voucher_retrieve
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this voucher.
+        required: true
+      tags:
+      - voucher
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+          description: ''
+    put:
+      operationId: voucher_update
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this voucher.
+        required: true
+      tags:
+      - voucher
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VoucherRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VoucherRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+          description: ''
+    patch:
+      operationId: voucher_partial_update
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this voucher.
+        required: true
+      tags:
+      - voucher
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVoucherRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVoucherRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVoucherRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+          description: ''
+    delete:
+      operationId: voucher_destroy
+      description: Mixin for class-based views with proper error handling
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this voucher.
+        required: true
+      tags:
+      - voucher
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Address:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        is_default:
+          type: boolean
+        address_line1:
+          type: string
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        area:
+          type: string
+          maxLength: 100
+        phone_number:
+          type: string
+          maxLength: 20
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - address_line1
+      - created_at
+      - id
+      - name
+      - phone_number
+      - updated_at
+    AddressRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_default:
+          type: boolean
+        address_line1:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        area:
+          type: string
+          maxLength: 100
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+      required:
+      - address_line1
+      - name
+      - phone_number
+    Cart:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+          readOnly: true
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        total_items:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - items
+      - total_amount
+      - total_items
+      - updated_at
+      - user
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        sku:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - id
+      - product
+      - subtotal
+      - unit_price
+    CartItemRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        sku:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+      required:
+      - product
+    CartRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+      required:
+      - user
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        label:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          nullable: true
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
+        parent:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+          pattern: (?:jpg|jpeg|png|gif)$
+        subcategories:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - label
+      - subcategories
+    CategoryRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          nullable: true
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
+        parent:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+          pattern: (?:jpg|jpeg|png|gif)$
+      required:
+      - label
+    DiscountTypeEnum:
+      enum:
+      - PERCENTAGE
+      - FIXED
+      type: string
+      description: |-
+        * `PERCENTAGE` - Percentage
+        * `FIXED` - Fixed Amount
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        order_number:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        city:
+          type: string
+          maxLength: 100
+        area:
+          type: string
+          maxLength: 100
+        address_line1:
+          type: string
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipping_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        phone_number:
+          type: string
+          maxLength: 20
+        tax:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Discount applied via voucher/coupon.
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        voucher:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - discount_amount
+      - id
+      - order_number
+      - total
+      - updated_at
+    OrderDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        order_number:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        city:
+          type: string
+          maxLength: 100
+        area:
+          type: string
+          maxLength: 100
+        address_line1:
+          type: string
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipping_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        phone_number:
+          type: string
+          maxLength: 20
+        tax:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Discount applied via voucher/coupon.
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        voucher:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+      required:
+      - created_at
+      - discount_amount
+      - id
+      - items
+      - order_number
+      - total
+      - updated_at
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        sku:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        variant_info:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - product
+      - quantity
+      - subtotal
+      - unit_price
+      - variant_info
+    OrderRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        area:
+          type: string
+          minLength: 1
+          maxLength: 100
+        address_line1:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipping_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+        tax:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        voucher:
+          type: integer
+          nullable: true
+        voucher_code:
+          type: string
+          writeOnly: true
+          minLength: 1
+    PaginatedAddressList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+    PaginatedCartList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cart'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PaginatedVoucherList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Voucher'
+    PatchedAddressRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_default:
+          type: boolean
+        address_line1:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        area:
+          type: string
+          maxLength: 100
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+    PatchedCartRequest:
+      type: object
+      properties:
+        user:
+          type: integer
+    PatchedCategoryRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          nullable: true
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
+        parent:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+          pattern: (?:jpg|jpeg|png|gif)$
+    PatchedOrderRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        area:
+          type: string
+          minLength: 1
+          maxLength: 100
+        address_line1:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address_line2:
+          type: string
+          maxLength: 255
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipping_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+        tax:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        voucher:
+          type: integer
+          nullable: true
+        voucher_code:
+          type: string
+          writeOnly: true
+          minLength: 1
+    PatchedProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        short_description:
+          type: string
+          nullable: true
+        discount_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        category:
+          type: integer
+          nullable: true
+        key_features: {}
+        description: {}
+        additional_info: {}
+        thumbnail:
+          type: string
+          format: binary
+          pattern: (?:jpg|jpeg|png|gif)$
+        brand:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+        is_deleted:
+          type: boolean
+    PatchedVoucherRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        discount_type:
+          $ref: '#/components/schemas/DiscountTypeEnum'
+        discount_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        usage_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Maximum number of times the voucher can be used.
+        times_used:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+    PaymentStatusEnum:
+      enum:
+      - PENDING
+      - PAID
+      - FAILED
+      - REFUNDED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `PAID` - Paid
+        * `FAILED` - Failed
+        * `REFUNDED` - Refunded
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        has_variants:
+          type: boolean
+          readOnly: true
+        short_description:
+          type: string
+          nullable: true
+        discount_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        category:
+          type: integer
+          nullable: true
+        key_features: {}
+        description: {}
+        additional_info: {}
+        thumbnail:
+          type: string
+          format: uri
+          pattern: (?:jpg|jpeg|png|gif)$
+        brand:
+          type: integer
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_active:
+          type: boolean
+        is_deleted:
+          type: boolean
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+          readOnly: true
+        skus:
+          type: array
+          items:
+            $ref: '#/components/schemas/SKU'
+          readOnly: true
+        average_rating:
+          type: string
+          readOnly: true
+        rating_count:
+          type: string
+          readOnly: true
+      required:
+      - average_rating
+      - base_price
+      - created_at
+      - has_variants
+      - id
+      - images
+      - name
+      - rating_count
+      - skus
+      - tags
+      - updated_at
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+          pattern: (?:jpg|jpeg|png|gif)$
+      required:
+      - id
+      - image
+    ProductImageRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          pattern: (?:jpg|jpeg|png|gif)$
+      required:
+      - image
+    ProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        short_description:
+          type: string
+          nullable: true
+        discount_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        category:
+          type: integer
+          nullable: true
+        key_features: {}
+        description: {}
+        additional_info: {}
+        thumbnail:
+          type: string
+          format: binary
+          pattern: (?:jpg|jpeg|png|gif)$
+        brand:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+        is_deleted:
+          type: boolean
+      required:
+      - base_price
+      - name
+    SKU:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        sku_code:
+          type: string
+          maxLength: 255
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        variants_dict:
+          type: string
+          readOnly: true
+        variants:
+          type: array
+          items:
+            type: integer
+      required:
+      - id
+      - price
+      - product
+      - variants
+      - variants_dict
+    SKURequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        sku_code:
+          type: string
+          maxLength: 255
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        variants:
+          type: array
+          items:
+            type: integer
+      required:
+      - price
+      - product
+      - variants
+    StatusEnum:
+      enum:
+      - PENDING
+      - PROCESSING
+      - SHIPPED
+      - DELIVERED
+      - CANCELLED
+      - REFUNDED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `PROCESSING` - Processing
+        * `SHIPPED` - Shipped
+        * `DELIVERED` - Delivered
+        * `CANCELLED` - Cancelled
+        * `REFUNDED` - Refunded
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          nullable: true
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+    TagRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          nullable: true
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - name
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 50
+        discount_type:
+          $ref: '#/components/schemas/DiscountTypeEnum'
+        discount_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        usage_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Maximum number of times the voucher can be used.
+        times_used:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - code
+      - discount_type
+      - discount_value
+      - id
+      - valid_from
+      - valid_to
+    VoucherRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        discount_type:
+          $ref: '#/components/schemas/DiscountTypeEnum'
+        discount_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        usage_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Maximum number of times the voucher can be used.
+        times_used:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - code
+      - discount_type
+      - discount_value
+      - valid_from
+      - valid_to

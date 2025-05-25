@@ -24,7 +24,7 @@ default_roles = [
                 PermissionEnum.category_list_view, PermissionEnum.category_create, PermissionEnum.category_update
 
             ],
-        'description': 'Man ',
+        'description': 'Manager ',
         'is_active': True
     },
     {

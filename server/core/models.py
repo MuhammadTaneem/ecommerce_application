@@ -10,7 +10,9 @@ from django.conf import settings
 class Role(models.Model):
     name = models.CharField(max_length=100, unique=True)
     permissions = models.JSONField(default=list)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True,default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -39,17 +41,17 @@ class Usermanager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=30, null=True)
-    last_name = models.CharField(max_length=30, null=True)
+    first_name = models.CharField(max_length=30, blank=True, default="")
+    last_name = models.CharField(max_length=30, blank=True, default="")
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=15, blank=True, null=True)
+    phone = models.CharField(max_length=15, blank=True, default="")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    last_login = models.DateTimeField(null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    last_login = models.DateTimeField( blank=True, default=None, null=True)
+    avatar = models.ImageField(upload_to='avatars/',  blank=True, default="")
     permissions = models.JSONField(default=list)
     role = models.ForeignKey(
         Role,
@@ -66,6 +68,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def clean(self):
         if self.phone:
+            
             if User.objects.filter(phone=self.phone).exclude(id=self.id).exists():
                 raise ValidationError(f"The phone number {self.phone} is already in use.")
 
@@ -89,37 +92,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-#
-# class Address(models.Model):
-#
-#     name = models.CharField(max_length=100)
-#     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='addresses')
-#     address_line1 = models.CharField( max_length=255)
-#     address_line2 = models.CharField( default= '', max_length=255, blank=True)
-#     city = models.CharField(max_length=100)
-#     is_default = models.BooleanField(default=False)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-#
-#     def create(self, validated_data):
-#         user = validated_data['user']
-#         if not validated_data.get('name'):
-#             count = Address.objects.filter(user=user).count() + 1
-#             validated_data['name'] = f"Address {count}"
-#         return super().create(validated_data)
-#
-#
-#     def save(self, *args, **kwargs):
-#         if self.is_default:
-#             Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
-#         super(Address, self).save(*args, **kwargs)
-#
-#     @property
-#     def get_default_address(self):
-#         return Address.objects.filter(user=self.user, is_default=True).first()
-#
-#     def __str__(self):
-#         return self.name
 
 class Address(models.Model):
     user = models.ForeignKey(
@@ -131,8 +103,8 @@ class Address(models.Model):
     is_default = models.BooleanField(default=False)
     address_line1 = models.CharField(max_length=255)
     address_line2 = models.CharField(max_length=255, blank=True, default="")
-    city = models.CharField(max_length=100, blank=True)
-    area = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True, default="")
+    area = models.CharField(max_length=100, blank=True, default="")
     phone_number = models.CharField(max_length=20)
 
     # Metadata

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import check_password
 from core.Utiilties.authentication import t_auth_active_token_verify, t_auth_reset_token_verify
-from core.Utiilties.permission_chacker import has_permissions
+from core.Utiilties.permission_chacker import has_permissions, HasPermissionMixin
 from core.Utiilties.utilities_functions import token_generator, activation_email_sender, reset_password_email_sender
 from core.serializers import *
 from core.Utiilties.enum import TokenType
@@ -39,24 +39,12 @@ def user_login(request):
 
 
 @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# @permission_required('product_details', raise_exception=True, login_url='/auth/login')
-@has_permissions(PermissionEnum.product_delete)
-def user_logout(self):
-    return Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
-
-
-@api_view(['POST'])
 def sign_up(request):
     if request.method == 'POST':
         serializer = ReadWriteUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            # start_time = datetime.datetime.now()
             activation_email_sender.delay(user.email, request.user.id)
-            # activation_email_sender(user.email, request.user.id)
-            # end_time = datetime.datetime.now()
-            # print(f"execution time: {end_time - start_time}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
@@ -73,7 +61,6 @@ def get_profile(request):
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-# @permission_required('app_label.permission_codename')
 def change_password(request):
     if request.method == 'PUT':
         user = request.user
@@ -118,40 +105,6 @@ def update_email(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return None
 
-
-# def token_generator(user_id, token_type):
-#     try:
-#         # token_life_time = get_token_life_time(token_type)
-#         token_life_time = datetime.timedelta(minutes=2)
-#         algorithm = config_data['algorithm']
-#         if token_type.access:
-#             token_life_time = config_data['access_token_life_time']
-#         elif token_type.active:
-#             token_life_time = config_data['active_token_life_time']
-#         elif token_type.reset:
-#             token_life_time = config_data['reset_token_life_time']
-#         payload = {
-#             'id': user_id,
-#             'exp': datetime.datetime.now(datetime.UTC) + token_life_time,
-#             "type": token_type.name,
-#             'iat': datetime.datetime.now(datetime.UTC)
-#         }
-#         # return jwt.encode(payload, settings.SECRET_KEY, algorithm=algorithm).decode('utf-8')
-#         return jwt.encode(payload, settings.SECRET_KEY, algorithm=algorithm)
-#     except:
-#         return Response(data="Internal Server Error", status=status.HTTP_400_BAD_REQUEST)
-
-
-# def send_activation_email(email, user_id):
-#     try:
-#         token = token_generator(user_id=user_id, token_type=TokenType.active)
-#         active_user_url = config_data['urls']['active_user_url']
-#         context = {'activation_url': active_user_url + token, 'logo_url': config_data['logo_url']}
-#         template_path = 'emails/active_user.html'
-#         html_content = render_to_string(template_path, context)
-#         return email_sender(email=email, body=html_content, subject='User Activation Email')
-#     except:
-#         return False
 
 
 @api_view(['POST'])
@@ -248,3 +201,93 @@ class AddressViewSet(viewsets.ModelViewSet):
             {"detail": "No default address found."},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+class RoleViewSet(HasPermissionMixin, viewsets.ModelViewSet):
+    serializer_class = RoleSerializer
+    permission_classes = [IsAuthenticated]
+    method_permissions = {
+        'PUT': PermissionEnum.role_update,
+        'GET': PermissionEnum.role_list_view,
+        'DELETE': PermissionEnum.role_delete,
+        'POST': PermissionEnum.role_create
+    }
+
+    def get_queryset(self):
+        roles = Role.objects.all()
+        return roles
+    
+
+@api_view(['PUT'])
+@has_permissions(PermissionEnum.user_role_update)
+def user_role_update(request):
+    role_id = request.data.get('role_id')
+    user_id = request.data.get('user_id')
+    role = None
+
+    if not role_id and not user_id:
+        return Response({'message': 'Role ID and User ID are required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    role = Role.objects.filter(id=role_id).first()
+    if not role:
+        return Response({'message': 'Role not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            if not user:
+                return Response({'message': 'User is not found'}, status=status.HTTP_400_BAD_REQUEST)
+            user.role = role
+            user.save()
+        except User.DoesNotExist:
+            return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({'message': 'User role updated successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'PUT'])
+@has_permissions(PermissionEnum.user_permissions_update)
+def user_permissions_view(request):
+    user_id = request.data.get('user_id')
+    permission = request.data.get('permission')
+    if not user_id and not permission:
+        return Response({'message': 'User ID and Permission are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'PUT':
+        serializer = UserPermissionSerializer(user, data=permission, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
+
+
+
+@api_view(['GET'])
+@has_permissions(PermissionEnum.view_user)
+def view_user(request):
+    phone_number = request.query_params.get('phone_number')
+    email = request.query_params.get('email')
+    if not phone_number or not email:
+        return Response({'message': 'Phone number or email is required'}, status=status.HTTP_400_BAD_REQUEST)
+   
+    if email:
+        try:
+            user = User.objects.get(email=email)
+            serializer = ReadWriteUserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    if phone_number:
+        try:
+            user = User.objects.get(phone_number=phone_number)
+            serializer = ReadWriteUserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'message': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)

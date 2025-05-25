@@ -1,4 +1,6 @@
 import re
+
+from django.contrib.auth.models import Permission
 from rest_framework import serializers
 from core.Utiilties.config import ConfData
 from core.Utiilties.enum import PermissionEnum
@@ -54,6 +56,17 @@ class UserUpdateSerializer(BaseUserSerializer):
         exclude = ['password', 'permissions', User.USERNAME_FIELD]
         read_only_fields = ('role', 'is_superuser', 'is_staff', 'is_active', 'permissions', 'created', 'last_login')
 
+
+class UserPermissionSerializer(serializers.ModelSerializer):
+    permissions = serializers.ListField(
+        child=serializers.ChoiceField(choices=[(perm.value, perm.name) for perm in PermissionEnum]),
+        allow_empty=True
+    )
+
+    class Meta:
+        model = User
+        fields = ['permissions']
+        
 
 class UserEmailUpdate(BaseUserSerializer):
     class Meta:

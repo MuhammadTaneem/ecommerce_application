@@ -19,6 +19,7 @@ def assign_default_role(sender, instance, created, **kwargs):
 
 @receiver(post_migrate)
 def create_or_update_default_roles(sender, **kwargs):
+    print("enter post migrate")
     for role in default_roles:
         obj, created = Role.objects.get_or_create(name=role['name'])
         if created:
