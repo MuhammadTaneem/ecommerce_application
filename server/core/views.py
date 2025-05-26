@@ -1,5 +1,6 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.hashers import check_password
@@ -207,10 +208,10 @@ class RoleViewSet(HasPermissionMixin, viewsets.ModelViewSet):
     serializer_class = RoleSerializer
     permission_classes = [IsAuthenticated]
     method_permissions = {
-        'PUT': PermissionEnum.role_update,
-        'GET': PermissionEnum.role_list_view,
-        'DELETE': PermissionEnum.role_delete,
-        'POST': PermissionEnum.role_create
+        'PUT': PermissionEnum.roles_update,
+        'GET': PermissionEnum.roles_list,
+        'DELETE': PermissionEnum.roles_delete,
+        'POST': PermissionEnum.roles_create
     }
 
     def get_queryset(self):
@@ -269,25 +270,30 @@ def user_permissions_view(request):
 
 
 @api_view(['GET'])
-@has_permissions(PermissionEnum.view_user)
-def view_user(request):
-    phone_number = request.query_params.get('phone_number')
+@has_permissions([PermissionEnum.view_user])
+def list_users(request):
+    queryset = User.objects.all()
+
     email = request.query_params.get('email')
-    if not phone_number or not email:
-        return Response({'message': 'Phone number or email is required'}, status=status.HTTP_400_BAD_REQUEST)
-   
+    phone = request.query_params.get('phone')
+    role_id = request.query_params.get('role_id')
+    search = request.query_params.get('search')
+
     if email:
-        try:
-            user = User.objects.get(email=email)
-            serializer = ReadWriteUserSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    if phone_number:
-        try:
-            user = User.objects.get(phone_number=phone_number)
-            serializer = ReadWriteUserSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    return Response({'message': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
+        queryset = queryset.filter(email__iexact=email)
+
+    if phone:
+        queryset = queryset.filter(phone__iexact=phone)
+
+    if role_id:
+        queryset = queryset.filter(role_id=role_id)
+
+    if search:
+        queryset = queryset.filter(first_name__icontains=search) | queryset.filter(last_name__icontains=search)
+
+    # Use DRF's built-in LimitOffsetPagination
+    paginator = LimitOffsetPagination()
+    paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+    serializer = ReadWriteUserSerializer(paginated_queryset, many=True)
+    return paginator.get_paginated_response(serializer.data)

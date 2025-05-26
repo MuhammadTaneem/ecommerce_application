@@ -8,7 +8,7 @@ COPY package*.json ./
 RUN npm install
 
 # Add development dependencies for better hot reloading
-RUN npm install -D @vitejs/plugin-react-refresh
+#RUN npm install -D @vitejs/plugin-react-refresh
 
 COPY . .
 

@@ -1,94 +1,36 @@
-import { useState} from "react";
-import NavbarComponent from "./navbar.tsx";
-import { Outlet } from "react-router-dom";
-import FooterComponent from "./footer.tsx";
-import SidebarComponent from "./sidebar.tsx";
-import { useMediaQuery } from "react-responsive";
-import AdminSidebarComponent from "./admin_sidebar.tsx";
-const isAuthenticated:boolean = true;
-const isAdminUser:boolean = true;
+import { Outlet } from 'react-router-dom';
+import { Suspense, useState } from 'react';
+import Header from './Header';
+import Footer from './Footer';
+import Sidebar from './Sidebar';
+import ShoppingCart from '../shop/ShoppingCart';
+import { useCart } from '../../hooks/useCart';
 
+const Layout = () => {
+  const { isOpen } = useCart();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-export interface NavbarComponentProps {
-    onToggleSidebar: () => void;
-    isSidebarOpen: boolean;
-    isLargeScreen: boolean;
-}
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header onMenuClick={() => setSidebarOpen(true)} />
+      
+      <div className="flex flex-1">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <main className="flex-1">
+          <div className="container-custom py-8">
+            <Suspense fallback={<div>Loading...</div>}>
+              <Outlet />
+            </Suspense>
+          </div>
+        </main>
+      </div>
+      
+      <Footer />
+      
+      <ShoppingCart isOpen={isOpen} />
+    </div>
+  );
+};
 
-
-export default function LayoutComponent() {
-    const isLargeScreen = useMediaQuery({query: "(min-width: 1200px)"});
-    const [isSidebarOpen, setIsSidebarOpen] = useState(isLargeScreen);
-
-    // Function to toggle sidebar
-    const toggleSidebar = () => {
-        setIsSidebarOpen(prevState => !prevState);
-    };
-
-
-//
-//     return (
-//         <>
-//
-//             {isAuthenticated ? <NavbarComponent  onToggleSidebar={toggleSidebar}
-//                                                  isSidebarOpen={isSidebarOpen}
-//                                                  isLargeScreen={isLargeScreen}
-//             /> : <h2>Please log in.</h2>}
-//             <div className="main-container flex">
-//                 {isAdminUser && <AdminSidebarComponent></AdminSidebarComponent>}
-//                 {isSidebarOpen && !isAdminUser && <SidebarComponent  onToggleSidebar={toggleSidebar}
-//                                                      isSidebarOpen={isSidebarOpen}
-//                                                      isLargeScreen={isLargeScreen} />}
-//                 <div className="clearfix">
-//
-//                 < Outlet />
-//                 </div>
-//             </div>
-//             <FooterComponent />
-//         </>
-//     );
-// }
-
-    return (
-        <>
-            {/* Navbar: Show if authenticated */}
-            {isAuthenticated ? (
-                <NavbarComponent
-                    onToggleSidebar={toggleSidebar}
-                    isSidebarOpen={isSidebarOpen}
-                    isLargeScreen={isLargeScreen}
-                />
-            ) : (
-                <h2>Please log in.</h2>
-            )}
-
-            {/* Main container */}
-            <div className="flex">
-
-                <div className="text-nowrap">
-                    {/* Admin Sidebar: Show only for admin users */}
-                    {isAdminUser &&  isSidebarOpen && <AdminSidebarComponent/>}
-
-                    {/* Regular Sidebar: Show for non-admin users when sidebar is open */}
-                    {!isAdminUser && isSidebarOpen && (
-                        <SidebarComponent
-                            onToggleSidebar={toggleSidebar}
-                            isSidebarOpen={isSidebarOpen}
-                            isLargeScreen={isLargeScreen}
-                        />
-                    )}
-                </div>
-
-
-                {/* Main content */}
-                <div className="size-full">
-                    <Outlet/>
-                </div>
-            </div>
-
-            {/* Footer */}
-            <FooterComponent/>
-        </>
-    );
-
-}
+export default Layout;

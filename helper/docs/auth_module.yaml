@@ -123,7 +123,7 @@ components:
         city:
           type: string
         area:
-          type: string
+            type: string
         phone_number:
           type: string
         is_default:
@@ -1100,59 +1100,6 @@ paths:
                   message:
                     type: string
                     example: "Role not found"
-  /view_user/:
-    get:
-      summary: Retrieve user details by email or phone number
-      description: Fetches the user profile using either email or phone number. Requires appropriate permissions.
-      operationId: auth_view_user_retrieve
-      tags:
-        - user-management
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: email
-          in: query
-          description: Email of the user
-          required: false
-          schema:
-            type: string
-            example: "user@example.com"
-        - name: phone_number
-          in: query
-          description: Phone number of the user
-          required: false
-          schema:
-            type: string
-            example: "+8801712345678"
-      responses:
-        '200':
-          description: User details retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '400':
-          description: Either email or phone number must be provided
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Either email or phone number must be provided"
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "No user found with email: invalid@example.com"
 
   /user_permissions/:
     get:
@@ -1242,3 +1189,88 @@ paths:
                   message:
                     type: string
                     example: "User not found"
+
+  /list_users/:
+    get:
+      summary: List all users with filters and limit-offset pagination
+      description: Retrieve a paginated list of users. Allows filtering by email, phone, role ID, and searching by name.
+      operationId: auth_list_users
+      tags:
+        - user-management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: email
+          in: query
+          description: Filter by exact email address
+          required: false
+          schema:
+            type: string
+            example: "user@example.com"
+        - name: phone
+          in: query
+          description: Filter by exact phone number
+          required: false
+          schema:
+            type: string
+            example: "+8801712345678"
+        - name: role_id
+          in: query
+          description: Filter by role ID
+          required: false
+          schema:
+            type: integer
+            example: 2
+        - name: search
+          in: query
+          description: Search in first_name or last_name (case-insensitive)
+          required: false
+          schema:
+            type: string
+            example: "john"
+        - name: limit
+          in: query
+          description: Number of results per page (default 10, max 100)
+          required: false
+          schema:
+            type: integer
+            example: 20
+        - name: offset
+          in: query
+          description: Starting index for results
+          required: false
+          schema:
+            type: integer
+            example: 0
+      responses:
+        '200':
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid request"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

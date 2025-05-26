@@ -1,100 +1,86 @@
-import {useEffect, useState} from "react";
-import axiosInstance from "../../utilites/api.ts";
-import {addCategory} from "@/features/categoriesSlice.ts";
-import {useAppDispatch, useAppSelector} from "@/core/store.ts";
-import {ChevronRightIcon, ChevronDownIcon, XMarkIcon, Bars3Icon} from '@heroicons/react/24/solid'
-import {CategoryType} from "@/features/categories_type.ts";
-import {useNavigate} from "react-router-dom";
-import {NavbarComponentProps} from "./layout.tsx";
+import { useRef, useEffect } from 'react';
+import { X } from 'lucide-react';
+import CategoryTreeNav from '../navigation/CategoryTreeNav';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
-
-export default function SidebarComponent({onToggleSidebar, isSidebarOpen, isLargeScreen}: NavbarComponentProps) {
-    const categories: CategoryType[] = useAppSelector(state => state.categories.categories)
-    console.log(isLargeScreen);
-    const dispatch = useAppDispatch();
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axiosInstance.get('/products/categories/');
-                console.log(response.data);
-                dispatch(addCategory(response.data));
-            } catch (error) {
-                console.error('There was an error!', error);
-            }
-        };
-        fetchData();
-    }, []);
-
-
-    return (<>
-        <div className="sidebar p-4  w-auto h-screen border">
-            <div className="button-line mb-4 grid justify-items-end">
-                {<button
-                    className="flex items-center justify-center w-10 h-10 rounded-full transition"
-                    onClick={onToggleSidebar}
-                    aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
-                >
-                    {isSidebarOpen ? (
-                        <XMarkIcon className="w-5 h-5 "/>
-                    ) : (
-                        <Bars3Icon className="w-5 h-5"/>
-                    )}
-                </button>}
-            </div>
-
-
-            {categories.map((category) => (
-                    <CategoryDropdown key={category.id} category={category}/>
-                ))}
-
-        </div>
-    </>)
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
+const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+  const { categories } = useSelector((state: RootState) => state.categories);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
-function CategoryDropdown({category}: { category: CategoryType }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const toggleDropdown = () => {
-        setIsOpen(!isOpen);
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
     };
-    const navigate = useNavigate();
 
-    const navigateToProducts = (categorySlug: string) => {
-        navigate(`/products/#${categorySlug}`);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, [isOpen, onClose]);
 
-    return (
+  // Prevent scrolling when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
 
-
-        <div className="">
-
-            <div
-                className="cursor-pointer flex justify-between items-center "
-            >
-                <span
-                    className="hover:text-blue-600"
-                    onClick={() => navigateToProducts(category.slug)}> {category.label}</span>
-                {category.subcategories.length > 0 && (
-                    <span onClick={toggleDropdown} className="pl-10 hover:text-blue-600">{isOpen ?
-                        <ChevronDownIcon className='w-5 h-5'/> :
-                        <ChevronRightIcon className="w-5 h-5"/>}</span>
-                )}
-            </div>
-            {isOpen && category.subcategories.length > 0 && (
-                <div className="ml-4">
-
-                    {category.subcategories.map((subcategory: CategoryType) => (
-                        <span key={subcategory.id} onClick={(e) => {
-                            e.stopPropagation();
-                        }}>
-                            <CategoryDropdown key={subcategory.id} category={subcategory}/>
-                        </span>
-
-                    ))}
-                </div>
-            )}
+  return (
+    <>
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden"
+          aria-hidden="true"
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div
+        ref={sidebarRef}
+        className={`fixed inset-y-0 left-0 z-50 w-full max-w-xs transform overflow-y-auto bg-white p-6 transition-all duration-300 ease-in-out dark:bg-gray-800 md:relative md:inset-y-auto md:left-auto md:z-0 md:flex md:w-64 md:transform-none md:flex-col md:overflow-y-auto ${
+          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        <div className="flex items-center justify-between md:hidden">
+          <h2 className="text-xl font-bold">Categories</h2>
+          <button
+            onClick={onClose}
+            className="rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="Close sidebar"
+          >
+            <X size={20} />
+          </button>
         </div>
+        
+        <div className="mt-6 hidden md:block">
+          <h2 className="text-xl font-bold">Categories</h2>
+        </div>
+        
+        <nav className="mt-8">
+          <CategoryTreeNav categories={categories} />
+        </nav>
+      </div>
+    </>
+  );
+};
 
-
-    );
-}
+export default Sidebar;
