@@ -80,6 +80,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return f'{self.first_name} {self.last_name}'.strip()
 
     @property
+    def role_name(self):
+        return self.role.name
+
+    @property
     def get_default_address(self):
         return self.addresses.filter(is_default=True).first()
 

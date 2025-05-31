@@ -1,5 +1,42 @@
-# docker-compose.yml
+version: '3.8'
+
 services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${NAME}
+      - POSTGRES_USER=${USER}
+      - POSTGRES_PASSWORD=${PASSWORD}
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5433:5432"
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER} -d ${NAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   backend:
     build: 
       context: ./server
@@ -13,9 +50,10 @@ services:
     container_name: django_container
     command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     depends_on:
-      - db
-      - redis
-      - celery_worker
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -34,8 +72,8 @@ services:
     networks:
       - ecommerce_network 
     restart: always
-    stdin_open: true  # Enable STDIN for pdb
-    tty: true        # Enable TTY for pdb
+    stdin_open: true
+    tty: true
 
   celery_worker:
     build:
@@ -44,6 +82,9 @@ services:
     command: celery -A server worker --loglevel=info
     volumes:
       - ./server:/app
+    depends_on:
+      - backend
+      - redis
     env_file:
       - .env
     environment:
@@ -52,79 +93,33 @@ services:
       - PYTHONUNBUFFERED=1
     restart: always
     networks:
-      - ecommerce_network 
+      - ecommerce_network
 
-  # celery_beat:
+  # frontend:
   #   build:
-  #     context: ./server
+  #     context: ./user_interface
   #     dockerfile: Dockerfile
-  #   command: celery -A server beat --loglevel=info
+  #   container_name: frontend_container
   #   volumes:
-  #     - ./server:/app
-  #   depends_on:
-  #    - celery_worker
+  #     - ./user_interface:/app
+  #     - /app/node_modules  # Prevent overwriting node_modules
+  #   ports:
+  #     - "5173:5173"
   #   environment:
-  #     - PYTHONUNBUFFERED=1
+  #     - CHOKIDAR_USEPOLLING=true
+  #     - WATCHPACK_POLLING=true
+  #     - FAST_REFRESH=true
+  #     - VITE_API_URL=http://localhost:8000
+  #   depends_on:
+  #     - backend
   #   networks:
-  #     - ecommerce_network  
-  #   restart: always
-
-  db:
-    image: postgres
-    volumes:
-      - postgres_data:/data/postgres
-    environment:
-      - POSTGRES_DB=${NAME}
-      - POSTGRES_USER=${USER}
-      - POSTGRES_PASSWORD=${PASSWORD}
-      - HOST=${HOST}
-      - PORT=${PORT}
-    container_name: postgres_db
-    restart: always
-    ports:
-      - "5433:5432"
-    networks:
-      - ecommerce_network 
-
-  redis:
-    image: redis:alpine
-    container_name: redis_container
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: always
-    env_file:
-      - .env
-    environment:
-      - CACHES_LOCATION=${CACHES_LOCATION}
-    networks:
-      - ecommerce_network 
-
-  frontend:
-    build:
-      context: ./user_interface
-      dockerfile: Dockerfile
-    container_name: frontend_container
-    volumes:
-      - ./user_interface:/app
-      - /app/node_modules
-    ports:
-      - "5174:5174"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
-      - FAST_REFRESH=true
-    command: npm run dev -- --host 0.0.0.0
-    networks:
-      - ecommerce_network 
-    stdin_open: true
-    tty: true
+  #     - ecommerce_network 
+  #   stdin_open: true
+  #   tty: true
 
 volumes:
   postgres_data:
   redis_data:
-  node_modules: {}
 
 networks:
   ecommerce_network:

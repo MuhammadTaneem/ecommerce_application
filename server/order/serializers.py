@@ -160,5 +160,5 @@ class OrderDetailSerializer(OrderSerializer):
 class VoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voucher
-        fields = ['id', 'code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'usage_limit',
+        fields = ['id', 'code', 'discount_type', 'discount_value', 'valid_from', 'valid_to', 'usage_limit','max_discount_amount',
                   'times_used']

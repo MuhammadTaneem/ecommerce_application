@@ -49,7 +49,7 @@ const CategoryItem = ({ category, level }: CategoryItemProps) => {
         {hasSubcategories && (
           <button
             onClick={toggleOpen}
-            className="mr-1 p-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+            className="mr-1 p-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
             aria-label={isOpen ? 'Collapse category' : 'Expand category'}
           >
             {isOpen ? (
@@ -62,7 +62,7 @@ const CategoryItem = ({ category, level }: CategoryItemProps) => {
         
         <Link
           to={`/products/${category.slug}`}
-          className="flex-1 rounded-md py-2 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-primary-400"
+          className="flex-1 rounded-md py-2 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-primary-400"
           onClick={handleCategoryClick}
         >
           {category.label.charAt(0).toUpperCase() + category.label.slice(1)}

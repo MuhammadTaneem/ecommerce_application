@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
-import { ShoppingCart, Menu, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, Search, User, AlignLeft, LogOut, Settings, Package } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import ThemeToggle from '../ui/ThemeToggle';
 import Button from '../ui/Button';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -11,16 +12,54 @@ interface HeaderProps {
 
 const Header = ({ onMenuClick }: HeaderProps) => {
   const { totalItems, open } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Add scroll event listener
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 10) {
-      setIsScrolled(true);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      setShowUserMenu(!showUserMenu);
     } else {
-      setIsScrolled(false);
+      navigate('/login');
     }
-  });
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+  };
 
   return (
     <header 
@@ -33,12 +72,22 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       <div className="container-custom">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
+            {/* Mobile menu button */}
             <button
               onClick={onMenuClick}
               className="mr-4 rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 md:hidden"
-              aria-label="Open menu"
+              aria-label="Toggle mobile menu"
             >
               <Menu size={20} />
+            </button>
+            
+            {/* Desktop sidebar toggle */}
+            <button
+              onClick={onMenuClick}
+              className="mr-4 hidden rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 md:flex items-center"
+              aria-label="Toggle sidebar"
+            >
+              <AlignLeft size={20} />
             </button>
             
             <Link to="/" className="flex items-center">
@@ -99,12 +148,67 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               )}
             </Button>
             
-            <div className="hidden md:block">
-              <Link to="/login">
-                <Button variant="outline" size="sm">
-                  Login
-                </Button>
-              </Link>
+            <div className="relative" ref={userMenuRef}>
+              <Button
+                variant="ghost"
+                onClick={handleProfileClick}
+                aria-label={isAuthenticated ? "View profile" : "Sign in"}
+                className="hidden md:flex items-center"
+              >
+                {isAuthenticated ? (
+                  <div className="flex items-center">
+                    <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                      {user?.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="ml-2 hidden lg:block">{user?.name}</span>
+                  </div>
+                ) : (
+                  <User size={20} />
+                )}
+              </Button>
+              
+              {/* User dropdown menu */}
+              {showUserMenu && isAuthenticated && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-gray-700">
+                  <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">
+                    <p className="font-medium">{user?.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                  </div>
+                  <div className="border-t border-gray-100 dark:border-gray-700"></div>
+                  <Link
+                    to="/profile"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <User size={16} className="mr-2" />
+                    Profile
+                  </Link>
+                  <Link
+                    to="/orders"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <Package size={16} className="mr-2" />
+                    Orders
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <Settings size={16} className="mr-2" />
+                    Settings
+                  </Link>
+                  <div className="border-t border-gray-100 dark:border-gray-700"></div>
+                  <button
+                    className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={16} className="mr-2" />
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

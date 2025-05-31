@@ -3,15 +3,17 @@ FROM node:20-slim
 
 WORKDIR /app
 
+# Copy package files first for better caching
 COPY package*.json ./
 
-RUN npm install
+# Install dependencies
+RUN npm ci --only=production=false
 
-# Add development dependencies for better hot reloading
-#RUN npm install -D @vitejs/plugin-react-refresh
-
+# Copy source code
 COPY . .
 
+# Expose the port
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Start the development server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

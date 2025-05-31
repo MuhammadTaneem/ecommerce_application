@@ -5,23 +5,92 @@ import { z } from 'zod';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
-import { Package, CreditCard, Settings, User } from 'lucide-react';
+import { Package, CreditCard, Settings, User, MapPin, Plus } from 'lucide-react';
+import AddressForm from '../components/profile/AddressForm';
+import AddressCard from '../components/profile/AddressCard';
+import { Address } from '../types';
+import OrderDetailsModal from '../components/shop/OrderDetailsModal';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Please enter a valid email address'),
   phone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
-  country: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  
+  // Simulated addresses data - in a real app, this would come from Redux/API
+  const [addresses, setAddresses] = useState<Address[]>([
+    {
+      id: 1,
+      name: 'Home',
+      address_line1: '123 Main Street',
+      address_line2: 'Apt 4B',
+      city: 'Dhaka',
+      area: 'Uttara',
+      phone_number: '+8801234567890',
+      is_default: true,
+    },
+    {
+      id: 2,
+      name: 'Office',
+      address_line1: '456 Business Avenue',
+      city: 'Dhaka',
+      area: 'Banani',
+      phone_number: '+8801987654321',
+      is_default: false,
+    },
+  ]);
+  
+  // Sample orders data
+  const [orders, setOrders] = useState([
+    {
+      id: 'ORD-1001',
+      date: '2024-03-15',
+      status: 'Delivered',
+      items: [
+        {
+          id: 1,
+          name: 'Product 1',
+          price: 49.99,
+          quantity: 2,
+          image: 'https://via.placeholder.com/150',
+          hasReview: false
+        },
+        {
+          id: 2,
+          name: 'Product 2',
+          price: 29.99,
+          quantity: 1,
+          image: 'https://via.placeholder.com/150',
+          hasReview: true
+        }
+      ],
+      total: 129.97
+    },
+    {
+      id: 'ORD-1002',
+      date: '2024-03-10',
+      status: 'Delivered',
+      items: [
+        {
+          id: 3,
+          name: 'Product 3',
+          price: 79.99,
+          quantity: 1,
+          image: 'https://via.placeholder.com/150',
+          hasReview: false
+        }
+      ],
+      total: 79.99
+    }
+  ]);
   
   const {
     register,
@@ -33,21 +102,60 @@ const ProfilePage = () => {
       name: 'John Doe',
       email: 'john.doe@example.com',
       phone: '(123) 456-7890',
-      address: '123 Main St',
-      city: 'Anytown',
-      state: 'CA',
-      zip: '12345',
-      country: 'United States',
     },
   });
 
   const onSubmit = async (data: ProfileFormData) => {
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
     console.log('Profile data:', data);
+  };
+
+  const handleAddressSubmit = async (data: Omit<Address, 'id'>) => {
+    if (editingAddress) {
+      // Update existing address
+      setAddresses(addresses.map(addr => 
+        addr.id === editingAddress.id ? { ...data, id: addr.id } : addr
+      ));
+    } else {
+      // Add new address
+      const newAddress = {
+        ...data,
+        id: Math.max(...addresses.map(a => a.id), 0) + 1,
+      };
+      setAddresses([...addresses, newAddress]);
+    }
     
-    // This would be replaced with actual profile update logic
-    // dispatch(updateProfile(data));
+    setShowAddressForm(false);
+    setEditingAddress(null);
+  };
+
+  const handleEditAddress = (address: Address) => {
+    setEditingAddress(address);
+    setShowAddressForm(true);
+  };
+
+  const handleDeleteAddress = (id: number) => {
+    setAddresses(addresses.filter(addr => addr.id !== id));
+  };
+
+  const handleAddReview = (orderId: string, itemId: number, rating: number, comment: string) => {
+    setOrders(orders.map(order => {
+      if (order.id === orderId) {
+        return {
+          ...order,
+          items: order.items.map(item => {
+            if (item.id === itemId) {
+              return {
+                ...item,
+                hasReview: true
+              };
+            }
+            return item;
+          })
+        };
+      }
+      return order;
+    }));
   };
 
   const renderTabContent = () => {
@@ -55,67 +163,26 @@ const ProfilePage = () => {
       case 'profile':
         return (
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <Input
-                  label="Full Name"
-                  error={errors.name?.message}
-                  {...register('name')}
-                />
-              </div>
+            <div className="grid gap-6">
+              <Input
+                label="Full Name"
+                error={errors.name?.message}
+                {...register('name')}
+              />
               
-              <div className="sm:col-span-2">
-                <Input
-                  label="Email"
-                  type="email"
-                  error={errors.email?.message}
-                  {...register('email')}
-                />
-              </div>
+              <Input
+                label="Email"
+                type="email"
+                error={errors.email?.message}
+                {...register('email')}
+              />
               
-              <div>
-                <Input
-                  label="Phone"
-                  {...register('phone')}
-                />
-              </div>
-              
-              <div className="sm:col-span-2">
-                <Input
-                  label="Address"
-                  {...register('address')}
-                />
-              </div>
+              <Input
+                label="Phone"
+                {...register('phone')}
+              />
               
               <div>
-                <Input
-                  label="City"
-                  {...register('city')}
-                />
-              </div>
-              
-              <div>
-                <Input
-                  label="State/Province"
-                  {...register('state')}
-                />
-              </div>
-              
-              <div>
-                <Input
-                  label="ZIP/Postal Code"
-                  {...register('zip')}
-                />
-              </div>
-              
-              <div>
-                <Input
-                  label="Country"
-                  {...register('country')}
-                />
-              </div>
-              
-              <div className="sm:col-span-2">
                 <Button
                   type="submit"
                   loading={isSubmitting}
@@ -127,32 +194,73 @@ const ProfilePage = () => {
           </form>
         );
       
+      case 'addresses':
+        return (
+          <div className="space-y-6">
+            {showAddressForm ? (
+              <AddressForm
+                address={editingAddress || undefined}
+                onSubmit={handleAddressSubmit}
+                onCancel={() => {
+                  setShowAddressForm(false);
+                  setEditingAddress(null);
+                }}
+              />
+            ) : (
+              <>
+                <Button
+                  onClick={() => setShowAddressForm(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add New Address
+                </Button>
+
+                <div className="grid gap-4">
+                  {addresses.map((address) => (
+                    <AddressCard
+                      key={address.id}
+                      address={address}
+                      onEdit={handleEditAddress}
+                      onDelete={handleDeleteAddress}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      
       case 'orders':
         return (
           <div>
             <div className="mb-6 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {[1, 2, 3].map((order) => (
-                  <div key={order} className="p-6">
+                {orders.map((order) => (
+                  <div key={order.id} className="p-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium">Order #{order * 1000}</p>
+                        <p className="font-medium">Order #{order.id}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Placed on {new Date().toLocaleDateString()}
+                          Placed on {order.date}
                         </p>
                       </div>
                       <div>
                         <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
-                          Delivered
+                          {order.status}
                         </span>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">$129.99</p>
+                        <p className="font-medium">${order.total.toFixed(2)}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          3 items
+                          {order.items.length} items
                         </p>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedOrder(order)}
+                      >
                         View Order
                       </Button>
                     </div>
@@ -306,6 +414,17 @@ const ProfilePage = () => {
                   Profile Information
                 </button>
                 <button
+                  onClick={() => setActiveTab('addresses')}
+                  className={`flex w-full items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    activeTab === 'addresses'
+                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <MapPin size={16} className="mr-3" />
+                  Addresses
+                </button>
+                <button
                   onClick={() => setActiveTab('orders')}
                   className={`flex w-full items-center rounded-md px-3 py-2 text-sm font-medium ${
                     activeTab === 'orders'
@@ -348,6 +467,7 @@ const ProfilePage = () => {
             <CardHeader>
               <CardTitle>
                 {activeTab === 'profile' && 'Profile Information'}
+                {activeTab === 'addresses' && 'Manage Addresses'}
                 {activeTab === 'orders' && 'Order History'}
                 {activeTab === 'payment' && 'Payment Methods'}
                 {activeTab === 'settings' && 'Account Settings'}
@@ -359,6 +479,16 @@ const ProfilePage = () => {
           </Card>
         </div>
       </div>
+      
+      {selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onAddReview={(itemId, rating, comment) => 
+            handleAddReview(selectedOrder.id, itemId, rating, comment)
+          }
+        />
+      )}
     </div>
   );
 };

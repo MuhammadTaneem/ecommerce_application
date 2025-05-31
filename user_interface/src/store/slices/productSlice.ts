@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Product } from '../../types';
-import { sampleProducts } from '../../data/products';
+import sampleProducts from '../../data/sampleProducts';
 
 interface ProductState {
   products: Product[];
@@ -55,7 +55,7 @@ const productSlice = createSlice({
         );
       } else {
         state.filteredProducts = state.products.filter(
-          (product) => product.category === action.payload
+          (product) => String(product.category) === action.payload
         );
       }
     },
@@ -70,7 +70,7 @@ function filterProducts(products: Product[], query: string): Product[] {
   return products.filter(
     (product) =>
       product.name.toLowerCase().includes(lowerQuery) ||
-      product.description.toLowerCase().includes(lowerQuery)
+      (product.short_description && product.short_description.toLowerCase().includes(lowerQuery))
   );
 }
 

@@ -295,6 +295,15 @@ paths:
               schema:
                 type: object
                 properties:
+                  
+                  id:
+                    type: integer
+                    description: "User's unique identifier"
+                    example: 123
+                  type:
+                    type: string
+                    description: "User type or role"
+                    example: "admin"
                   token:
                     type: string
                     description: "JWT access token"

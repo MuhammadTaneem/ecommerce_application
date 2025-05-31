@@ -1,19 +1,28 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useState } from 'react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import { login } from '../services/auth.service';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  rememberMe: z.boolean().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters')
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
+  // const { login, loading, error: authError } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get the redirect path from location state
+  const from = location.state?.from?.pathname || '/';
+
   const {
     register,
     handleSubmit,
@@ -23,17 +32,20 @@ const LoginPage = () => {
     defaultValues: {
       email: '',
       password: '',
-      rememberMe: false,
     },
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    // Simulate login API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Login data:', data);
-    
-    // This would be replaced with actual login logic
-    // dispatch(loginUser(data));
+    try {
+      setError(null);
+      await login(data);
+      
+      // Navigate to the page they were trying to access or home
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError('Invalid email or password. Please try again.');
+      console.error('Login error:', err);
+    }
   };
 
   return (
@@ -45,6 +57,12 @@ const LoginPage = () => {
             Sign in to your account
           </p>
         </div>
+        
+        {(error || authError) && (
+          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            {error || authError}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -83,18 +101,18 @@ const LoginPage = () => {
               </label>
             </div>
             
-            <a
-              href="#"
+            <Link
+              to="/forgot-password"
               className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
           
           <Button
             type="submit"
             fullWidth
-            loading={isSubmitting}
+            loading={isSubmitting || loading}
           >
             Sign In
           </Button>

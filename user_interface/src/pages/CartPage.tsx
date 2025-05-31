@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useCart } from '../hooks/useCart';
 
 const CartPage = () => {
+  const navigate = useNavigate();
   const {
     items,
     totalItems,
@@ -171,7 +172,7 @@ const CartPage = () => {
                   </div>
                 </div>
                 
-                <Button fullWidth>
+                <Button fullWidth onClick={() => navigate('/checkout')}>
                   Proceed to Checkout <ArrowRight size={16} className="ml-2" />
                 </Button>
               </div>
