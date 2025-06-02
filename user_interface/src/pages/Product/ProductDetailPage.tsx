@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { setSelectedProduct } from '../store/slices/productSlice';
+import { RootState } from '../../store';
+import { setSelectedProduct } from '../../store/slices/productSlice.ts';
 import { ShoppingCart, Heart, Share2, ArrowLeft, Info, MessageSquare, FileText } from 'lucide-react';
-import Button from '../components/ui/Button';
-import { useCart } from '../hooks/useCart';
-import { ProductVariant } from '../types';
-import sampleProducts from '../data/sampleProducts';
-import ProductReviews from '../components/shop/ProductReviews';
+import Button from '../../components/ui/Button.tsx';
+import { useCart } from '../../hooks/useCart.ts';
+import { ProductVariant } from '../../types';
+import sampleProducts from '../../data/sampleProducts.ts';
+import ProductReviews from '../../components/shop/ProductReviews.tsx';
 
 // Dummy review data
 const dummyReviews = [

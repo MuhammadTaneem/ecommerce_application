@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import ThemeToggle from '../ui/ThemeToggle';
 import Button from '../ui/Button';
 import { useCart } from '../../hooks/useCart';
-import { useAuth } from '../../hooks/useAuth';
+import authService from "../../services/auth.services.ts";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -12,11 +12,12 @@ interface HeaderProps {
 
 const Header = ({ onMenuClick }: HeaderProps) => {
   const { totalItems, open } = useCart();
-  const { user, isAuthenticated, logout } = useAuth();
+  // const { user, isAuthenticated, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const user = authService.getCurrentUser()
 
   // Add scroll event listener
   useEffect(() => {
@@ -49,7 +50,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   }, []);
 
   const handleProfileClick = () => {
-    if (isAuthenticated) {
+    if (authService.isAuthenticated()) {
       setShowUserMenu(!showUserMenu);
     } else {
       navigate('/login');
@@ -57,7 +58,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   const handleLogout = async () => {
-    await logout();
+    await authService.logout();
     setShowUserMenu(false);
   };
 
@@ -152,10 +153,10 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               <Button
                 variant="ghost"
                 onClick={handleProfileClick}
-                aria-label={isAuthenticated ? "View profile" : "Sign in"}
+                aria-label={authService.isAuthenticated() ? "View profile" : "Sign in"}
                 className="hidden md:flex items-center"
               >
-                {isAuthenticated ? (
+                {authService.isAuthenticated() ? (
                   <div className="flex items-center">
                     <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 dark:bg-primary-900 dark:text-primary-300">
                       {user?.name.charAt(0).toUpperCase()}
@@ -168,7 +169,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               </Button>
               
               {/* User dropdown menu */}
-              {showUserMenu && isAuthenticated && (
+              {showUserMenu && authService.isAuthenticated() && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-gray-700">
                   <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">
                     <p className="font-medium">{user?.name}</p>

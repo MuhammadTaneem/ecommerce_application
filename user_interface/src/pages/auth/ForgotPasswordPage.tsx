@@ -2,8 +2,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
+import Button from '../../components/ui/Button.tsx';
+import Input from '../../components/ui/Input.tsx';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),

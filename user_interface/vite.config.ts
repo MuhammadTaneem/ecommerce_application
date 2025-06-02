@@ -3,10 +3,9 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { loadEnv } from 'vite';
 
-// https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  
+
   return {
     plugins: [react()],
     base: mode === 'production' ? '/production/' : '/',
@@ -21,9 +20,12 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     server: {
-      port: 3000,
+      port: 5173,
       open: true,
       cors: true,
+    },
+    define: {
+      __APP_ENV__: JSON.stringify(env.VITE_API_URL),
     },
   };
 });

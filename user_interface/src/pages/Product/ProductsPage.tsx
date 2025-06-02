@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { filterProductsByCategory } from '../store/slices/productSlice';
-import ProductCard from '../components/shop/ProductCard';
+import { RootState } from '../../store';
+import { filterProductsByCategory } from '../../store/slices/productSlice.ts';
+import ProductCard from '../../components/shop/ProductCard.tsx';
 import { Grid, List, SlidersHorizontal, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import sampleProducts from '../data/sampleProducts';
-import { sampleBrands } from '../data/sampleBrands';
+import Button from '../../components/ui/Button.tsx';
+import Input from '../../components/ui/Input.tsx';
+import sampleProducts from '../../data/sampleProducts.ts';
+import { sampleBrands } from '../../data/sampleBrands.ts';
 import { Slider } from '@mui/material';
 
 const ProductsPage = () => {

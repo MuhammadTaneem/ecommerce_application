@@ -1,19 +1,12 @@
 import axios, {
     InternalAxiosRequestConfig,
-    AxiosResponse,
     AxiosError,
+    AxiosInstance,
 } from 'axios';
-import { ApiResponse, SuccessApiResponse , ErrorApiResponse } from "../types/api.ts";
 
-// ========================
-// 🔗 API Base URL
-// ========================
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-// ========================
-// 🌐 Public Endpoints (no auth required)
-// ========================
-const PUBLIC_ENDPOINTS = [
+const PUBLIC_ENDPOINTS: string[] = [
     '/auth/login/',
     '/auth/register/',
     '/auth/forgot-password/',
@@ -23,18 +16,13 @@ const PUBLIC_ENDPOINTS = [
 ];
 
 const isPublicEndpoint = (url: string): boolean => {
-    return PUBLIC_ENDPOINTS.some(
-        (endpoint) =>
-            url === endpoint ||
-            url.startsWith(`${endpoint}`) ||
-            (endpoint === '/products/' && url.match(/^\/products\/[\w-]+\/$/))
+    return PUBLIC_ENDPOINTS.some((endpoint) =>
+        url.startsWith(endpoint) ||
+        new RegExp(`^${endpoint.replace(/\//g, '\\/')}(?:[\\w\\-]+)?/?$`).test(url)
     );
 };
 
-// ========================
-// 🧩 Create Axios Instance
-// ========================
-export const apiClient = axios.create({
+const apiClient: AxiosInstance = axios.create({
     baseURL: API_URL,
     timeout: 10000,
     headers: {
@@ -42,64 +30,38 @@ export const apiClient = axios.create({
     },
 });
 
-// ========================
-// 🔐 Request Interceptor - Add token conditionally
-// ========================
 apiClient.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
+    (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
         const token = localStorage.getItem('token');
         const shouldAddToken = config.url && !isPublicEndpoint(config.url);
 
         if (token && shouldAddToken) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
-
         return config;
     },
-    (error: AxiosError) => {
-        // Network or setup error
-        const errorResponse: ErrorApiResponse = {
-            status: 500,
-            message: 'Request setup failed',
-            error_dict: { details: error.message },
-        };
-        return Promise.reject(errorResponse);
+    (error: AxiosError): Promise<AxiosError> => {
+        return Promise.reject(error);
     }
 );
 
-// ========================
-// 📦 Response Interceptor - Normalize response format
-// ========================
 apiClient.interceptors.response.use(
-    (response: AxiosResponse): AxiosResponse => {
-
-      const transformedData: SuccessApiResponse = {
-        status: response.status,
-        message: response.data?.message || 'Success',
-        data: response.data?.data || response.data,
-      };
-      
-      // Return the original response structure but with transformed data
-      response.data = transformedData;
-      return response;
+    (response) => {
+        return response;
     },
-    (error: AxiosError<ApiResponse<unknown>>) => {
-        const response = error.response;
-        const status = response?.status || 500;
-        const message =  error.message||response?.data?.message || 'Something went wrong';
-
-
-        if (status === 401) {
-            localStorage.removeItem('token');
+    (error: AxiosError): Promise<AxiosError> => {
+        // Optional: Handle global errors (e.g., network issues, 500s)
+        if (import.meta.env.DEV) {
+            console.error('[API Response Error]', error.message);
         }
 
-        const errorResponse: ErrorApiResponse = {
-            status,
-            message,
-            error_dict: response?.data || { details: error.message },
-        };
+        if (!navigator.onLine) {
+            alert('You are offline. Please check your internet connection.');
+        } else if (error.response?.status === 500) {
+            alert('Internal server error. Please try again later.');
+        }
 
-        return Promise.reject(errorResponse);
+        return Promise.reject(error);
     }
 );
 

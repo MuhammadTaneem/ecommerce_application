@@ -5,14 +5,14 @@ import { useDispatch } from 'react-redux';
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import ProductDetailPage from './pages/ProductDetailPage';
+import ProductsPage from './pages/Product/ProductsPage.tsx';
+import ProductDetailPage from './pages/Product/ProductDetailPage.tsx';
 import CartPage from './pages/CartPage';
 import { default as CheckoutPage } from './pages/CheckoutPage';
 import ProfilePage from './pages/ProfilePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import LoginPage from './pages/auth/LoginPage.tsx';
+import RegisterPage from './pages/auth/RegisterPage.tsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.tsx';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Admin Pages
@@ -30,7 +30,7 @@ import CampaignsPage from './pages/admin/campaigns';
 import { setTheme } from './store/slices/themeSlice';
 import { useTheme } from './hooks/useTheme';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import AuthInitializer from './components/auth/AuthInitializer';
+// import AuthInitializer from './components/auth/AuthInitializer';
 
 function App() {
   const dispatch = useDispatch();
@@ -60,7 +60,7 @@ function App() {
   return (
     <>
       {/* Initialize authentication state */}
-      <AuthInitializer />
+      {/*<AuthInitializer />*/}
       
       <Routes>
         {/* Customer Routes */}

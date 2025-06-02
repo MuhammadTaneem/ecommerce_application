@@ -35,6 +35,13 @@ ALLOWED_HOSTS = [
     'localhost:5173',
 ]
 
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = (
+    'http://localhost:8000',
+    'http://localhost:4200',
+
+)
 # Application definition
 # Application definition
 
@@ -178,12 +185,6 @@ REST_FRAMEWORK = {
 
 }
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ORIGIN_WHITELIST = (
-    'http://localhost:8000',
-    'http://localhost:4200',
-
-)
 
 TAUTH = {
     'login_field': 'email',

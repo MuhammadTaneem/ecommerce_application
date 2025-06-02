@@ -1,70 +1,70 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from 'react';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import { login } from '../services/auth.service';
+import Button from '../../components/ui/Button.tsx';
+import Input from '../../components/ui/Input.tsx';
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string(),
+  terms: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>;
 
-const LoginPage = () => {
-  // const { login, loading, error: authError } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  // Get the redirect path from location state
-  const from = location.state?.from?.pathname || '/';
-
+const RegisterPage = () => {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
+      confirmPassword: '',
+      terms: false,
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    try {
-      setError(null);
-      await login(data);
-      
-      // Navigate to the page they were trying to access or home
-      navigate(from, { replace: true });
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
-      console.error('Login error:', err);
-    }
+  const onSubmit = async (data: RegisterFormData) => {
+    // Simulate register API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log('Register data:', data);
+    
+    // This would be replaced with actual registration logic
+    // dispatch(registerUser(data));
   };
 
   return (
     <div className="mx-auto max-w-md">
       <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Welcome Back</h1>
+          <h1 className="text-2xl font-bold">Create an Account</h1>
           <p className="mt-1 text-gray-500 dark:text-gray-400">
-            Sign in to your account
+            Join us and start shopping
           </p>
         </div>
         
-        {(error || authError) && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-            {error || authError}
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <Input
+              label="Full Name"
+              placeholder="John Doe"
+              error={errors.name?.message}
+              {...register('name')}
+            />
+          </div>
+          
           <div>
             <Input
               label="Email"
@@ -85,36 +85,59 @@ const LoginPage = () => {
             />
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+          <div>
+            <Input
+              label="Confirm Password"
+              type="password"
+              placeholder="••••••••"
+              error={errors.confirmPassword?.message}
+              {...register('confirmPassword')}
+            />
+          </div>
+          
+          <div className="flex items-start">
+            <div className="flex h-5 items-center">
               <input
-                id="remember-me"
+                id="terms"
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800"
-                {...register('rememberMe')}
+                {...register('terms')}
               />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
-              >
-                Remember me
-              </label>
             </div>
-            
-            <Link
-              to="/forgot-password"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              Forgot password?
-            </Link>
+            <div className="ml-3 text-sm">
+              <label
+                htmlFor="terms"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                I agree to the{' '}
+                <a
+                  href="#"
+                  className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                >
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a
+                  href="#"
+                  className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                >
+                  Privacy Policy
+                </a>
+              </label>
+              {errors.terms && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.terms.message}
+                </p>
+              )}
+            </div>
           </div>
           
           <Button
             type="submit"
             fullWidth
-            loading={isSubmitting || loading}
+            loading={isSubmitting}
           >
-            Sign In
+            Create Account
           </Button>
         </form>
         
@@ -147,12 +170,12 @@ const LoginPage = () => {
         </div>
         
         <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          Don't have an account?{' '}
+          Already have an account?{' '}
           <Link
-            to="/register"
+            to="/login"
             className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
           >
-            Sign up
+            Sign in
           </Link>
         </p>
       </div>
@@ -160,4 +183,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

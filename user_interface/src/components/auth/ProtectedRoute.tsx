@@ -7,9 +7,9 @@ interface ProtectedRouteProps {
   children?: React.ReactNode;
 }
 
-const ProtectedRoute = ({ 
-  redirectPath = '/login', 
-  children 
+const ProtectedRoute = ({
+  redirectPath = '/login',
+  children
 }: ProtectedRouteProps) => {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
@@ -22,4 +22,4 @@ const ProtectedRoute = ({
   return children ? <>{children}</> : <Outlet />;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

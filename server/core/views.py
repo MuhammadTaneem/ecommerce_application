@@ -25,8 +25,6 @@ def user_login(request):
     if user is not None:
         if (user.is_active and is_active_required) or is_active_required is False:
             if check_password(password, user.password):
-                # import pdb;pdb.set_trace()
-                # this  check password is get algorithm from hasher. is not tauth algorithm
                 return Response({'id':user.id,'type':user.role_name,'token': token_generator(user_id=user.id, token_type=TokenType.access)},
                                 status=status.HTTP_200_OK)
             else:
