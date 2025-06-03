@@ -159,7 +159,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                 {authService.isAuthenticated() ? (
                   <div className="flex items-center">
                     <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 dark:bg-primary-900 dark:text-primary-300">
-                      {user?.name.charAt(0).toUpperCase()}
+                      {user?.name.toUpperCase()}
                     </div>
                     <span className="ml-2 hidden lg:block">{user?.name}</span>
                   </div>

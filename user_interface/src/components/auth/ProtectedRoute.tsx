@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import authService from "../../services/auth.services.ts";
 
 interface ProtectedRouteProps {
   redirectPath?: string;
@@ -11,7 +10,7 @@ const ProtectedRoute = ({
   redirectPath = '/login',
   children
 }: ProtectedRouteProps) => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = authService.isAuthenticated()
   const location = useLocation();
 
   if (!isAuthenticated) {

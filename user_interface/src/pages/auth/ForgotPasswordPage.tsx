@@ -2,8 +2,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import Button from '../../components/ui/Button.tsx';
 import Input from '../../components/ui/Input.tsx';
+import authService from "../../services/auth.services.ts";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -12,6 +14,9 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 const ForgotPasswordPage = () => {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -21,9 +26,17 @@ const ForgotPasswordPage = () => {
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Reset password email sent to:', data.email);
+    try {
+      setError(null);
+      await authService.requestPasswordReset(data.email);
+      setSuccess('Reset password email sent. Please check your email.');
+    } catch (err: any) {
+      setError(
+        err.response?.data?.detail || 
+        err.response?.data?.message || 
+        'Failed to send reset password email. Please try again.'
+      );
+    }
   };
 
   return (
@@ -35,6 +48,18 @@ const ForgotPasswordPage = () => {
             Enter your email address and we'll send you a link to reset your password
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 rounded-md bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/30 dark:text-green-400">
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input

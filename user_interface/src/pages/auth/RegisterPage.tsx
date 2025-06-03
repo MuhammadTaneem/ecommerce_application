@@ -1,26 +1,34 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useState } from 'react';
 import Button from '../../components/ui/Button.tsx';
 import Input from '../../components/ui/Input.tsx';
+import authService from "../../services/auth.services.ts";
 
 const registerSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+  first_name: z.string().min(2, 'First name is required'),
+  last_name: z.string().min(2, 'Last name is required'),
   email: z.string().email('Please enter a valid email address'),
+  phone: z.string().min(10, 'Please enter a valid phone number'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
+  confirm_password: z.string(),
   terms: z.boolean().refine((val) => val === true, {
     message: 'You must accept the terms and conditions',
   }),
-}).refine((data) => data.password === data.confirmPassword, {
+}).refine((data) => data.password === data.confirm_password, {
   message: 'Passwords do not match',
-  path: ['confirmPassword'],
+  path: ['confirm_password'],
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const RegisterPage = () => {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -28,21 +36,36 @@ const RegisterPage = () => {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: '',
+      first_name: '',
+      last_name: '',
       email: '',
+      phone: '',
       password: '',
-      confirmPassword: '',
+      confirm_password: '',
       terms: false,
     },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    // Simulate register API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Register data:', data);
-    
-    // This would be replaced with actual registration logic
-    // dispatch(registerUser(data));
+    try {
+      setError(null);
+      // Remove confirm_password and terms from the data sent to API
+      const { confirm_password, terms, ...registerData } = data;
+      
+      await authService.register(registerData);
+      setSuccess('Registration successful! Please check your email to activate your account.');
+      
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.detail || 
+        err.response?.data?.message || 
+        'Registration failed. Please try again.'
+      );
+    }
   };
 
   return (
@@ -55,13 +78,34 @@ const RegisterPage = () => {
           </p>
         </div>
         
+        {error && (
+          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 rounded-md bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/30 dark:text-green-400">
+            {success}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Input
-              label="Full Name"
-              placeholder="John Doe"
-              error={errors.name?.message}
-              {...register('name')}
+              label="First Name"
+              placeholder="John"
+              error={errors.first_name?.message}
+              {...register('first_name')}
+            />
+          </div>
+          
+          <div>
+            <Input
+              label="Last Name"
+              placeholder="Doe"
+              error={errors.last_name?.message}
+              {...register('last_name')}
             />
           </div>
           
@@ -72,6 +116,16 @@ const RegisterPage = () => {
               placeholder="you@example.com"
               error={errors.email?.message}
               {...register('email')}
+            />
+          </div>
+
+          <div>
+            <Input
+              label="Phone"
+              type="tel"
+              placeholder="+1234567890"
+              error={errors.phone?.message}
+              {...register('phone')}
             />
           </div>
           
@@ -90,8 +144,8 @@ const RegisterPage = () => {
               label="Confirm Password"
               type="password"
               placeholder="••••••••"
-              error={errors.confirmPassword?.message}
-              {...register('confirmPassword')}
+              error={errors.confirm_password?.message}
+              {...register('confirm_password')}
             />
           </div>
           
@@ -140,34 +194,6 @@ const RegisterPage = () => {
             Create Account
           </Button>
         </form>
-        
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                Or continue with
-              </span>
-            </div>
-          </div>
-          
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              Google
-            </button>
-            <button
-              type="button"
-              className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              Facebook
-            </button>
-          </div>
-        </div>
         
         <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
           Already have an account?{' '}

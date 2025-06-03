@@ -7,12 +7,14 @@ import axios, {
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const PUBLIC_ENDPOINTS: string[] = [
-    '/auth/login/',
-    '/auth/register/',
-    '/auth/forgot-password/',
-    '/auth/reset-password/',
-    '/products/',
-    '/categories/',
+    'auth/login/',
+    'auth/sign_up/',
+    'auth/reset_password/',
+    'auth/reset_password_confirm/',
+    'auth/re_send_activation_email/',
+    'auth/active_user/',
+    'auth/products/',
+    'auth/categories/',
 ];
 
 const isPublicEndpoint = (url: string): boolean => {
@@ -38,6 +40,9 @@ apiClient.interceptors.request.use(
         if (token && shouldAddToken) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
+        else{
+            config.headers['Authorization'] = null;
+        }
         return config;
     },
     (error: AxiosError): Promise<AxiosError> => {
@@ -49,7 +54,19 @@ apiClient.interceptors.response.use(
     (response) => {
         return response;
     },
-    (error: AxiosError): Promise<AxiosError> => {
+    async (error: AxiosError): Promise<AxiosError> => {
+        // Handle 401 Unauthorized responses
+        if (error.response?.status === 401) {
+            // Clear auth data from localStorage
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+
+            // Redirect to login page if not already there
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
+        }
+
         // Optional: Handle global errors (e.g., network issues, 500s)
         if (import.meta.env.DEV) {
             console.error('[API Response Error]', error.message);

@@ -13,6 +13,8 @@ import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/auth/LoginPage.tsx';
 import RegisterPage from './pages/auth/RegisterPage.tsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.tsx';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage.tsx';
+import ActivateAccountPage from './pages/auth/ActivateAccountPage.tsx';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Admin Pages
@@ -81,6 +83,8 @@ function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
+          <Route path="activate-account" element={<ActivateAccountPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
