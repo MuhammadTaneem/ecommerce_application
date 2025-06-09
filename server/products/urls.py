@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     ProductViewSet, CategoryViewSet,
-    BrandViewSet, TagViewSet, VariantViewSet,product_context
+    BrandViewSet, TagViewSet, VariantViewSet, context
 )
 
 # Create a router and register the viewsets
@@ -17,5 +17,5 @@ router.register('variants', VariantViewSet, basename='variant')
 # Include the router's URLs in your urlpatterns
 urlpatterns = [
     path('', include(router.urls)),
-    path('context/',product_context)
+    path('context/',context),
 ]

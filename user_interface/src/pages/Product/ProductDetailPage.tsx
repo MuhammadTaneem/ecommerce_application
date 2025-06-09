@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
-import { setSelectedProduct } from '../../store/slices/productSlice.ts';
 import { ShoppingCart, Heart, Share2, ArrowLeft, Info, MessageSquare, FileText } from 'lucide-react';
 import Button from '../../components/ui/Button.tsx';
 import { useCart } from '../../hooks/useCart.ts';
-import { ProductVariant } from '../../types';
 import sampleProducts from '../../data/sampleProducts.ts';
 import ProductReviews from '../../components/shop/ProductReviews.tsx';
+import { SKUType, ProductType } from '../../types/index.ts';
+import productService from '../../services/productService.ts';
 
 // Dummy review data
 const dummyReviews = [
@@ -51,48 +49,41 @@ const dummyReviews = [
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { products, selectedProduct, loading } = useSelector((state: RootState) => state.products);
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedSku, setSelectedSku] = useState<ProductVariant | null>(null);
+  const [product, setProduct] = useState<ProductType | null>(null);
+  const [selectedSku, setSelectedSku] = useState<SKUType | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'details' | 'info' | 'reviews'>('details');
   
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (id) {
-      // Try to find product in Redux store first
-      let product = products.find((p) => p.id === Number(id));
-      
-      // If not found in store, try to find in sample products
-      if (!product) {
-        product = sampleProducts.find((p) => p.id === Number(id));
-      }
-      
-      if (product) {
-        dispatch(setSelectedProduct(product));
-        
-        // Initialize with first SKU if product has variants
-        if (product.has_variants && product.skus && product.skus.length > 0) {
-          setSelectedSku(product.skus[0]);
-          
-          // Initialize selected variants from first SKU
-          const initialVariants: Record<string, string> = {};
-          Object.entries(product.skus[0].variants_dict || {}).forEach(([key, value]) => {
-            initialVariants[key] = value;
-          });
-          setSelectedVariants(initialVariants);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await productService.getProductById(id);
+
+        if (response.status === 200) {
+          setProduct(response.data);
+        } else {
+          throw new Error('Failed to fetch product');
         }
-      } else {
-        // If product not found, redirect to products page
-        navigate('/products');
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'An error occurred while fetching the product');
+      } finally {
+        setLoading(false);
       }
-    }
-    
-    return () => {
-      dispatch(setSelectedProduct(null));
     };
-  }, [id, products, dispatch, navigate]);
+
+    if (id) {
+      fetchProduct();
+    }
+  }, [id]);
   
   // Handle variant selection
   const handleVariantChange = (variantType: string, value: string) => {

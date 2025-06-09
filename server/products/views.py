@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from core.Utiilties.permission_chacker import has_permissions, HasPermissionMixin
 from core.Utiilties.enum import PermissionEnum
+from order.models import OrderStatusChoices, PaymentStatusChoices, DiscountTypeChoices
 from .models import Product, ProductImage, SKU, Category, Brand, Tag, VariantAttribute
 from .review.models import Review
 from .review.serializers import ReviewSerializer
@@ -412,7 +413,7 @@ class ProductViewSet(ModelViewSet):
 #         }
 #     )
 class CategoryViewSet(HasPermissionMixin, ModelViewSet):
-    queryset = Category.objects.filter(parent=None).all()
+    # queryset = Category.objects.filter(parent=None).all()
     serializer_class = CategorySerializer
 
     method_permissions = {
@@ -420,6 +421,14 @@ class CategoryViewSet(HasPermissionMixin, ModelViewSet):
         'DELETE': PermissionEnum.category_delete,
         'POST': PermissionEnum.category_create
     }
+
+    def get_queryset(self):
+        if self.action == 'list':
+            # Only top-level categories in list view
+            return Category.objects.filter(parent=None).all()
+        else:
+            # All categories for retrieve/update/delete
+            return Category.objects.all()
 
 
 # Brand ViewSet
@@ -457,7 +466,7 @@ class VariantViewSet(HasPermissionMixin, ModelViewSet):
 
 
 @api_view(['GET'])
-def product_context(request):
+def context(request):
     if request.method == 'GET':
         categories = Category.objects.all()
         category_serializer = FlatCategorySerializer(categories, many=True)
@@ -474,6 +483,13 @@ def product_context(request):
              'variants': variant_serializer.data,
              'brands': brand_serializer.data,
              'tags': tag_serializer.data,
+             'order_status': text_choices_to_json(OrderStatusChoices),
+             'payment_status': text_choices_to_json(PaymentStatusChoices),
+             'voucher_type': text_choices_to_json(DiscountTypeChoices),
              },
             status=status.HTTP_200_OK)
     return None
+
+
+def text_choices_to_json(choices):
+    return [{"key": key, "value": value} for key, value in choices.choices]

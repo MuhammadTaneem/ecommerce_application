@@ -8,7 +8,7 @@ import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card'
 import { Package, CreditCard, Settings, User, MapPin, Plus } from 'lucide-react';
 import AddressForm from '../components/profile/AddressForm';
 import AddressCard from '../components/profile/AddressCard';
-import { Address } from '../types';
+import { AddressType } from '../types';
 import OrderDetailsModal from '../components/shop/OrderDetailsModal';
 
 const profileSchema = z.object({
@@ -22,11 +22,11 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [editingAddress, setEditingAddress] = useState<AddressType | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   
   // Simulated addresses data - in a real app, this would come from Redux/API
-  const [addresses, setAddresses] = useState<Address[]>([
+  const [addresses, setAddresses] = useState<AddressType[]>([
     {
       id: 1,
       name: 'Home',
@@ -110,7 +110,7 @@ const ProfilePage = () => {
     console.log('Profile data:', data);
   };
 
-  const handleAddressSubmit = async (data: Omit<Address, 'id'>) => {
+  const handleAddressSubmit = async (data: Omit<AddressType, 'id'>) => {
     if (editingAddress) {
       // Update existing address
       setAddresses(addresses.map(addr => 
@@ -129,7 +129,7 @@ const ProfilePage = () => {
     setEditingAddress(null);
   };
 
-  const handleEditAddress = (address: Address) => {
+  const handleEditAddress = (address: AddressType) => {
     setEditingAddress(address);
     setShowAddressForm(true);
   };

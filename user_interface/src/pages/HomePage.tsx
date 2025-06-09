@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import ProductCard from '../components/shop/ProductCard';
 import { ArrowRight, Search } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useState, useEffect } from 'react';
-import sampleProducts from '../data/sampleProducts';
+import productService from '../services/productService';
+import { ProductType } from '../types/index';
+import { toast } from '../hooks/use-toast';
 
 const HomePage = () => {
-  const { products } = useSelector((state: RootState) => state.products);
   const [searchQuery, setSearchQuery] = useState('');
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -16,6 +16,10 @@ const HomePage = () => {
     minutes: 0,
     seconds: 0
   });
+
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [trendingProducts, setTrendingProducts] = useState<ProductType[]>([]);
   
   // Flash sale data
   const flashSale = {
@@ -51,23 +55,26 @@ const HomePage = () => {
   }, []);
 
   // Use sample products if products is empty
-  const allProducts = products.length > 0 ? products : sampleProducts;
-  
-  // Get trending products (using the most viewed/rated ones)
-  const trendingProducts = [...allProducts]
-    .sort((a, b) => (b.rating_count || 0) - (a.rating_count || 0))
-    .slice(0, 8);
 
-  // Get featured products
-  const featuredProducts = allProducts.filter(product => product.featured).slice(0, 8);
-
-  // Handle search form submission
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await productService.getProducts();
+      setProducts(data);
+      setTrendingProducts(data);
+    }
+    catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch products.',
+        variant: 'destructive',
+      });
     }
   };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   return (
     <div>
@@ -150,7 +157,7 @@ const HomePage = () => {
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

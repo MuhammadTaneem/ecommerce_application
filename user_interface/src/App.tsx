@@ -19,7 +19,7 @@ import NotFoundPage from './pages/NotFoundPage';
 
 // Admin Pages
 import AdminDashboardPage from './pages/admin/DashboardPage';
-import AdminProductsPage from './pages/admin/ProductsPage';
+import AdminProductsPage from './pages/admin/products/AdminProductsPage.tsx';
 import AdminOrdersPage from './pages/admin/OrdersPage';
 import AdminCustomersPage from './pages/admin/CustomersPage';
 import CategoriesPage from './pages/admin/categories';

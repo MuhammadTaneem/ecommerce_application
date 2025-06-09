@@ -41,7 +41,7 @@ class BrandSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'slug']
+        fields = ['id', 'name','description', 'slug']
 
 
 

@@ -1,318 +1,395 @@
-import { useState, useRef, useCallback } from 'react';
-import { Search, Filter, Eye, X, Plus, Edit, Trash, Upload, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Pencil, Trash2, Plus, X, Eye } from 'lucide-react';
+import { toast } from '../../../hooks/use-toast';
 import Button from '../../../components/ui/Button';
-import { Campaign } from '../../../types/Campaign';
+import Input from '../../../components/ui/Input';
+import { CampaignType } from '../../../types';
+import campaignService from '../../../services/campaignService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../../components/ui/AlertDialog';
 
-// Sample campaigns data
-const sampleCampaigns = [
-    {
-        id: 'CAM-001',
-        name: "Summer Special Flash Sale",
-        description: "Get up to 50% off on selected items. Limited time offer!",
-        image: "https://images.pexels.com/photos/934070/pexels-photo-934070.jpeg",
-        startDate: new Date('2024-03-20T00:00:00'),
-        endDate: new Date('2024-03-25T23:59:59'),
-        is_published: true
-    },
-    {
-        id: 'CAM-002',
-        name: "Back to School Campaign",
-        description: "Special discounts on school supplies and accessories",
-        image: "https://example.com/back-to-school.jpg",
-        startDate: new Date('2024-08-15T00:00:00'),
-        endDate: new Date('2024-09-05T23:59:59'),
-        is_published: false
-    }
-];
+interface FormDataType extends Omit<CampaignType, 'id'> {
+  image_1_file?: File | null;
+  image_2_file?: File | null;
+  image_3_file?: File | null;
+}
 
-const CampaignsPage = () => {
-    const [campaigns, setCampaigns] = useState<Campaign[]>(sampleCampaigns);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showForm, setShowForm] = useState(false);
-    const [currentCampaign, setCurrentCampaign] = useState<Campaign | null>(null);
-    const [formData, setFormData] = useState<Campaign>({
+export default function CampaignsPage() {
+  const [campaigns, setCampaigns] = useState<CampaignType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignType | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<number | null>(null);
+  const [formData, setFormData] = useState<FormDataType>({
         name: '',
         description: '',
-        image: '',
-        startDate: new Date(),
-        endDate: new Date(),
+    image_1: '',
+    image_2: '',
+    image_3: '',
+    image_1_file: null,
+    image_2_file: null,
+    image_3_file: null,
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
         is_published: false
     });
-    const [dragActive, setDragActive] = useState(false);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Filter campaigns based on search term
-    const filteredCampaigns = campaigns.filter(campaign =>
-        campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        campaign.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
 
-    const handleAddEdit = (campaign?: Campaign) => {
-        if (campaign) {
-            setCurrentCampaign(campaign);
-            setFormData({ ...campaign });
-            setPreviewImage(campaign.image);
-        } else {
-            setCurrentCampaign(null);
-            setFormData({
-                name: '',
-                description: '',
-                image: '',
-                startDate: new Date(),
-                endDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days later
-                is_published: false
-            });
-            setPreviewImage(null);
-        }
-        setShowForm(true);
+  const fetchCampaigns = async () => {
+    try {
+      setIsLoading(true);
+      const data = await campaignService.getCampaigns();
+      setCampaigns(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
+      setCampaigns([]);
+      setError('Failed to fetch campaigns');
+      toast({
+        title: "Error",
+        description: "Failed to fetch campaigns",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
     };
 
-    const handleDelete = (id: string) => {
-        // In a real app, this would call an API
-        setCampaigns(campaigns.filter(campaign => campaign.id !== id));
-    };
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image_1_file' | 'image_2_file' | 'image_3_file') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Error",
+          description: "Image size should be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const handleTogglePublish = (id: string) => {
-        // In a real app, this would call an API
-        setCampaigns(campaigns.map(campaign =>
-            campaign.id === id ? { ...campaign, is_published: !campaign.is_published } : campaign
-        ));
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
+      // Store the file object
         setFormData(prev => ({
             ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleDateChange = (field: 'startDate' | 'endDate') => (e: React.ChangeEvent<HTMLInputElement>) => {
-        const date = new Date(e.target.value);
-        if (!isNaN(date.getTime())) {
-            setFormData(prev => ({
-                ...prev,
-                [field]: date
+        [field]: file,
+        // Also store preview
+        [field.replace('_file', '')]: URL.createObjectURL(file)
             }));
         }
     };
 
-    // File upload handlers
-    const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setDragActive(true);
-        } else if (e.type === 'dragleave') {
-            setDragActive(false);
-        }
-    }, []);
+  const formatDateForInput = (dateString: string | Date | undefined): string => {
+    if (!dateString) return new Date().toISOString().split('T')[0];
+    try {
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0];
+    } catch {
+      return new Date().toISOString().split('T')[0];
+    }
+  };
 
-    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFile(e.dataTransfer.files[0]);
-        }
-    }, []);
+  const handleDateChange = (date: string, field: 'startDate' | 'endDate') => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: new Date(date).toISOString()
+    }));
+  };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEdit = (campaign: CampaignType) => {
+    setSelectedCampaign(campaign);
+    setFormData({
+      name: campaign.name,
+      description: campaign.description,
+      image_1: campaign.image_1,
+      image_2: campaign.image_2,
+      image_3: campaign.image_3,
+      image_1_file: null,
+      image_2_file: null,
+      image_3_file: null,
+      startDate: campaign.startDate || new Date().toISOString(),
+      endDate: campaign.endDate || new Date().toISOString(),
+      is_published: campaign.is_published
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    console.log("submitFormData");
         e.preventDefault();
-        if (e.target.files && e.target.files[0]) {
-            handleFile(e.target.files[0]);
+    try {
+      const submitFormData = new FormData();
+
+      // Basic form fields
+      submitFormData.append('name', formData.name);
+      submitFormData.append('description', formData.description);
+      
+      // Format dates properly
+      submitFormData.append('start_date', formData.startDate);
+      submitFormData.append('end_date', formData.endDate);
+      submitFormData.append('is_published', String(formData.is_published));
+
+      // Handle file uploads
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      fileInputs.forEach((input: Element) => {
+        const fileInput = input as HTMLInputElement;
+        if (fileInput.files && fileInput.files[0]) {
+          const fieldName = fileInput.getAttribute('name');
+          if (fieldName) {
+            submitFormData.append(fieldName, fileInput.files[0]);
         }
+        }
+      });
+
+
+      // If editing and no new files are selected, append existing image URLs
+      if (selectedCampaign) {
+        if (!submitFormData.has('image_1') && selectedCampaign.image_1) {
+          submitFormData.append('image_1', selectedCampaign.image_1);
+        }
+        if (!submitFormData.has('image_2') && selectedCampaign.image_2) {
+          submitFormData.append('image_2', selectedCampaign.image_2);
+        }
+        if (!submitFormData.has('image_3') && selectedCampaign.image_3) {
+          submitFormData.append('image_3', selectedCampaign.image_3);
+        }
+      }
+
+      if (selectedCampaign) {
+        await campaignService.updateCampaign(selectedCampaign.id, submitFormData);
+        toast({
+          title: "Success",
+          description: "Campaign updated successfully",
+        });
+      } else {
+        await campaignService.createCampaign(submitFormData);
+        toast({
+          title: "Success",
+          description: "Campaign created successfully",
+        });
+      }
+
+      setIsModalOpen(false);
+      setSelectedCampaign(null);
+      setFormData({
+        name: '',
+        description: '',
+        image_1: '',
+        image_2: '',
+        image_3: '',
+        image_1_file: null,
+        image_2_file: null,
+        image_3_file: null,
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
+        is_published: false
+      });
+      fetchCampaigns();
+    } catch (err) {
+      console.error('Error saving campaign:', err);
+      toast({
+        title: "Error",
+        description: "Failed to save campaign",
+        variant: "destructive",
+      });
+    }
     };
 
-    const handleFile = (file: File) => {
-        // Check if file is an image
-        if (!file.type.match('image.*')) {
-            alert('Please select an image file');
-            return;
-        }
+  const handleDelete = async (id: number) => {
+    setCampaignToDelete(id);
+    setDeleteDialogOpen(true);
+  };
 
-        // In a real app, you would upload the file to a server here
-        // For now, we'll just create a local URL for preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const result = e.target?.result as string;
-            setPreviewImage(result);
-            setFormData(prev => ({
-                ...prev,
-                image: result
-            }));
-        };
-        reader.readAsDataURL(file);
-    };
+  const confirmDelete = async () => {
+    if (!campaignToDelete) return;
+    
+    try {
+      await campaignService.deleteCampaign(campaignToDelete);
+      toast({
+        title: "Success",
+        description: "Campaign deleted successfully",
+      });
+      fetchCampaigns();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete campaign",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setCampaignToDelete(null);
+    }
+  };
 
-    const handleRemoveImage = () => {
-        setPreviewImage(null);
-        setFormData(prev => ({
-            ...prev,
-            image: ''
-        }));
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        // Validate image
-        if (!formData.image) {
-            alert('Please upload an image for the campaign');
-            return;
-        }
-        
-        if (currentCampaign) {
-            // Update existing campaign
-            setCampaigns(campaigns.map(campaign => 
-                campaign.id === currentCampaign.id ? { ...formData, id: campaign.id } : campaign
-            ));
+  const openModal = (campaign?: CampaignType) => {
+    if (campaign) {
+      setSelectedCampaign(campaign);
+      setFormData({
+        name: campaign.name,
+        description: campaign.description,
+        image_1: campaign.image_1,
+        image_2: campaign.image_2,
+        image_3: campaign.image_3,
+        image_1_file: null,
+        image_2_file: null,
+        image_3_file: null,
+        startDate: campaign.startDate || new Date().toISOString(),
+        endDate: campaign.endDate || new Date().toISOString(),
+        is_published: campaign.is_published
+      });
         } else {
-            // Add new campaign
-            const newId = `CAM-${String(campaigns.length + 1).padStart(3, '0')}`;
-            setCampaigns([...campaigns, { ...formData, id: newId }]);
+      setSelectedCampaign(null);
+      setFormData({
+        name: '',
+        description: '',
+        image_1: '',
+        image_2: '',
+        image_3: '',
+        image_1_file: null,
+        image_2_file: null,
+        image_3_file: null,
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
+        is_published: false
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const openViewModal = async (id: number) => {
+    try {
+      const campaign = await campaignService.getCampaignById(id);
+      setSelectedCampaign(campaign);
+      setIsViewModalOpen(true);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch campaign details",
+        variant: "destructive",
+      });
         }
-        
-        setShowForm(false);
-    };
+  };
+
+  if (isLoading) return <div className="p-4 text-gray-700 dark:text-gray-200">Loading...</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
 
     return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
         <div>
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Campaigns</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Campaigns</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Create and manage your promotional campaigns
+          </p>
+        </div>
                 <Button 
+          onClick={() => openModal()}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm"
                     variant="primary"
-                    className="mt-4 sm:mt-0"
-                    onClick={() => handleAddEdit()}
                 >
-                    <Plus size={16} className="mr-2" />
+          <Plus className="h-4 w-4" />
                     Add Campaign
                 </Button>
             </div>
 
-            {/* Search and Filters */}
-            <div className="mb-6 flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                    <input
-                        type="text"
-                        placeholder="Search campaigns..."
-                        className="input pr-10 w-full"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    {searchTerm && (
-                        <button
-                            type="button"
-                            className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            onClick={() => setSearchTerm('')}
-                        >
-                            <X size={16} />
-                        </button>
-                    )}
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Search size={18} />
-                    </div>
-                </div>
-            </div>
-
-            {/* Campaigns List */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Campaign
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-700/50">
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Name
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Duration
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Period
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {filteredCampaigns.length > 0 ? (
-                                filteredCampaigns.map((campaign) => (
-                                    <tr key={campaign.id}>
+              {campaigns.length > 0 ? (
+                campaigns.map((campaign) => (
+                  <tr key={campaign.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0">
+                        {campaign.image_1 && (
                                                     <img
-                                                        className="h-10 w-10 rounded-lg object-cover"
-                                                        src={campaign.image}
-                                                        alt={campaign.name}
-                                                        onError={(e) => {
-                                                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Campaign';
-                                                        }}
+                            src={campaign.image_1} 
+                            alt="" 
+                            className="h-10 w-10 rounded-lg object-cover mr-3"
                                                     />
-                                                </div>
-                                                <div className="ml-4">
+                        )}
+                        <div>
                                                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                                                         {campaign.name}
                                                     </div>
-                                                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                        {campaign.description.length > 50
-                                                            ? `${campaign.description.substring(0, 50)}...`
-                                                            : campaign.description}
+                          <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                            {campaign.description}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900 dark:text-white">
-                                                {new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${
                                                 campaign.is_published
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400'
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400'
                                             }`}>
                                                 {campaign.is_published ? 'Published' : 'Draft'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex justify-end space-x-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleTogglePublish(campaign.id!)}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => openViewModal(campaign.id)}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(campaign)}
+                          className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                          title="Edit campaign"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(campaign.id)}
+                          className="text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
+                          title="Delete campaign"
                                                 >
-                                                    {campaign.is_published ? 'Unpublish' : 'Publish'}
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleAddEdit(campaign)}
-                                                >
-                                                    <Edit size={16} />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(campaign.id!)}
-                                                >
-                                                    <Trash size={16} />
-                                                </Button>
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                                        No campaigns found
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    {isLoading ? 'Loading campaigns...' : 'No campaigns found'}
                                     </td>
                                 </tr>
                             )}
@@ -321,179 +398,254 @@ const CampaignsPage = () => {
                 </div>
             </div>
 
-            {/* Campaign Form Modal */}
-            {showForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                {currentCampaign ? 'Edit Campaign' : 'Add Campaign'}
-                            </h2>
-                            <button 
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                onClick={() => setShowForm(false)}
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <form className="space-y-4" onSubmit={handleSubmit}>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      {/* Edit/Create Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl shadow-xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {selectedCampaign ? 'Edit Campaign' : 'Create New Campaign'}
+              </h2>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form id="campaignForm" onSubmit={handleSubmit} encType="multipart/form-data">
+              <div className="overflow-y-auto flex-1 p-6">
+                <div className="space-y-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Campaign Name
                                 </label>
-                                <input
+                      <Input
                                     type="text"
-                                    name="name"
-                                    className="mt-1 input w-full"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="Enter campaign name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
+                        className="w-full"
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Description
                                 </label>
                                 <textarea
-                                    name="description"
-                                    className="mt-1 input w-full"
-                                    rows={4}
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     placeholder="Enter campaign description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
+                        className="w-full px-4 py-2 min-h-[120px] resize-y rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400"
                                     required
                                 />
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Campaign Image
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Start Date
                                 </label>
-                                
-                                {/* Image upload area */}
-                                <div 
-                                    className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
-                                        dragActive 
-                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
-                                            : 'border-gray-300 dark:border-gray-600'
-                                    }`}
-                                    onDragEnter={handleDrag}
-                                    onDragOver={handleDrag}
-                                    onDragLeave={handleDrag}
-                                    onDrop={handleDrop}
-                                >
-                                    {previewImage ? (
-                                        <div className="w-full text-center">
-                                            <div className="relative inline-block">
-                                                <img 
-                                                    src={previewImage} 
-                                                    alt="Campaign preview" 
-                                                    className="max-h-48 rounded-md mx-auto"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={handleRemoveImage}
-                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                                                >
-                                                    <X size={16} />
-                                                </button>
+                      <Input
+                        type="date"
+                        value={formatDateForInput(formData.startDate)}
+                        onChange={(e) => handleDateChange(e.target.value, 'startDate')}
+                        className="w-full"
+                        required
+                      />
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-1 text-center">
-                                            <div className="flex justify-center">
-                                                <ImageIcon 
-                                                    className="mx-auto h-12 w-12 text-gray-400" 
-                                                    strokeWidth={1}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        End Date
+                      </label>
+                      <Input
+                        type="date"
+                        value={formatDateForInput(formData.endDate)}
+                        onChange={(e) => handleDateChange(e.target.value, 'endDate')}
+                        className="w-full"
+                        required
                                                 />
                                             </div>
-                                            <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                                                <label
-                                                    htmlFor="file-upload"
-                                                    className="relative cursor-pointer rounded-md font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus-within:outline-none"
-                                                >
-                                                    <span>Upload a file</span>
-                                                    <input
-                                                        id="file-upload"
-                                                        name="file-upload"
+
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Campaign Images
+                      </label>
+                      <div className="grid gap-6 md:grid-cols-3">
+                        {[1, 2, 3].map((num) => (
+                          <div key={num}>
+                            <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                              <Input
                                                         type="file"
-                                                        className="sr-only"
+                                name={`image_${num}`}
+                                onChange={(e) => handleImageChange(e, `image_${num}_file` as any)}
                                                         accept="image/*"
-                                                        onChange={handleFileChange}
-                                                        ref={fileInputRef}
-                                                    />
-                                                </label>
-                                                <p className="pl-1">or drag and drop</p>
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              />
+                              <div className="text-center">
+                                {formData[`image_${num}` as keyof typeof formData] ? (
+                                  <img 
+                                    src={formData[`image_${num}` as keyof typeof formData] as string} 
+                                    alt={`Preview ${num}`} 
+                                    className="w-full h-32 object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    <div className="flex justify-center">
+                                      <Plus className="h-8 w-8" />
                                             </div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                PNG, JPG, GIF up to 10MB
-                                            </p>
+                                    <p>Upload Image {num}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Start Date
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        name="startDate"
-                                        className="mt-1 input w-full"
-                                        value={formData.startDate.toISOString().slice(0, 16)}
-                                        onChange={handleDateChange('startDate')}
-                                        required
-                                    />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        End Date
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        name="endDate"
-                                        className="mt-1 input w-full"
-                                        value={formData.endDate.toISOString().slice(0, 16)}
-                                        onChange={handleDateChange('endDate')}
-                                        required
-                                    />
+                        ))}
                                 </div>
                             </div>
-                            <div className="flex items-center mt-4">
+
+                    <div className="col-span-2">
+                      <label className="flex items-center space-x-2 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    id="is_published"
-                                    name="is_published"
-                                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                                     checked={formData.is_published}
-                                    onChange={(e) => setFormData({...formData, is_published: e.target.checked})}
+                          onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:focus:ring-blue-400"
                                 />
-                                <label htmlFor="is_published" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                    Publish immediately
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Publish campaign</span>
                                 </label>
                             </div>
-                            <div className="flex justify-end space-x-2 mt-6">
-                                <Button
-                                    variant="outline"
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    variant="primary"
-                                    type="submit"
-                                >
-                                    {currentCampaign ? 'Update' : 'Create'} Campaign
-                                </Button>
-                            </div>
-                        </form>
-                    </div>
+                  </div>
                 </div>
-            )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                >
+                  {selectedCampaign ? 'Update Campaign' : 'Create Campaign'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {isViewModalOpen && selectedCampaign && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Campaign Details
+              </h2>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h3>
+                <p className="mt-1 text-gray-900 dark:text-white">{selectedCampaign.name}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</h3>
+                <p className="mt-1 text-gray-900 dark:text-white whitespace-pre-wrap">{selectedCampaign.description}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Images</h3>
+                <div className="mt-2 grid grid-cols-3 gap-4">
+                  {selectedCampaign.image_1 && (
+                    <img src={selectedCampaign.image_1} alt="Campaign 1" className="h-32 w-full object-cover rounded" />
+                  )}
+                  {selectedCampaign.image_2 && (
+                    <img src={selectedCampaign.image_2} alt="Campaign 2" className="h-32 w-full object-cover rounded" />
+                  )}
+                  {selectedCampaign.image_3 && (
+                    <img src={selectedCampaign.image_3} alt="Campaign 3" className="h-32 w-full object-cover rounded" />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Campaign Period</h3>
+                <p className="mt-1 text-gray-900 dark:text-white">
+                  {new Date(selectedCampaign.startDate).toLocaleDateString()} - {new Date(selectedCampaign.endDate).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
+                <p className="mt-1">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    selectedCampaign.is_published
+                      ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
+                  }`}>
+                    {selectedCampaign.is_published ? 'Published' : 'Draft'}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsViewModalOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this campaign? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setCampaignToDelete(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
         </div>
     );
-};
-
-export default CampaignsPage; 
+} 

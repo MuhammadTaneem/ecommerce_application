@@ -33,7 +33,7 @@ class Category(models.Model):
     label = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, max_length=255, null=True, blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default='')
     image = models.ImageField(upload_to='category_images/',
                               validators=[
                                   FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif']),
@@ -72,6 +72,7 @@ class Brand(models.Model):
 class Tag(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(unique=True, null=True, blank=True)
+    description = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

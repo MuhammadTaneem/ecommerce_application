@@ -97,7 +97,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'order_number', 'status', 'payment_status', 'city','area','address_line1','address_line2',
-            'subtotal', 'shipping_cost','phone_number',
+            'subtotal', 'shipping_cost','phone_number','notes',
             'tax', 'discount_amount', 'total', 'voucher', 'voucher_code', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'order_number', 'discount_amount', 'total', 'created_at', 'updated_at']

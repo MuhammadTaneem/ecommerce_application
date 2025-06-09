@@ -8,30 +8,36 @@ from products.models import Product, SKU
 
 User = get_user_model()
 
-class OrderStatusChoices(models.TextChoices):
-    PENDING = 'PENDING', 'Pending'
-    PROCESSING = 'PROCESSING', 'Processing'
-    SHIPPED = 'SHIPPED', 'Shipped'
-    DELIVERED = 'DELIVERED', 'Delivered'
-    CANCELLED = 'CANCELLED', 'Cancelled'
-    REFUNDED = 'REFUNDED', 'Refunded'
+
+class OrderStatusChoices(models.IntegerChoices):
+    PENDING = 1 , 'Pending'
+    PROCESSING = 2, 'Processing'
+    SHIPPED = 3, 'Shipped'
+    DELIVERED = 4, 'Delivered'
+    CANCELLED = 5, 'Cancelled'
+    REFUNDED = 6, 'Refunded'
 
 
-class PaymentStatusChoices(models.TextChoices):
-    PENDING = 'PENDING', 'Pending'
-    PAID = 'PAID', 'Paid'
-    FAILED = 'FAILED', 'Failed'
-    REFUNDED = 'REFUNDED', 'Refunded'
+class PaymentStatusChoices(models.IntegerChoices):
+    PENDING = 1, 'Pending'
+    PAID = 2, 'Paid'
+    FAILED = 3, 'Failed'
+    REFUNDED = 4, 'Refunded'
+
+
+class DiscountTypeChoices(models.IntegerChoices):
+    PERCENTAGE = 1, 'Percentage'
+    FIXED = 2, 'Fixed'
 
 
 class Voucher(models.Model):
-    DISCOUNT_TYPE_CHOICES = (
-        ('PERCENTAGE', 'Percentage'),
-        ('FIXED', 'Fixed Amount'),
-    )
+    # DISCOUNT_TYPE_CHOICES = (
+    #     ('PERCENTAGE', 'Percentage'),
+    #     ('FIXED', 'Fixed Amount'),
+    # )
 
     code = models.CharField(max_length=50, unique=True, db_index=True)
-    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES)
+    discount_type = models.IntegerField(choices=DiscountTypeChoices.choices, default=DiscountTypeChoices.PERCENTAGE)
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     max_discount_amount = models.DecimalField(
         max_digits=10, decimal_places=2, null=False, blank=False,
@@ -134,9 +140,8 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     order_number = models.CharField(max_length=50, unique=True, auto_created=True)
-    status = models.CharField(max_length=20, choices=OrderStatusChoices, default=OrderStatusChoices.PENDING)
-    payment_status = models.CharField(max_length=20, choices=PaymentStatusChoices, default=PaymentStatusChoices.PENDING)
-
+    status = models.IntegerField(choices=OrderStatusChoices.choices, default=OrderStatusChoices.PENDING)
+    payment_status = models.IntegerField(choices=PaymentStatusChoices.choices,default=PaymentStatusChoices.PENDING)
     # Shipping Information
     city = models.CharField(max_length=100)
     area = models.CharField(max_length=100)
@@ -165,7 +170,7 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     # Optional fields
-    notes = models.TextField(blank=True, null=True)
+    notes = models.TextField(blank=True, default='')
     tracking_number = models.CharField(max_length=100, blank=True, null=True)
 
     def save(self, *args, **kwargs):

@@ -1,31 +1,26 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
-import { filterProductsByCategory } from '../../store/slices/productSlice.ts';
 import ProductCard from '../../components/shop/ProductCard.tsx';
 import { Grid, List, SlidersHorizontal, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import Button from '../../components/ui/Button.tsx';
-import Input from '../../components/ui/Input.tsx';
-import sampleProducts from '../../data/sampleProducts.ts';
+import productService from '../../services/productService.ts';
 import { sampleBrands } from '../../data/sampleBrands.ts';
 import { Slider } from '@mui/material';
+import { TagType, ProductType } from '../../types/index.ts';
+import { toast } from '../../hooks/use-toast.ts';
 
 const ProductsPage = () => {
   const { category } = useParams<{ category?: string }>();
-  const { filteredProducts, loading } = useSelector((state: RootState) => state.products);
-  const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   
   // Use sample products if filteredProducts is empty
-  const products = filteredProducts.length > 0 ? filteredProducts : sampleProducts;
-  
+  const [products, setProducts] = useState<ProductType[]>([]);
   // Get search params
   const searchParams = new URLSearchParams(location.search);
   const searchQuery = searchParams.get('search') || '';
   const sortParam = searchParams.get('sort') || 'featured';
-  const showDiscountParam = searchParams.get('discount') === 'true';
   
   // UI state
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -38,19 +33,34 @@ const ProductsPage = () => {
   const [minPriceInput, setMinPriceInput] = useState('0');
   const [maxPriceInput, setMaxPriceInput] = useState('10000');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isSortOpen, setIsSortOpen] = useState(false);
   const [isTagsOpen, setIsTagsOpen] = useState(false);
   const [isBrandsOpen, setIsBrandsOpen] = useState(false);
   const brandsDropdownRef = useRef<HTMLDivElement>(null);
   
+
+  
   // Filter products by category
-  useEffect(() => {
-    if (category) {
-      dispatch(filterProductsByCategory(category));
-    } else {
-      dispatch(filterProductsByCategory('all'));
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await productService.getProducts();
+      setProducts(data);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch products.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [category, dispatch]);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
 
   // Update URL when filters change
   useEffect(() => {
@@ -162,6 +172,7 @@ const ProductsPage = () => {
     );
   };
 
+  const allTags: TagType[] = [];
   // Toggle brand selection
   const toggleBrand = (brandId: number) => {
     setSelectedBrands(prev => 
@@ -171,36 +182,11 @@ const ProductsPage = () => {
     );
   };
 
-  // Extract all unique tags and brands from products
-  const allTags = products.reduce((tags, product) => {
-    if (product.tags) {
-      product.tags.forEach(tag => {
-        if (!tags.some(t => t.id === tag.id)) {
-          tags.push(tag);
-        }
-      });
-    }
-    return tags;
-  }, [] as {id: number, name: string, slug: string}[]);
 
-  // Extract all unique brands from products
   const allBrands = sampleBrands;
 
   // Sort products
-  const sortedProducts = [...products].sort((a, b) => {
-    switch (sorting) {
-      case 'price-low':
-        return parseFloat(a.base_price) - parseFloat(b.base_price);
-      case 'price-high':
-        return parseFloat(b.base_price) - parseFloat(a.base_price);
-      case 'newest':
-        return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
-      case 'rating':
-        return (b.average_rating || 0) - (a.average_rating || 0);
-      default:
-        return b.featured ? 1 : -1;
-    }
-  });
+  const sortedProducts = [...products];
 
   // Filter products by search, tags, brands, and price
   const filteredResults = sortedProducts.filter(product => {
@@ -481,7 +467,7 @@ const ProductsPage = () => {
                 {/* Tags */}
                 {product.tags && product.tags.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-1">
-                    {product.tags.map(tag => (
+                    {product.tags.map((tag: TagType) => (
                       <span 
                         key={tag.id} 
                         className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"

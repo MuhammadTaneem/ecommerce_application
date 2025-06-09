@@ -1,8 +1,9 @@
 import { useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import CategoryTreeNav from '../navigation/CategoryTreeNav';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
+import { fetchCategories } from '../../store/slices/categorySlice';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,8 +11,14 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const { categories } = useSelector((state: RootState) => state.categories);
+  const dispatch = useDispatch();
+  const { categories, isLoading, error } = useSelector((state: RootState) => state.categories);
   const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Fetch categories on mount if not already loaded
+  useEffect(() => {
+    dispatch(fetchCategories() as any);
+  }, [dispatch]);
 
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -77,7 +84,17 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </div>
         
         <nav className="mt-8">
-          <CategoryTreeNav categories={categories} />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent dark:border-white dark:border-t-transparent"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500 dark:text-red-400">
+              {error}
+            </div>
+          ) : (
+            <CategoryTreeNav categories={categories} />
+          )}
         </nav>
       </aside>
     </>
