@@ -1,0 +1,56 @@
+@startuml
+skinparam monochrome true
+skinparam backgroundColor White
+skinparam defaultFontName Arial
+skinparam defaultFontSize 23
+
+scale 0.5
+
+title <size:26><b>Activity Diagram: User Registration and Account Activation</b></size>
+
+|User|
+start
+:Enters registration details\n(email/phone, password);
+:Submits registration form;
+
+|System (Backend)|
+:Receives registration data;
+:Validates input data;
+
+if (Is data valid?) then (yes)
+  :Creates pending User account\n(marked as inactive);
+  :Generates activation token;
+  :Sends activation email/SMS request\nto Email Service;
+  
+  |Email Service\n(Celery/Redis)|
+  :Receives activation request;
+  :Composes and sends activation\nemail/SMS to User;
+  
+  |User|
+  :Receives activation email/SMS;
+  :Clicks activation link/enters code;
+  
+  |System (Backend)|
+  :Receives activation request/code;
+  :Validates activation token/code;
+  
+  if (Is token/code valid?) then (yes)
+    :Activates User account\n(marked as active);
+    :Displays "Account Activated"\nconfirmation;
+    :Allows User to login;
+    stop
+  else (no)
+    :Displays activation error;
+    detach
+  endif
+else (no)
+  :Display validation errors;
+  |User|
+  repeat
+    :Enters registration details;
+  repeat while (Data valid?) is (no)
+  ->yes;
+  detach
+endif
+
+@enduml

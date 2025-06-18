@@ -1,0 +1,129 @@
+@startuml
+skinparam monochrome true
+skinparam backgroundColor White
+
+skinparam usecase {
+  BackgroundColor White
+  BorderColor Black
+  FontSize 13
+  FontName Arial
+  ArrowColor Black
+  ArrowFontName Arial
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+  FontSize 14
+  FontName Arial
+}
+skinparam package {
+  BorderColor Black
+  BackgroundColor White
+  FontSize 15
+  FontStyle Bold
+  FontName Arial
+}
+
+scale 1.5
+left to right direction
+
+title <size:18><b>Admin Use Cases</b></size>
+
+package "Admin Functions" {
+  actor Admin << Person >> as Admin
+  usecase (Manage Users) as admin1
+  usecase (Manage Products) as admin2
+  usecase (Manage Orders) as admin3
+  usecase (Marketing Tools) as admin4
+  
+  Admin --> admin1
+  Admin --> admin2
+  Admin --> admin3
+  Admin --> admin4
+
+  admin1 .down.> (User CRUD) : includes
+  admin1 .down.> (Role Management) : includes
+  admin2 .down.> (Product CRUD) : includes
+  admin2 .down.> (Inventory) : includes
+  admin3 .down.> (Order Tracking) : includes
+  admin3 .down.> (Status Updates) : includes
+  admin4 .down.> (Vouchers) : includes
+  admin4 .down.> (Campaigns) : includes
+}
+
+note right of Admin
+  <b>Administrator Capabilities:</b>
+  • Full system configuration
+  • User and role management
+  • Product catalog control
+  • Order processing
+  • Marketing campaign setup
+end note
+
+@enduml
+
+
+
+
+
+@startuml
+skinparam monochrome true
+skinparam backgroundColor White
+skinparam usecase {
+  BackgroundColor White
+  BorderColor Black
+  FontSize 13
+  FontName Arial
+  ArrowColor Black
+  ArrowFontName Arial
+}
+skinparam actor {
+  BackgroundColor White
+  BorderColor Black
+  FontSize 14
+  FontName Arial
+}
+skinparam package {
+  BorderColor Black
+  BackgroundColor White
+  FontSize 15
+  FontStyle Bold
+  FontName Arial
+}
+
+scale 1.5
+left to right direction
+
+title <size:18><b>Customer Use Cases</b></size>
+
+package "Customer Functions" {
+  actor Customer << Person >> as Customer
+  usecase (Account Management) as cust1
+  usecase (Product Browsing) as cust2
+  usecase (Order Process) as cust3
+  usecase (Feedback) as cust4
+  
+  Customer --> cust1
+  Customer --> cust2
+  Customer --> cust3
+  Customer --> cust4
+
+  cust1 .down.> (Registration) : includes
+  cust1 .down.> (Login/Recovery) : includes
+  cust2 .down.> (Search/Filter) : includes
+  cust2 .down.> (View Details) : includes
+  cust3 .down.> (Cart) : includes
+  cust3 .down.> (Checkout) : includes
+  cust4 .down.> (Reviews) : includes
+  cust4 .down.> (Ratings) : includes
+}
+
+note left of Customer
+  <b>Customer Capabilities:</b>
+  • Account self-service
+  • Product discovery
+  • Order placement
+  • Feedback submission
+end note
+
+@enduml

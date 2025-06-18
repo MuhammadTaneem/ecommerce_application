@@ -1,0 +1,81 @@
+You are analyzing a full-stack e-commerce web application developed as part of a university project. The tech stack includes:
+
+- Backend: Django with Django REST Framework (DRF), PostgreSQL, Celery, Redis
+- Frontend: React.js with Redux for state management
+- Deployment: Dockerized using Docker Compose
+- Authentication: JWT-based system with email/phone login, activation, password reset, and role-based access control
+
+The system supports:
+- Dynamic product management including products with variants (e.g., color, size)
+- SKU-based inventory tracking
+- Custom role-based access control (RBAC) system with dynamic permissions (no extra DB queries needed)
+- User roles: Admin, Seller, Buyer (can be extended)
+- User authentication via email and phone number, with custom user model
+- JWT token-based secure communication between frontend and backend
+- Order management system with status tracking, shipping info, payment status, voucher support
+- Voucher/Coupon system with percentage or fixed discount types, usage limits, and validity periods
+- Campaigns, Brands, Categories, Tags
+- Product reviews and ratings
+- Shopping cart with variant-aware item handling
+- Asynchronous task handling via Celery + Redis (for notifications, emails, etc.)
+- Address management system for users
+- Clean and modular code structure with JSONField for flexible product attributes and descriptions
+- File upload support (images, thumbnails, product images)
+- Search and filtering in user/product/order management
+- Docker-ready deployment setup
+
+Models include:
+- User, Role, Address
+- Product, Category, Brand, Tag, VariantAttribute, VariantValue, SKU, ProductImage
+- Cart, CartItem
+- Order, OrderItem
+- Review
+- Voucher, Campaign
+
+Key Features:
+- Fully functional authentication module with activation, password reset, and profile update
+- Custom permission middleware that allows dynamic permission assignment without database joins
+- Support for multiple product types with variant support (color, size, etc.) using JSON fields
+- SKU-level stock tracking and availability checks
+- Voucher system with time-based validity, usage limits, and max discount caps
+- Cart system with automatic subtotal and quantity validation
+- Full order lifecycle from creation to delivery/cancellation/refund
+- Review and rating system with purchase verification
+- Address management with default address support
+- Pagination, search, and filtering in API endpoints
+- Background task processing with Celery and Redis
+- Containerized architecture using Docker and Docker Compose
+
+API Modules:
+1. Auth Module:
+   - Login / Register / Activation / Password Reset
+   - Profile Management
+   - Address CRUD
+   - Role & Permission Management
+   - User Management (assign roles, update permissions, filter users)
+
+2. Product Module:
+   - Product Catalog with categories, tags, brands
+   - Variant-based product system with SKU support
+   - Image uploads and thumbnail handling
+   - Reviews and ratings
+
+3. Cart & Checkout Module:
+   - Add/remove/edit items in cart
+   - Calculate totals dynamically
+   - Create order from cart with transaction support
+
+4. Order Module:
+   - Full order lifecycle (pending → delivered → refunded)
+   - Shipping details, payment status, voucher integration
+   - Order cancellation and status updates
+
+5. Voucher Module:
+   - Create, manage, and apply vouchers
+   - Percentage/Fixed discount types with limits and usage caps
+
+6. Campaigns & Marketing:
+   - Campaigns with images and date-based visibility
+   - Promotional content and banners
+
+This application is built with scalability, modularity, and maintainability in mind, supporting future expansion into multi-vendor marketplaces.
