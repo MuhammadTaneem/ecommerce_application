@@ -88,9 +88,9 @@ const initialForm: ProductFormData = {
     short_description: '',
     discount_price: '',
     category: '',
-    key_features: [],
-    description: [],
-    additional_info: [],
+    key_features: [{key: '', value: ''}],
+    description: [{key: '', value: ''}],
+    additional_info: [{key: '', value: ''}],
     brand: '',
 };
 
@@ -204,12 +204,12 @@ const KeyValuePairs = ({
         onChange(updatedData);
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addPair();
-        }
-    };
+    // const handleKeyPress = (e: React.KeyboardEvent) => {
+    //     if (e.key === 'Enter') {
+    //         e.preventDefault();
+    //         addPair();
+    //     }
+    // };
 
     const addEmptyPair = () => {
         const updatedData = [...data, {key: '', value: ''}];
@@ -284,48 +284,6 @@ const KeyValuePairs = ({
                 </div>
             ))}
 
-            {/* Add new pair form */}
-            {data.length === 0 && (
-                <div
-                    className="flex items-center gap-3 p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800/30">
-                    <div className="flex-1 grid grid-cols-2 gap-3">
-                        <div>
-                            <label
-                                className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Key</label>
-                            <input
-                                type="text"
-                                value={newKey}
-                                onChange={(e) => setNewKey(e.target.value)}
-                                placeholder="Enter key"
-                                onKeyPress={handleKeyPress}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-                        <div>
-                            <label
-                                className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Value</label>
-                            <input
-                                type="text"
-                                value={newValue}
-                                onChange={(e) => setNewValue(e.target.value)}
-                                placeholder="Enter value"
-                                onKeyPress={handleKeyPress}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addPair}
-                        disabled={!newKey.trim() || !newValue.trim()}
-                        className="text-blue-600 hover:text-blue-700 border-blue-300 hover:border-blue-400 px-4"
-                    >
-                        Add
-                    </Button>
-                </div>
-            )}
 
             {/* Empty state */}
             {data.length === 0 && !newKey && !newValue && (
@@ -340,7 +298,8 @@ const KeyValuePairs = ({
 
 export default function ProductFormPage() {
     const {id} = useParams<{ id: string }>();
-    const isEdit = !!id;
+    const navigate = useNavigate();
+    const [editMode, setEditMode] = useState<boolean>(!!id);
     const [step, setStep] = useState<Step>('basic');
     const [productId, setProductId] = useState<number | null>(id ? Number(id) : null);
     const [loading, setLoading] = useState(false);
@@ -365,23 +324,56 @@ export default function ProductFormPage() {
     }, [contextData, dispatch]);
 
     useEffect(() => {
-        if (isEdit && id) {
+        if (id) {
+            setEditMode(true);
+        } else {
+            setEditMode(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        if (editMode && id) {
             setLoading(true);
             productService.getAdminProductById(Number(id)).then(product => {
                 setFormData({
                     ...initialForm,
                     ...product,
-                    category: product.category || '',
-                    brand: product.brand || '',
-                    key_features: product.key_features || [{key: '', value: ''}],
-                    description: product.description || [{key: '', value: ''}],
-                    additional_info: product.additional_info || [{key: '', value: ''}],
+                    category: product.category ? String(product.category) : '',
+                    brand: product.brand ? String(product.brand) : '',
+                    discount_price: product.discount_price ? String(product.discount_price) : '',
+                    key_features: Array.isArray(product.key_features)
+                        ? product.key_features.map((item: any) =>
+                            typeof item === 'object' && item !== null && 'key' in item && 'value' in item
+                                ? item
+                                : { key: String(item), value: '' }
+                        )
+                        : (product.key_features && typeof product.key_features === 'object'
+                            ? Object.entries(product.key_features).map(([key, value]) => ({ key, value: String(value) }))
+                            : [{ key: '', value: '' }]),
+                    description: Array.isArray(product.description)
+                        ? product.description.map((item: any) =>
+                            typeof item === 'object' && item !== null && 'key' in item && 'value' in item
+                                ? item
+                                : { key: String(item), value: '' }
+                        )
+                        : (product.description && typeof product.description === 'object'
+                            ? Object.entries(product.description).map(([key, value]) => ({ key, value: String(value) }))
+                            : [{ key: '', value: '' }]),
+                    additional_info: Array.isArray(product.additional_info)
+                        ? product.additional_info.map((item: any) =>
+                            typeof item === 'object' && item !== null && 'key' in item && 'value' in item
+                                ? item
+                                : { key: String(item), value: '' }
+                        )
+                        : (product.additional_info && typeof product.additional_info === 'object'
+                            ? Object.entries(product.additional_info).map(([key, value]) => ({ key, value: String(value) }))
+                            : [{ key: '', value: '' }]),
                 });
                 setProductId(product.id);
             }).finally(() => setLoading(false));
         }
         // eslint-disable-next-line
-    }, [id]);
+    }, [editMode, id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const {name, value} = e.target;
@@ -424,13 +416,15 @@ export default function ProductFormPage() {
                 additional_info: form.additional_info.filter(pair => pair.key.trim() && pair.value.trim()),
             };
             let res;
-            if (isEdit && productId) {
+            if (editMode && productId) {
                 res = await productService.updateProduct(productId, apiData);
                 toast({title: 'Product updated'});
             } else {
                 res = await productService.createProduct(apiData);
                 toast({title: 'Product created'});
                 setProductId(res.id);
+                setEditMode(true);
+                navigate(`/admin/products/${res.id}/edit`);
             }
             setStep('skus');
         } catch (err: any) {
@@ -619,7 +613,7 @@ export default function ProductFormPage() {
 
             <div className="flex justify-end pt-6">
                 <Button type="submit" disabled={loading} className="px-6 py-2">
-                    {loading ? 'Saving...' : (isEdit ? 'Update' : 'Create')} & Next
+                    {loading ? 'Saving...' : (editMode ? 'Update' : 'Create')} & Next
                 </Button>
             </div>
         </form>
@@ -636,7 +630,7 @@ export default function ProductFormPage() {
     return (
         <div className={adminStyles.pageContainer}>
             <div className={adminStyles.headerContainer}>
-                <h1 className={adminStyles.headerTitle}>{isEdit ? 'Edit Product' : 'Add Product'}</h1>
+                <h1 className={adminStyles.headerTitle}>{editMode ? 'Edit Product' : 'Add Product'}</h1>
             </div>
             <div className={adminStyles.mainContainer}>
                 {renderStepper()}

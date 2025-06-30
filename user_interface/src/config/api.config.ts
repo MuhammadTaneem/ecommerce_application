@@ -56,7 +56,7 @@ apiClient.interceptors.response.use(
     },
     async (error: AxiosError): Promise<AxiosError> => {
         // Handle 401 Unauthorized responses
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
             // Clear auth data from localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
