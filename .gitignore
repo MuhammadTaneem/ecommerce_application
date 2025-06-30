@@ -30,13 +30,9 @@ dump.rdb
 *.rdb
 *.aof
 
-# PostgreSQL / MySQL
-*.sql
-*.psql
 
-# Environment variables
-# .env
-# *.env
+
+
 
 # Node.js and React specific
 node_modules/
