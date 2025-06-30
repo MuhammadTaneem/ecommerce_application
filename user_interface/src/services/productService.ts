@@ -1,7 +1,7 @@
 import apiClient from '../config/api.config';
 import { ProductType } from '../types';
 
-// Get all products (public)
+
 
 
 class ProductService {
@@ -45,9 +45,9 @@ class ProductService {
     }
   };
 
-  createProduct = async (productData: Omit<ProductType, 'id'>): Promise<ProductType> => {
+  createProduct = async (productData: any) => {
     try {
-      const response = await apiClient.post('/products', productData);
+      const response = await apiClient.post('/products/', productData);
       return response.data;
     } catch (error) {
       console.error('Error creating product:', error);
@@ -55,9 +55,9 @@ class ProductService {
     }
   };
 
-  updateProduct = async (id: number, productData: Partial<ProductType>): Promise<ProductType> => {
+  updateProduct = async (id: number, productData: Partial<any>): Promise<ProductType> => {
     try {
-      const response = await apiClient.put(`/products/${id}`, productData);
+      const response = await apiClient.put(`/products/${id}/`, productData);
       return response.data;
     }
     catch (error) {
@@ -68,50 +68,85 @@ class ProductService {
 
   deleteProduct = async (id: number): Promise<void> => {
     try {
-      await apiClient.delete(`/products/${id}`);
+      await apiClient.delete(`/products/${id}/`);
     } catch (error) {
       console.error(`Error deleting product with id ${id}:`, error);
       throw error;
     }
   };
 
-  // getProductReviews = async (productId: number): Promise<ReviewType[]> => {
-  //   try {
-  //     const response = await apiClient.get(`/products/${productId}/reviews`);
-  //     return response.data;
-  //   }
-  //   catch (error) {
-  //     console.error('Error getting product reviews:', error);
-  //     throw error;
-  //   }
-  // };
+  // Methods for multi-step product creation
+  
+  // Step 1: Create product with basic info
+  createBasicProduct = async (productData: any): Promise<any> => {
+    try {
+      const response = await apiClient.post('/products/', productData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating basic product:', error);
+      throw error;
+    }
+  };
+  
+  // Step 2: Add variants/SKUs to product
+  addProductSkus = async (productId: number, skuData: any): Promise<any> => {
+    try {
+      const response = await apiClient.post(`/products/${productId}/skus/`, skuData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding SKUs:', error);
+      throw error;
+    }
+  };
+  
+  // Step 3: Add tags to product
+  addProductTags = async (productId: number, tagData: { tag_ids: number[] }): Promise<any> => {
+    try {
+      const response = await apiClient.post(`/products/${productId}/tags/`, tagData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding tags:', error);
+      throw error;
+    }
+  };
+  
+  // Step 4: Add images to product
+  addProductImages = async (productId: number, imageData: FormData): Promise<any> => {
+    try {
+      const response = await apiClient.post(`/products/${productId}/images/`, imageData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding product images:', error);
+      throw error;
+    }
+  };
 
-  // getProductReviews = async (productId: number): Promise<ReviewType[]> => {
-  //   try {
-  //     const response = await apiClient.get(`/products/${productId}/reviews`);
-  //     return response.data;
-  //   }
-  // };
+  // Commented out methods that may be implemented later
+  /* 
+  getProductReviews = async (productId: number): Promise<ReviewType[]> => {
+    try {
+      const response = await apiClient.get(`/products/${productId}/reviews`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting product reviews:', error);
+      throw error;
+    }
+  };
 
-  // createProductReview = async (productId: number, reviewData: ReviewType): Promise<ReviewType> => {
-  //   try {
-  //     const response = await apiClient.post(`/products/${productId}/reviews`, reviewData);
-  //     return response.data;
-  //   }
-  // };
-
-  // updateProductReview = async (productId: number, reviewId: number, reviewData: ReviewType): Promise<ReviewType> => {
-  //   try {
-  //     const response = await apiClient.put(`/products/${productId}/reviews/${reviewId}`, reviewData);
-  //     return response.data;
-  //   }
-  // };
-
-  // deleteProductReview = async (productId: number, reviewId: number): Promise<void> => {
-  //   try {
-  //     await apiClient.delete(`/products/${productId}/reviews/${reviewId}`);
-  //   }
-  // };
+  createProductReview = async (productId: number, reviewData: ReviewType): Promise<ReviewType> => {
+    try {
+      const response = await apiClient.post(`/products/${productId}/reviews`, reviewData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating product review:', error);
+      throw error;
+    }
+  };
+  */
 
   // getProductVariants = async (productId: number): Promise<VariantType[]> => {
   //   try {

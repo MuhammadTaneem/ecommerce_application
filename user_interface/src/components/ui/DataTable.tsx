@@ -81,7 +81,7 @@ function DataTable<T>({
                   ))}
                 </TableRow>
               ))
-            ) : data.length === 0 ? (
+            ) : data?.length === 0 ? (
               // Empty state
               <TableRow>
                 <TableCell 
@@ -93,7 +93,7 @@ function DataTable<T>({
               </TableRow>
             ) : (
               // Data rows with optional expansion
-              data.map((item, index) => {
+              data?.map((item, index) => {
                 const rowId = getRowId(item);
                 const isExpanded = expandedRows ? expandedRows[rowId] : false;
                 

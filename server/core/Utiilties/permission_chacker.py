@@ -33,6 +33,10 @@ def check_permissions(
     if not request.user.is_anonymous:
         user_permissions = request.user.permissions
 
+    print(user_permissions)
+    print(request.user)
+    print(required_permissions)
+
     # Check if global permissions are defined
     req_perms = []
     if required_permissions:

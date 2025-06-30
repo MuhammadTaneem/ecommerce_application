@@ -36,12 +36,13 @@
     "react": "^18.3.1",
     "react-datepicker": "^8.4.0",
     "react-dom": "^18.3.1",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.51.0",
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.22.3",
     "sonner": "^2.0.3",
     "tailwind-merge": "^2.6.0",
-    "zod": "^3.22.4",
+    "zod": "^3.25.67",
     "zustand": "^5.0.5"
   },
   "devDependencies": {

@@ -20,6 +20,7 @@ import NotFoundPage from './pages/NotFoundPage';
 // Admin Pages
 import AdminDashboardPage from './pages/admin/DashboardPage';
 import AdminProductsPage from './pages/admin/products/AdminProductsPage.tsx';
+import ProductFormPage from './pages/admin/products/ProductFormPage.tsx';
 import AdminOrdersPage from './pages/admin/OrdersPage';
 import AdminCustomersPage from './pages/admin/CustomersPage';
 import CategoriesPage from './pages/admin/categories';
@@ -93,6 +94,8 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="products" element={<AdminProductsPage />} />
+            <Route path="products/add" element={<ProductFormPage />} />
+            <Route path="products/edit/:id" element={<ProductFormPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="customers" element={<AdminCustomersPage />} />
             <Route path="categories" element={<CategoriesPage />} />
