@@ -11,11 +11,13 @@ import {fetchContextData} from '../../../store/slices/contextSlice';
 import {RootState} from '../../../store';
 import productService from '../../../services/productService';
 
-type Step = 'basic' | 'skus';
+type Step = 'basic' | 'skus' | 'tags' | 'image';
 
 const steps: { id: Step; name: string }[] = [
     {id: 'basic', name: 'Basic Info'},
     {id: 'skus', name: 'SKUs'},
+    {id: 'tags', name: 'Tags'},
+    {id: 'image', name: 'Image'},
 ];
 
 // Zod Schema for Key-Value Pair
@@ -307,6 +309,10 @@ export default function ProductFormPage() {
     const {isDark} = useTheme();
     const dispatch = useDispatch();
     const contextData = useSelector((state: RootState) => state.context.contextData);
+    const [skus, setSkus] = useState<any[]>([]);
+    const [activeSkuIndex, setActiveSkuIndex] = useState(0);
+    const [selectedTags, setSelectedTags] = useState<number[]>([]);
+    const [tagsSaved, setTagsSaved] = useState(false);
 
     const {
         formData: form,
@@ -370,10 +376,146 @@ export default function ProductFormPage() {
                             : [{ key: '', value: '' }]),
                 });
                 setProductId(product.id);
+                setSkus(product.skus && Array.isArray(product.skus)
+                    ? product.skus.map((sku: any) => ({
+                        ...sku,
+                        variants: sku.variants_dict
+                            ? Object.entries(sku.variants_dict).map(([key, value]) => ({ [key]: value }))
+                            : [],
+                    }))
+                    : []
+                );
+                setSelectedTags(product.tags ? product.tags.map((t: any) => t.id) : []);
             }).finally(() => setLoading(false));
         }
         // eslint-disable-next-line
     }, [editMode, id]);
+
+    // Helper: get all variant keys used in all SKUs
+    const getAllVariantKeys = (): string[] => {
+        const allKeys: string[] = skus.flatMap((sku) =>
+            sku.variants ? sku.variants.map((v: any) => Object.keys(v)[0]) : []
+        );
+        return Array.from(new Set(allKeys));
+    };
+
+    // Helper: validate all SKUs have the same variant keys and at least one variant
+    const validateSkus = () => {
+        if (skus.length === 0) return true;
+        const allKeys = getAllVariantKeys();
+        if (allKeys.length === 0) return false;
+        return skus.every(sku => {
+            const skuKeys: string[] = sku.variants ? sku.variants.map((v: any) => Object.keys(v)[0]) : [];
+            return skuKeys.length === allKeys.length && allKeys.every(key => skuKeys.includes(key));
+        });
+    };
+
+    // Handler: Add new SKU
+    const handleAddSku = () => {
+        setSkus(prev => [...prev, { price: '', discount_price: '', stock_quantity: '', variants: [] }]);
+        setActiveSkuIndex(skus.length);
+    };
+
+    // Handler: Remove SKU
+    const handleRemoveSku = async (index: number) => {
+        const sku = skus[index];
+        if (sku && sku.id && productId) {
+            try {
+                await productService.deleteProductSkus(productId, sku.id);
+                setSkus(prev => prev.filter((_, i) => i !== index));
+                setActiveSkuIndex(0);
+                toast({ title: 'SKU deleted' });
+            } catch (err: any) {
+                toast({ title: 'Error', description: err?.message || 'Failed to delete SKU', variant: 'destructive' });
+            }
+        } else {
+            setSkus(prev => prev.filter((_, i) => i !== index));
+            setActiveSkuIndex(0);
+        }
+    };
+
+    // Handler: Update SKU field
+    const handleSkuFieldChange = (field: string, value: any) => {
+        setSkus(prev => prev.map((sku, idx) => idx === activeSkuIndex ? { ...sku, [field]: value } : sku));
+    };
+
+    // New: Update SKU variant (type and value)
+    const handleSkuVariantTypeChange = (index: number, newTypeId: string) => {
+        setSkus(prev => prev.map((sku, idx) => {
+            if (idx !== activeSkuIndex) return sku;
+            let variants = [...(sku.variants || [])];
+            // If changing an existing type, update the key
+            if (variants[index]) {
+                variants[index] = { [newTypeId]: '' };
+            } else {
+                variants.push({ [newTypeId]: '' });
+            }
+            // Remove duplicate types
+            const seen = new Set();
+            variants = variants.filter(v => {
+                const key = Object.keys(v)[0];
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+            return { ...sku, variants };
+        }));
+    };
+
+    const handleSkuVariantValueChange = (index: number, valueId: string) => {
+        setSkus(prev => prev.map((sku, idx) => {
+            if (idx !== activeSkuIndex) return sku;
+            let variants = [...(sku.variants || [])];
+            const key = Object.keys(variants[index])[0];
+            variants[index] = { [key]: valueId };
+            return { ...sku, variants };
+        }));
+    };
+
+    // Remove a variant row
+    const handleRemoveVariant = (index: number) => {
+        setSkus(prev => prev.map((sku, idx) => {
+            if (idx !== activeSkuIndex) return sku;
+            let variants = [...(sku.variants || [])];
+            variants.splice(index, 1);
+            return { ...sku, variants };
+        }));
+    };
+
+    // Validate only the current SKU for Save SKU button
+    const validateCurrentSku = () => {
+        const sku = skus[activeSkuIndex];
+        if (!sku) return false;
+        // Must have at least one variant
+        if (!sku.variants || sku.variants.length === 0) return false;
+        // All variant types must be selected and unique
+        const keys = sku.variants.map((v: any) => Object.keys(v)[0]);
+        if (keys.length !== new Set(keys).size) return false;
+        if (keys.some((k: string) => !k)) return false;
+        // All values must be selected
+        if (sku.variants.some((v: any) => !v[Object.keys(v)[0]])) return false;
+        // Price and stock_quantity must be filled
+        if (!sku.price || !sku.stock_quantity) return false;
+        return true;
+    };
+
+    // Handler: Save SKU (add or update)
+    const handleSaveSku = async () => {
+        const sku = skus[activeSkuIndex];
+        if (!productId) return;
+        try {
+            if (sku.id) {
+                await productService.updateProductSkus(productId, sku.id, sku);
+                toast({ title: 'SKU updated' });
+            } else {
+                const res = await productService.addProductSkus(productId, sku);
+                setSkus(prev => prev.map((s, idx) => idx === activeSkuIndex ? { ...s, id: res.id ?? res.sku_id ?? res.skuId } : s));
+                toast({ title: 'SKU created' });
+            }
+        } catch (err: any) {
+            toast({ title: 'Error', description: err?.message || 'Failed', variant: 'destructive' });
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const {name, value} = e.target;
@@ -434,20 +576,22 @@ export default function ProductFormPage() {
         }
     };
 
-    // Stepper UI
-    const renderStepper = () => (
-        <div className="flex mb-6">
-            {steps.map((s, idx) => (
-                <div key={s.id} className="flex items-center">
+    // Tabbed UI
+    const renderTabs = () => (
+        <div className="flex border-b mb-6">
+            {steps.map((s) => (
                     <button
-                        className={`px-4 py-2 rounded ${step === s.id ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300'}`}
-                        disabled={s.id === 'skus' && !productId}
-                        onClick={() => s.id === 'basic' || productId ? setStep(s.id) : null}
+                    key={s.id}
+                    className={`px-6 py-2 -mb-px border-b-2 font-medium transition-colors duration-200 focus:outline-none ${
+                        step === s.id
+                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-blue-500'
+                    }`}
+                    disabled={s.id !== 'basic' && !productId}
+                    onClick={() => (s.id === 'basic' || productId) ? setStep(s.id) : null}
                     >
                         {s.name}
                     </button>
-                    {idx < steps.length - 1 && <span className="mx-2">→</span>}
-                </div>
             ))}
         </div>
     );
@@ -619,13 +763,202 @@ export default function ProductFormPage() {
         </form>
     );
 
-    // Step 2: Blank SKUs
-    const renderSKUs = () => (
+    // Step 2: SKUs
+    const renderSKUs = () => {
+        const sku = skus[activeSkuIndex] || { price: '', discount_price: '', stock_quantity: '', variants: [] };
+        // Theme classes
+        const tabActive = 'bg-blue-500 text-white';
+        const tabInactive = 'bg-gray-200 dark:bg-gray-700 dark:text-gray-300 text-gray-500';
+        const cardBg = 'bg-white dark:bg-gray-800';
+        const border = 'border border-gray-200 dark:border-gray-700';
+        return (
+            <div>
+                <div className="flex gap-2 mb-4">
+                    {skus.map((_, idx) => (
+                        <button
+                            key={idx}
+                            className={`px-4 py-2 rounded ${activeSkuIndex === idx ? tabActive : tabInactive}`}
+                            onClick={() => setActiveSkuIndex(idx)}
+                        >
+                            SKU {idx + 1}
+                        </button>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddSku} className="ml-2">+ Add SKU</Button>
+                </div>
+                {skus.length > 0 && (
+                    <div className={`${cardBg} ${border} p-4 rounded-lg mb-4`}>
+                        <div className="flex justify-between mb-2">
+                            <div className="font-semibold">SKU #{activeSkuIndex + 1}</div>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveSku(activeSkuIndex)} className="text-red-500">Remove</Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Price</label>
+                                <input type="number" value={sku.price} onChange={e => handleSkuFieldChange('price', e.target.value)} className={`w-full px-3 py-2 border rounded-md ${border} ${cardBg}`} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Discount Price</label>
+                                <input type="number" value={sku.discount_price} onChange={e => handleSkuFieldChange('discount_price', e.target.value)} className={`w-full px-3 py-2 border rounded-md ${border} ${cardBg}`} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Stock Quantity</label>
+                                <input type="number" value={sku.stock_quantity} onChange={e => handleSkuFieldChange('stock_quantity', e.target.value)} className={`w-full px-3 py-2 border rounded-md ${border} ${cardBg}`} />
+                            </div>
+                        </div>
+                        <div className="mb-4">
+                            <div className="font-semibold mb-2">Variants</div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(() => {
+                                    const variantsArr = sku.variants && sku.variants.length > 0 ? sku.variants : [{}];
+                                    return variantsArr.map((variantObj: any, idx: number) => {
+                                        const variantKey = Object.keys(variantObj)[0] || '';
+                                        const variantValue = variantObj[variantKey] || '';
+                                        // Get available types for this row (exclude already used except current)
+                                        const usedTypes = (sku.variants || []).map((v: any, i: number) => i !== idx ? Object.keys(v)[0] : null).filter(Boolean);
+                                        const availableTypes = contextData?.variants?.filter((v: any) => !usedTypes.includes(v.id.toString())) || [];
+                                        const selectedType = contextData?.variants?.find((v: any) => v.id.toString() === variantKey);
+                                        return (
+                                            <div key={idx} className="flex gap-2 items-end">
+                                                <div className="flex-1">
+                                                    <label className="block text-xs font-medium mb-1">Variant Type</label>
+                                                    <select
+                                                        value={variantKey}
+                                                        onChange={e => handleSkuVariantTypeChange(idx, e.target.value)}
+                                                        className={`w-full px-3 py-2 border rounded-md ${border} ${cardBg}`}
+                                                    >
+                                                        <option value="">Select Variant Type</option>
+                                                        {availableTypes.map((variant: any) => (
+                                                            <option key={variant.id} value={variant.id}>{variant.name}</option>
+                                                        ))}
+                                                        {selectedType && !availableTypes.some((v: any) => v.id === selectedType.id) && (
+                                                            <option value={selectedType.id}>{selectedType.name}</option>
+                                                        )}
+                                                    </select>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-xs font-medium mb-1">Value</label>
+                                                    <select
+                                                        value={variantValue}
+                                                        onChange={e => handleSkuVariantValueChange(idx, e.target.value)}
+                                                        className={`w-full px-3 py-2 border rounded-md ${border} ${cardBg}`}
+                                                        disabled={!variantKey}
+                                                    >
+                                                        <option value="">Select Value</option>
+                                                        {selectedType?.values.map((val: any) => (
+                                                            <option key={val.id} value={val.id}>{val.value}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                {sku.variants && sku.variants.length > 1 && (
+                                                    <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveVariant(idx)} className="text-red-500">Remove</Button>
+                                                )}
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                                {/* Always show one empty variant selector for adding new */}
+                                {sku.variants && contextData?.variants && sku.variants.length < contextData.variants.length && (
+                                    <div key="new-variant" className="flex gap-2 items-end">
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-medium mb-1">Variant Type</label>
+                                            <select
+                                                value=""
+                                                onChange={e => {
+                                                    const variantId = e.target.value;
+                                                    if (!variantId) return;
+                                                    handleSkuVariantTypeChange(sku.variants.length, variantId);
+                                                }}
+                                                className={`w-full px-3 py-2 border rounded-md ${border} ${cardBg}`}
+                                            >
+                                                <option value="">Select Variant Type</option>
+                                                {contextData.variants.filter((v: any) =>
+                                                    !(sku.variants || []).some((variantObj: any) => Object.keys(variantObj)[0] === v.id.toString())
+                                                ).map((variant: any) => (
+                                                    <option key={variant.id} value={variant.id}>{variant.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button type="button" onClick={handleSaveSku} disabled={!validateCurrentSku()}>Save SKU</Button>
+                        </div>
+                    </div>
+                )}
+                <div className="flex justify-between mt-6">
+                    <Button onClick={() => setStep('basic')}>Back</Button>
+                    <Button onClick={() => setStep('tags')} disabled={!validateSkus()}>Next: Tags</Button>
+                </div>
+            </div>
+        );
+    };
+
+    // Step 3: Tags
+    const renderTags = () => {
+        const tagList = contextData?.tags || [];
+        return (
+            <div>
+                <h2 className="text-lg font-semibold mb-4">Select Tags</h2>
+                <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">Selected: {selectedTags.length}</div>
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {tagList.map((tag: any) => {
+                        const selected = selectedTags.includes(tag.id);
+                        return (
+                            <button
+                                key={tag.id}
+                                type="button"
+                                onClick={() => handleTagToggle(tag.id)}
+                                className={`px-4 py-2 rounded border transition-colors duration-150 focus:outline-none text-sm
+                                    ${selected
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-700 dark:hover:text-blue-300'}
+                                `}
+                                aria-pressed={selected}
+                            >
+                                {tag.name}
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="flex gap-2 items-center justify-between">
+                    <Button onClick={() => setStep('skus')}>Back</Button>
+                    <div className="flex gap-2">
+                        <Button onClick={handleSaveTags} disabled={selectedTags.length === 0 || tagsSaved}>Save Tags</Button>
+                        <Button variant="outline" onClick={() => setStep('image')}>Skip</Button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Step 4: Blank Image
+    const renderImage = () => (
         <div>
-            <h2>SKUs Step (Coming Soon)</h2>
-            <Button onClick={() => setStep('basic')}>Back</Button>
+            <h2>Image Step (Coming Soon)</h2>
+            <Button onClick={() => setStep('tags')}>Back</Button>
         </div>
     );
+
+    // Handler for tag selection
+    const handleTagToggle = (tagId: number) => {
+        setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
+        setTagsSaved(false);
+    };
+
+    // Handler for saving tags
+    const handleSaveTags = async () => {
+        if (!productId) return;
+        try {
+            await productService.addProductTags(productId, { tag_ids: selectedTags });
+            setTagsSaved(true);
+            toast({ title: 'Tags saved' });
+            setStep('image');
+        } catch (err: any) {
+            toast({ title: 'Error', description: err?.message || 'Failed to save tags', variant: 'destructive' });
+        }
+    };
 
     return (
         <div className={adminStyles.pageContainer}>
@@ -633,9 +966,19 @@ export default function ProductFormPage() {
                 <h1 className={adminStyles.headerTitle}>{editMode ? 'Edit Product' : 'Add Product'}</h1>
             </div>
             <div className={adminStyles.mainContainer}>
-                {renderStepper()}
+                {renderTabs()}
                 <div className={adminStyles.contentContainer}>
-                    {loading ? <div>Loading...</div> : step === 'basic' ? renderBasicForm() : renderSKUs()}
+                    {loading ? (
+                        <div>Loading...</div>
+                    ) : step === 'basic' ? (
+                        renderBasicForm()
+                    ) : step === 'skus' ? (
+                        renderSKUs()
+                    ) : step === 'tags' ? (
+                        renderTags()
+                    ) : step === 'image' ? (
+                        renderImage()
+                    ) : null}
                 </div>
             </div>
         </div>

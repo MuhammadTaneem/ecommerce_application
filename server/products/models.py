@@ -186,11 +186,18 @@ class SKU(models.Model):
     def get_price(self):
         return self.discount_price if self.discount_price else self.price
 
+    # @property
+    # def variants_dict(self):
+    #     variants_dict = {}
+    #     for variant in self.variants.all():
+    #         variants_dict[variant.attribute.name] = variant.value
+    #     return variants_dict
+
     @property
     def variants_dict(self):
         variants_dict = {}
         for variant in self.variants.all():
-            variants_dict[variant.attribute.name] = variant.value
+            variants_dict[variant.attribute.id] = variant.id
         return variants_dict
 
 

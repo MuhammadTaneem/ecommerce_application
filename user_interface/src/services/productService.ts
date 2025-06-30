@@ -98,6 +98,25 @@ class ProductService {
       throw error;
     }
   };
+  updateProductSkus = async (productId: number,skuId: number, skuData: any): Promise<any> => {
+    try {
+      const response = await apiClient.put(`/products/${productId}/skus/${skuId}/`, skuData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding SKUs:', error);
+      throw error;
+    }
+  };
+
+  deleteProductSkus = async (productId: number,skuId: number): Promise<any> => {
+    try {
+      const response = await apiClient.delete(`/products/${productId}/skus/${skuId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding SKUs:', error);
+      throw error;
+    }
+  };
   
   // Step 3: Add tags to product
   addProductTags = async (productId: number, tagData: { tag_ids: number[] }): Promise<any> => {

@@ -279,7 +279,8 @@ class ProductViewSet(ModelViewSet):
                         'message': 'No valid tags found'
                     }, status=status.HTTP_404_NOT_FOUND)
 
-                product.tags.add(*tags)
+                product.tags.set(tags)
+                product.save()
                 serializer = TagSerializer(product.tags.all(), many=True)
                 return Response({
                     'message': f'{len(tags)} tags added successfully',

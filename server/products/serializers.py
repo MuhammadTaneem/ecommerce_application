@@ -54,7 +54,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class SKUSerializer(serializers.ModelSerializer):
     class Meta:
         model = SKU
-        fields = ['id', 'product', 'sku_code', 'price', 'discount_price', 'stock_quantity', 'variants_dict', 'variants']
+        fields = ['id', 'product', 'sku_code', 'price', 'discount_price', 'stock_quantity', 'variants_dict','variants']
 
     def run_validation(self, data):
         variants_data = data.get('variants')
