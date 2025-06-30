@@ -144,6 +144,17 @@ class ProductService {
     }
   };
 
+  // Delete a product image
+  deleteProductImage = async (productId: number, imageId: number): Promise<any> => {
+    try {
+      const response = await apiClient.delete(`/products/${productId}/images/${imageId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting product image:', error);
+      throw error;
+    }
+  };
+
   // Commented out methods that may be implemented later
   /* 
   getProductReviews = async (productId: number): Promise<ReviewType[]> => {

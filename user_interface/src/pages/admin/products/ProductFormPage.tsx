@@ -1,7 +1,7 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
-import {Plus, X} from 'lucide-react';
+import {Plus, X, Upload, Image as ImageIcon, Trash2} from 'lucide-react';
 import {z} from 'zod';
 import Button from '../../../components/ui/Button';
 import {useToast} from '../../../hooks/use-toast';
@@ -313,6 +313,11 @@ export default function ProductFormPage() {
     const [activeSkuIndex, setActiveSkuIndex] = useState(0);
     const [selectedTags, setSelectedTags] = useState<number[]>([]);
     const [tagsSaved, setTagsSaved] = useState(false);
+    const [images, setImages] = useState<File[]>([]);
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [existingImages, setExistingImages] = useState<any[]>([]);
+    const [uploadProgress, setUploadProgress] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const {
         formData: form,
@@ -386,6 +391,7 @@ export default function ProductFormPage() {
                     : []
                 );
                 setSelectedTags(product.tags ? product.tags.map((t: any) => t.id) : []);
+                setExistingImages(product.images || []);
             }).finally(() => setLoading(false));
         }
         // eslint-disable-next-line
@@ -933,11 +939,119 @@ export default function ProductFormPage() {
         );
     };
 
-    // Step 4: Blank Image
+    // Step 4: Image Upload
     const renderImage = () => (
-        <div>
-            <h2>Image Step (Coming Soon)</h2>
-            <Button onClick={() => setStep('tags')}>Back</Button>
+        <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Product Images</h2>
+            
+            {/* Existing Images */}
+            {existingImages.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="text-md font-medium">Current Images</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {existingImages.map((img) => (
+                            <div key={img.id} className="relative group">
+                                <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                                    <img 
+                                        src={img.image} 
+                                        alt="Product" 
+                                        className="h-full w-full object-contain p-2"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveExistingImage(img.id)}
+                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            {/* Upload New Images */}
+            <div className="space-y-4">
+                <h3 className="text-md font-medium">Upload New Images</h3>
+                
+                {/* Drag & Drop Area */}
+                <div
+                    className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        multiple
+                        accept="image/*"
+                    />
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                        <Upload className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                            Drag & drop images here
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            or click to browse
+                        </p>
+                    </div>
+                </div>
+                
+                {/* Image Previews */}
+                {imageUrls.length > 0 && (
+                    <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Selected Images ({imageUrls.length})</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {imageUrls.map((url, index) => (
+                                <div key={index} className="relative group">
+                                    <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                                        <img 
+                                            src={url} 
+                                            alt={`Preview ${index + 1}`} 
+                                            className="h-full w-full object-contain p-2"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveImage(index)}
+                                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="flex justify-end mt-4">
+                            <Button 
+                                onClick={handleUploadImages} 
+                                disabled={images.length === 0 || uploadProgress}
+                                className="flex items-center gap-2"
+                            >
+                                {uploadProgress ? 'Uploading...' : 'Upload Images'}
+                                {!uploadProgress && <Upload className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Empty State */}
+                {imageUrls.length === 0 && existingImages.length === 0 && (
+                    <div className="text-center py-8">
+                        <ImageIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400">No images uploaded yet</p>
+                    </div>
+                )}
+            </div>
+            
+            <div className="flex justify-between mt-6">
+                <Button onClick={() => setStep('tags')}>Back</Button>
+                <Button onClick={() => navigate('/admin/products')}>Finish</Button>
+            </div>
         </div>
     );
 
@@ -957,6 +1071,92 @@ export default function ProductFormPage() {
             setStep('image');
         } catch (err: any) {
             toast({ title: 'Error', description: err?.message || 'Failed to save tags', variant: 'destructive' });
+        }
+    };
+
+    // Image handlers
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            setImages(prev => [...prev, ...newFiles]);
+            
+            // Create preview URLs for the new images
+            const newUrls = newFiles.map(file => URL.createObjectURL(file));
+            setImageUrls(prev => [...prev, ...newUrls]);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const newFiles = Array.from(e.dataTransfer.files);
+            setImages(prev => [...prev, ...newFiles]);
+            
+            // Create preview URLs for the new images
+            const newUrls = newFiles.map(file => URL.createObjectURL(file));
+            setImageUrls(prev => [...prev, ...newUrls]);
+        }
+    };
+
+    const handleRemoveImage = (index: number) => {
+        // Remove the image and its preview URL
+        setImages(prev => prev.filter((_, i) => i !== index));
+        
+        // Revoke the URL to prevent memory leaks
+        URL.revokeObjectURL(imageUrls[index]);
+        setImageUrls(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRemoveExistingImage = async (imageId: number) => {
+        if (!productId) return;
+        
+        try {
+            // Call API to delete the image
+            await productService.deleteProductImage(productId, imageId);
+            
+            // Update state to remove the image
+            setExistingImages(prev => prev.filter(img => img.id !== imageId));
+            toast({ title: 'Image removed successfully' });
+        } catch (err: any) {
+            toast({ title: 'Error', description: err?.message || 'Failed to remove image', variant: 'destructive' });
+        }
+    };
+
+    const handleUploadImages = async () => {
+        if (!productId || images.length === 0) return;
+        
+        try {
+            setUploadProgress(true);
+            
+            // Create FormData object
+            const formData = new FormData();
+            images.forEach(image => {
+                formData.append('images', image);
+            });
+            
+            // Upload images
+            await productService.addProductImages(productId, formData);
+            
+            // Clear images after successful upload
+            setImages([]);
+            setImageUrls([]);
+            
+            // Refresh existing images
+            const product = await productService.getAdminProductById(productId);
+            setExistingImages(product.images || []);
+            
+            toast({ title: 'Images uploaded successfully' });
+        } catch (err: any) {
+            toast({ title: 'Error', description: err?.message || 'Failed to upload images', variant: 'destructive' });
+        } finally {
+            setUploadProgress(false);
         }
     };
 
