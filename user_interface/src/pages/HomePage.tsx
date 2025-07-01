@@ -20,6 +20,7 @@ const HomePage = () => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(false);
   const [trendingProducts, setTrendingProducts] = useState<ProductType[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
   // Flash sale data
   const flashSale = {
@@ -54,27 +55,52 @@ const HomePage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Use sample products if products is empty
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await productService.getProducts();
-      setProducts(data);
-      setTrendingProducts(data);
+      
+      // Ensure data is an array before setting state
+      if (Array.isArray(data)) {
+        setProducts(data);
+        setTrendingProducts(data.slice(0, 4)); // Only show first 4 products as trending
+      } else {
+        throw new Error('Invalid data format received from server');
+      }
     }
     catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch products';
+      setError(errorMessage);
       toast({
         title: 'Error',
-        description: 'Failed to fetch products.',
+        description: errorMessage,
         variant: 'destructive',
       });
+      // Initialize with empty arrays on error
+      setProducts([]);
+      setTrendingProducts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  if (loading) {
+    return <div className="container-custom py-16">Loading products...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="container-custom py-16">
+        <div className="text-red-500">Error: {error}</div>
+        <Button onClick={fetchProducts} className="mt-4">Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -131,38 +157,42 @@ const HomePage = () => {
       </section>
       
       {/* Trending Products */}
-      <section className="py-16">
-        <div className="container-custom">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold sm:text-3xl">Trending Products</h2>
-            <Link to="/products?sort=trending" className="flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
-              View All <ArrowRight size={16} className="ml-1" />
-            </Link>
+      {trendingProducts.length > 0 && (
+        <section className="py-16">
+          <div className="container-custom">
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="text-2xl font-bold sm:text-3xl">Trending Products</h2>
+              <Link to="/products?sort=trending" className="flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                View All <ArrowRight size={16} className="ml-1" />
+              </Link>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {trendingProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {trendingProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Featured Products */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800/50">
-        <div className="container-custom">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold sm:text-3xl">Featured Products</h2>
-            <Link to="/products?featured=true" className="flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
-              View All <ArrowRight size={16} className="ml-1" />
-            </Link>
+      {products.length > 0 && (
+        <section className="py-16 bg-gray-50 dark:bg-gray-800/50">
+          <div className="container-custom">
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="text-2xl font-bold sm:text-3xl">Featured Products</h2>
+              <Link to="/products?featured=true" className="flex items-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+                View All <ArrowRight size={16} className="ml-1" />
+              </Link>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };

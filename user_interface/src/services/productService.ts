@@ -98,6 +98,17 @@ class ProductService {
       throw error;
     }
   };
+
+  getProductSkus = async (productId: number): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/products/${productId}/skus/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting SKUs:', error);
+      throw error;
+    }
+  };
+
   updateProductSkus = async (productId: number,skuId: number, skuData: any): Promise<any> => {
     try {
       const response = await apiClient.put(`/products/${productId}/skus/${skuId}/`, skuData);

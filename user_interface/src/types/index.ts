@@ -59,9 +59,9 @@ export interface ProductType {
   short_description: string;
   discount_price: string;
   category: number;
-  key_features: string[];
-  description: Record<string, string>;
-  additional_info: Record<string, string>;
+  key_features: KeyValuePair[];
+  description: KeyValuePair[];
+  additional_info: KeyValuePair[];
   thumbnail: string;
   brand: string | number | null;
   tags: TagType[];
@@ -173,7 +173,7 @@ export interface VariantType {
 }
 // KeyValuePair is a reusable interface for all key-value pair items
 export interface KeyValuePair {
-  key: number;
+  key: string;
   value: string;
 }
 

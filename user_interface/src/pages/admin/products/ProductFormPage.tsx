@@ -109,7 +109,6 @@ const useFormValidation = (initialData: ProductFormData) => {
             setIsValid(true);
             return true;
         } catch (error) {
-            console.log(error);
             if (error instanceof z.ZodError) {
                 const newErrors: Record<string, string> = {};
                 
@@ -518,6 +517,61 @@ export default function ProductFormPage() {
                 setSkus(prev => prev.map((s, idx) => idx === activeSkuIndex ? { ...s, id: res.id ?? res.sku_id ?? res.skuId } : s));
                 toast({ title: 'SKU created' });
             }
+            
+            // Reload all SKUs after saving
+            const response = await productService.getProductSkus(productId);
+
+            // Extract the SKUs array from the response
+            const updatedSkus = response?.data || [];
+
+            if (Array.isArray(updatedSkus)) {
+                // Transform server SKUs to match frontend format
+                const transformedSkus = updatedSkus.map(serverSku => {
+                    // Ensure variants is an array and has valid data
+                    const variants = Array.isArray(serverSku.variants) 
+                        ? serverSku.variants
+                            .filter((variant: unknown) => variant && typeof variant === 'object')
+                            .map((variant: Record<string, any>) => {
+                                const key = Object.keys(variant)[0];
+                                const value = variant[key];
+                                // Only create variant if both key and value exist
+                                if (key && value !== undefined && value !== null) {
+                                    return {
+                                        [key]: value.toString()
+                                    };
+                                }
+                                return null;
+                            })
+                            .filter((v: unknown) => v !== null) // Remove any null entries
+                        : [];
+
+                    // If no variants, use variants_dict if available
+                    if (variants.length === 0 && serverSku.variants_dict) {
+                        const variantDict = serverSku.variants_dict;
+                        variants.push(...Object.entries(variantDict).map(([key, value]) => ({
+                            [key]: value?.toString() || ''
+                        })));
+                    }
+
+                    return {
+                        id: serverSku.id,
+                        product: serverSku.product,
+                        sku_code: serverSku.sku_code,
+                        price: serverSku.price?.toString() || '',
+                        discount_price: serverSku.discount_price?.toString() || '',
+                        stock_quantity: serverSku.stock_quantity?.toString() || '',
+                        variants
+                    };
+                });
+                
+                setSkus(transformedSkus);
+            } else {
+                toast({ 
+                    title: 'Warning', 
+                    description: 'Received invalid SKU data from server', 
+                    variant: 'destructive' 
+                });
+            }
         } catch (err: any) {
             toast({ title: 'Error', description: err?.message || 'Failed', variant: 'destructive' });
         }
@@ -572,7 +626,7 @@ export default function ProductFormPage() {
                 toast({title: 'Product created'});
                 setProductId(res.id);
                 setEditMode(true);
-                navigate(`/admin/products/${res.id}/edit`);
+                navigate(`/admin/products/edit/${res.id}`);
             }
             setStep('skus');
         } catch (err: any) {

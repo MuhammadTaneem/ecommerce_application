@@ -10,7 +10,16 @@ interface CategoryTreeNavProps {
   level?: number;
 }
 
-const CategoryTreeNav = ({ categories, level = 0 }: CategoryTreeNavProps) => {
+const CategoryTreeNav = ({ categories = [], level = 0 }: CategoryTreeNavProps) => {
+  if (!Array.isArray(categories)) {
+    console.error('Categories prop is not an array:', categories);
+    return null;
+  }
+
+  if (categories.length === 0 && level === 0) {
+    return <div className="text-sm text-gray-500 p-4">No categories available</div>;
+  }
+
   return (
     <ul className={`space-y-1 ${level > 0 ? 'mt-1 ml-4' : ''}`}>
       {categories.map((category) => (
@@ -31,7 +40,7 @@ interface CategoryItemProps {
 
 const CategoryItem = ({ category, level }: CategoryItemProps) => {
   const [isOpen, setIsOpen] = useState(level === 0);
-  const hasSubcategories = category.subcategories.length > 0;
+  const hasSubcategories = category.subcategories && Array.isArray(category.subcategories) && category.subcategories.length > 0;
   const dispatch = useDispatch();
 
   const handleCategoryClick = () => {

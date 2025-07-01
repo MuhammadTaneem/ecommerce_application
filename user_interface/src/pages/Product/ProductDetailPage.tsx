@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, Share2, ArrowLeft, Info, MessageSquare, FileText } from 'lucide-react';
 import Button from '../../components/ui/Button.tsx';
 import { useCart } from '../../hooks/useCart.ts';
-import sampleProducts from '../../data/sampleProducts.ts';
 import ProductReviews from '../../components/shop/ProductReviews.tsx';
 import { SKUType, ProductType } from '../../types/index.ts';
 import productService from '../../services/productService.ts';
@@ -51,7 +50,7 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [product, setProduct] = useState<ProductType | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
   const [selectedSku, setSelectedSku] = useState<SKUType | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'details' | 'info' | 'reviews'>('details');
@@ -64,11 +63,12 @@ const ProductDetailPage = () => {
       try {
         setLoading(true);
         setError(null);
+        const n_id = Number(id);
 
-        const response = await productService.getProductById(id);
+        const response = await productService.getProductById(n_id);
 
-        if (response.status === 200) {
-          setProduct(response.data);
+        if (response) {
+          setSelectedProduct(response);
         } else {
           throw new Error('Failed to fetch product');
         }
@@ -271,7 +271,7 @@ const ProductDetailPage = () => {
                 <h3 className="mb-4 text-lg font-semibold">Key Features</h3>
                 <ul className="list-inside list-disc space-y-2">
                   {selectedProduct.key_features.map((feature, index) => (
-                    <li key={index} className="text-gray-600 dark:text-gray-400">{feature}</li>
+                    <li key={index} className="text-gray-600 dark:text-gray-400">{feature.key}: {feature.value}</li>
                   ))}
                 </ul>
               </div>
@@ -349,18 +349,6 @@ const ProductDetailPage = () => {
               </Button>
             </div>
             
-            {/* Category */}
-            {selectedProduct.category && (
-              <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
-                <p className="mb-2 font-medium">Category</p>
-                <Link
-                  to={`/products/${selectedProduct.category}`}
-                  className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-                >
-                  Category {selectedProduct.category}
-                </Link>
-              </div>
-            )}
           </div>
         </div>
         
@@ -410,12 +398,16 @@ const ProductDetailPage = () => {
             {/* Product Details Tab */}
             {activeTab === 'details' && (
               <div>
-                {selectedProduct.description && Object.keys(selectedProduct.description).length > 0 ? (
-                  <div className="prose max-w-none dark:prose-invert">
-                    {Object.entries(selectedProduct.description).map(([key, value]) => (
-                      <div key={key} className="mb-4">
-                        <h3 className="text-lg font-medium">{key}</h3>
-                        <p>{value}</p>
+                {selectedProduct.description && selectedProduct.description.length > 0 ? (
+                  <div className="prose max-w-none space-y-6 dark:prose-invert">
+                    {selectedProduct.description.map((part, index) => (
+                      <div key={index} className=" pb-4 last:border-b-0 dark:border-gray-700">
+                        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          {part.key}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          {part.value}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -438,18 +430,18 @@ const ProductDetailPage = () => {
             {/* Additional Info Tab */}
             {activeTab === 'info' && (
               <div>
-                {selectedProduct.additional_info && Object.keys(selectedProduct.additional_info).length > 0 ? (
-                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {Object.entries(selectedProduct.additional_info).map(([key, value]) => (
-                          <tr key={key}>
-                            <td className="whitespace-nowrap px-4 py-2 font-medium">{key}</td>
-                            <td className="px-4 py-2">{value}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                {selectedProduct.additional_info && selectedProduct.additional_info.length > 0 ? (
+                  <div className="prose max-w-none space-y-6 dark:prose-invert">
+                    {selectedProduct.additional_info.map((part, index) => (
+                      <div key={index} className=" pb-4 last:border-b-0 dark:border-gray-700">
+                        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          {part.key}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          {part.value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <p className="text-gray-500 dark:text-gray-400">No additional information available.</p>
