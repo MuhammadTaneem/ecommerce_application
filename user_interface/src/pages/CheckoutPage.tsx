@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
-import { Address, PaymentMethod } from '../types';
+import { AddressType, PaymentMethod, CartItemType } from '../types';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { CreditCard, Wallet, Smartphone, ArrowLeft, Check } from 'lucide-react';
+import authService from '../services/auth.services';
+import orderService from '../services/order.services';
+import { useToast } from '../hooks/use-toast';
+import { clearCart } from '../store/slices/cartSlice';
 
 const paymentSchema = z.object({
   method: z.enum(['cash', 'mobile', 'card'] as const),
@@ -18,6 +22,7 @@ const paymentSchema = z.object({
   card_number: z.string().optional(),
   expiry_date: z.string().optional(),
   cvv: z.string().optional(),
+  voucher_code: z.string().optional(),
 }).refine(data => {
   if (data.method === 'mobile') {
     return !!data.mobile_number && !!data.transaction_id;
@@ -32,34 +37,96 @@ const paymentSchema = z.object({
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
 
+// Temporary mock addresses until API is fixed
+const mockAddresses: AddressType[] = [
+  {
+    id: 1,
+    name: "Office",
+    is_default: true,
+    address_line1: "123 Main Street",
+    address_line2: "Apt 4B",
+    city: "Dhaka",
+    area: "uttara",
+    phone_number: "+8801234567890",
+    created_at: "2025-07-02T16:28:56.771131+06:00",
+    updated_at: "2025-07-02T16:28:56.771145+06:00"
+  },
+  {
+    id: 2,
+    name: "home",
+    is_default: false,
+    address_line1: "123 Main Street s",
+    address_line2: "Apt 4B",
+    city: "Dhaka",
+    area: "uttara",
+    phone_number: "+8801234567890",
+    created_at: "2025-07-02T16:29:04.816082+06:00",
+    updated_at: "2025-07-02T16:29:04.816096+06:00"
+  }
+];
+
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { items, totalPrice } = useSelector((state: RootState) => state.cart);
+  const dispatch = useDispatch();
+  const { toast } = useToast();
+  const { items } = useSelector((state: RootState) => state.cart);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('cash');
+  const [addresses, setAddresses] = useState<AddressType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Simulated addresses - in a real app, this would come from the user's profile
-  const addresses: Address[] = [
-    {
-      id: 1,
-      name: 'Home',
-      address_line1: '123 Main Street',
-      address_line2: 'Apt 4B',
-      city: 'Dhaka',
-      area: 'Uttara',
-      phone_number: '+8801234567890',
-      is_default: true,
-    },
-    {
-      id: 2,
-      name: 'Office',
-      address_line1: '456 Business Avenue',
-      city: 'Dhaka',
-      area: 'Banani',
-      phone_number: '+8801987654321',
-      is_default: false,
-    },
-  ];
+  // Calculate total price from cart items
+  const totalPrice = items.reduce(
+    (total, item) => total + Number(item.unit_price) * item.quantity,
+    0
+  );
+
+  // Fetch addresses from the API
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to use the API first
+        try {
+          // Check if authService has getAddresses method
+          if (typeof authService.getAddresses === 'function') {
+            const addressData = await authService.getAddresses();
+            setAddresses(addressData);
+          } else {
+            // If not available, use mock data
+            console.warn('Using mock address data since API is not available');
+            setAddresses(mockAddresses);
+          }
+        } catch (error) {
+          // Fallback to mock data if API fails
+          console.warn('API call failed, using mock address data', error);
+          setAddresses(mockAddresses);
+        }
+        
+        // Set default address if available
+        const defaultAddress = addresses.find((addr: AddressType) => addr.is_default);
+        if (defaultAddress && !selectedAddress) {
+          setSelectedAddress(defaultAddress.id);
+        } else if (addresses.length > 0 && !selectedAddress) {
+          // If no default address, select the first one
+          setSelectedAddress(addresses[0].id);
+        }
+      } catch (error) {
+        console.error('Error setting up addresses:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your addresses. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAddresses();
+  }, []);
 
   const {
     register,
@@ -70,37 +137,63 @@ const CheckoutPage = () => {
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       method: 'cash',
+      voucher_code: '',
     },
   });
 
   const currentPaymentMethod = watch('method');
 
-  // Set default address if none selected
-  useState(() => {
-    const defaultAddress = addresses.find(addr => addr.is_default);
-    if (defaultAddress && !selectedAddress) {
-      setSelectedAddress(defaultAddress.id);
-    }
-  });
-
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: string | number) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(price);
+    }).format(numPrice);
   };
 
-  const onSubmit = (data: PaymentFormData) => {
-    // Here you would implement the order submission logic
-    console.log('Order placed with data:', {
-      address: addresses.find(addr => addr.id === selectedAddress),
-      payment: data,
-      items,
-      totalPrice,
-    });
-    
-    alert('Order placed successfully!');
-    navigate('/');
+  const onSubmit = async (data: PaymentFormData) => {
+    if (!selectedAddress) {
+      toast({
+        title: "Address Required",
+        description: "Please select a shipping address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      // Prepare order data
+      const orderData = {
+        address_id: selectedAddress,
+        voucher_code: data.voucher_code || undefined
+      };
+      
+      // Call the API to place the order
+      const response = await orderService.createOrder(orderData);
+      
+      // Clear the cart after successful order
+      dispatch(clearCart());
+      
+      toast({
+        title: "Order Placed",
+        description: "Your order has been placed successfully!",
+        variant: "default"
+      });
+      
+      // Navigate to order confirmation or orders page
+      navigate('/profile?tab=orders');
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast({
+        title: "Order Failed",
+        description: "There was a problem placing your order. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Redirect to cart if cart is empty
@@ -130,57 +223,73 @@ const CheckoutPage = () => {
                 <CardTitle>Shipping Address</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {addresses.map((address) => (
-                    <div 
-                      key={address.id}
-                      onClick={() => setSelectedAddress(address.id)}
-                      className={`cursor-pointer rounded-lg border p-4 ${
-                        selectedAddress === address.id 
-                          ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/20' 
-                          : 'border-gray-200 dark:border-gray-700'
-                      }`}
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+                  </div>
+                ) : addresses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">You don't have any saved addresses.</p>
+                    <Button
+                      type="button"
+                      onClick={() => navigate('/profile?tab=addresses&action=add')}
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center">
-                            <h3 className="font-medium">{address.name}</h3>
-                            {address.is_default && (
-                              <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                Default
-                              </span>
-                            )}
+                      Add New Address
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {addresses.map((address) => (
+                      <div 
+                        key={address.id}
+                        onClick={() => setSelectedAddress(address.id)}
+                        className={`cursor-pointer rounded-lg border p-4 ${
+                          selectedAddress === address.id 
+                            ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/20' 
+                            : 'border-gray-200 dark:border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center">
+                              <h3 className="font-medium">{address.name}</h3>
+                              {address.is_default && (
+                                <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                              {address.address_line1}
+                              {address.address_line2 && <>, {address.address_line2}</>}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {address.city}, {address.area}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Phone: {address.phone_number}
+                            </p>
                           </div>
-                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {address.address_line1}
-                            {address.address_line2 && <>, {address.address_line2}</>}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {address.city}, {address.area}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Phone: {address.phone_number}
-                          </p>
+                          
+                          {selectedAddress === address.id && (
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500 text-white">
+                              <Check size={14} />
+                            </div>
+                          )}
                         </div>
-                        
-                        {selectedAddress === address.id && (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500 text-white">
-                            <Check size={14} />
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate('/profile?tab=addresses&action=add')}
-                    className="w-full"
-                  >
-                    + Add New Address
-                  </Button>
-                </div>
+                    ))}
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('/profile?tab=addresses&action=add')}
+                      className="w-full"
+                    >
+                      + Add New Address
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -326,6 +435,15 @@ const CheckoutPage = () => {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Voucher Code Field */}
+                  <div className="mt-4">
+                    <label className="mb-1 block text-sm font-medium">Voucher Code (Optional)</label>
+                    <Input 
+                      {...register("voucher_code")} 
+                      placeholder="Enter voucher code" 
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -344,9 +462,9 @@ const CheckoutPage = () => {
                       <div key={item.id} className="flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="h-12 w-12 rounded-md bg-gray-200 dark:bg-gray-700">
-                            {item.image && (
+                            {item.thumbnail && (
                               <img 
-                                src={item.image} 
+                                src={item.thumbnail} 
                                 alt={item.name} 
                                 className="h-full w-full object-cover rounded-md"
                               />
@@ -357,7 +475,7 @@ const CheckoutPage = () => {
                             <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                           </div>
                         </div>
-                        <p className="text-sm font-medium">{formatPrice(item.price * item.quantity)}</p>
+                        <p className="text-sm font-medium">{formatPrice(item.subtotal)}</p>
                       </div>
                     ))}
                   </div>
@@ -384,9 +502,10 @@ const CheckoutPage = () => {
                   <Button 
                     type="submit" 
                     className="w-full"
-                    disabled={!selectedAddress}
+                    disabled={!selectedAddress || loading || isSubmitting}
+                    loading={isSubmitting}
                   >
-                    Place Order
+                    {isSubmitting ? 'Processing...' : 'Place Order'}
                   </Button>
                 </div>
               </CardContent>

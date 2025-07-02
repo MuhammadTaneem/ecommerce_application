@@ -20,16 +20,6 @@ class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    # def get_permissions(self):
-    #     """
-    #     Override get_permissions to handle different permission requirements
-    #     """
-    #     if self.action in ['list', 'retrieve']:
-    #         permission_classes = [IsAuthenticated]
-    #     else:
-    #         permission_classes = [IsAuthenticated]
-    #     return [permission() for permission in permission_classes]
-
     @has_permissions(PermissionEnum.product_create)
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)

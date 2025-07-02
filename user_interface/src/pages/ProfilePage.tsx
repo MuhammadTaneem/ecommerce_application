@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,8 +8,11 @@ import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card'
 import { Package, CreditCard, Settings, User, MapPin, Plus } from 'lucide-react';
 import AddressForm from '../components/profile/AddressForm';
 import AddressCard from '../components/profile/AddressCard';
-import { AddressType } from '../types';
+import { AddressType, OrderType } from '../types';
 import OrderDetailsModal from '../components/shop/OrderDetailsModal';
+import authService from '../services/auth.services';
+import orderService from '../services/order.services';
+import { useToast } from '../hooks/use-toast';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -23,74 +26,72 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<AddressType | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null);
+  const [addresses, setAddresses] = useState<AddressType[]>([]);
+  const [orders, setOrders] = useState<OrderType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const { toast } = useToast();
   
-  // Simulated addresses data - in a real app, this would come from Redux/API
-  const [addresses, setAddresses] = useState<AddressType[]>([
-    {
-      id: 1,
-      name: 'Home',
-      address_line1: '123 Main Street',
-      address_line2: 'Apt 4B',
-      city: 'Dhaka',
-      area: 'Uttara',
-      phone_number: '+8801234567890',
-      is_default: true,
-    },
-    {
-      id: 2,
-      name: 'Office',
-      address_line1: '456 Business Avenue',
-      city: 'Dhaka',
-      area: 'Banani',
-      phone_number: '+8801987654321',
-      is_default: false,
-    },
-  ]);
+  // Fetch addresses from server
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (activeTab === 'addresses') {
+        try {
+          setLoading(true);
+          
+          // Try to use the API
+          try {
+            // Check if authService has getAddresses method
+            if (typeof authService.getAddresses === 'function') {
+              const addressData = await authService.getAddresses();
+              setAddresses(addressData);
+            } else {
+              console.warn('getAddresses function not available in authService');
+            }
+          } catch (error) {
+            console.error('Error fetching addresses:', error);
+            toast({
+              title: "Error",
+              description: "Failed to load your addresses. Please try again.",
+              variant: "destructive"
+            });
+          }
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchAddresses();
+  }, [activeTab]);
   
-  // Sample orders data
-  const [orders, setOrders] = useState([
-    {
-      id: 'ORD-1001',
-      date: '2024-03-15',
-      status: 'Delivered',
-      items: [
-        {
-          id: 1,
-          name: 'Product 1',
-          price: 49.99,
-          quantity: 2,
-          image: 'https://via.placeholder.com/150',
-          hasReview: false
-        },
-        {
-          id: 2,
-          name: 'Product 2',
-          price: 29.99,
-          quantity: 1,
-          image: 'https://via.placeholder.com/150',
-          hasReview: true
+  // Fetch orders from server
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (activeTab === 'orders') {
+        try {
+          setOrdersLoading(true);
+          
+          try {
+            const orderData = await orderService.getOrders();
+            setOrders(orderData);
+          } catch (error) {
+            console.error('Error fetching orders:', error);
+            toast({
+              title: "Error",
+              description: "Failed to load your orders. Please try again.",
+              variant: "destructive"
+            });
+          }
+        } finally {
+          setOrdersLoading(false);
         }
-      ],
-      total: 129.97
-    },
-    {
-      id: 'ORD-1002',
-      date: '2024-03-10',
-      status: 'Delivered',
-      items: [
-        {
-          id: 3,
-          name: 'Product 3',
-          price: 79.99,
-          quantity: 1,
-          image: 'https://via.placeholder.com/150',
-          hasReview: false
-        }
-      ],
-      total: 79.99
-    }
-  ]);
+      }
+    };
+
+    fetchOrders();
+  }, [activeTab]);
   
   const {
     register,
@@ -110,23 +111,51 @@ const ProfilePage = () => {
     console.log('Profile data:', data);
   };
 
-  const handleAddressSubmit = async (data: Omit<AddressType, 'id'>) => {
-    if (editingAddress) {
-      // Update existing address
-      setAddresses(addresses.map(addr => 
-        addr.id === editingAddress.id ? { ...data, id: addr.id } : addr
-      ));
-    } else {
-      // Add new address
-      const newAddress = {
-        ...data,
-        id: Math.max(...addresses.map(a => a.id), 0) + 1,
-      };
-      setAddresses([...addresses, newAddress]);
+  const handleAddressSubmit = async (data: any) => {
+    try {
+      setLoading(true);
+      
+      if (editingAddress) {
+        // Update existing address
+        // Here you would call an API to update the address
+        // For now, we'll just update the local state
+        setAddresses(addresses.map(addr => 
+          addr.id === editingAddress.id ? { ...data, id: addr.id } : addr
+        ));
+        
+        toast({
+          title: "Address Updated",
+          description: "Your address has been updated successfully",
+          variant: "default"
+        });
+      } else {
+        // Add new address
+        // Here you would call an API to create a new address
+        // For now, we'll just update the local state
+        const newAddress = {
+          ...data,
+          id: Math.max(...addresses.map(a => a.id), 0) + 1,
+        };
+        setAddresses([...addresses, newAddress]);
+        
+        toast({
+          title: "Address Added",
+          description: "Your new address has been added successfully",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Error saving address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save address. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setShowAddressForm(false);
+      setEditingAddress(null);
     }
-    
-    setShowAddressForm(false);
-    setEditingAddress(null);
   };
 
   const handleEditAddress = (address: AddressType) => {
@@ -134,28 +163,110 @@ const ProfilePage = () => {
     setShowAddressForm(true);
   };
 
-  const handleDeleteAddress = (id: number) => {
-    setAddresses(addresses.filter(addr => addr.id !== id));
+  const handleDeleteAddress = async (id: number) => {
+    try {
+      setLoading(true);
+      
+      // Here you would call an API to delete the address
+      // For now, we'll just update the local state
+      setAddresses(addresses.filter(addr => addr.id !== id));
+      
+      toast({
+        title: "Address Deleted",
+        description: "Your address has been deleted successfully",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete address. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddReview = (orderId: string, itemId: number, rating: number, comment: string) => {
-    setOrders(orders.map(order => {
-      if (order.id === orderId) {
-        return {
-          ...order,
-          items: order.items.map(item => {
-            if (item.id === itemId) {
-              return {
-                ...item,
-                hasReview: true
-              };
-            }
-            return item;
-          })
-        };
-      }
-      return order;
-    }));
+    // This would typically call an API to add a review
+    console.log('Adding review:', { orderId, itemId, rating, comment });
+  };
+
+  // Format date string
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  // Format price
+  const formatPrice = (price: string | number) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(numPrice);
+  };
+
+  // Get status badge color
+  const getStatusBadgeColor = (status: number) => {
+    switch (status) {
+      case 1: // Pending
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 2: // Processing
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 3: // Shipped
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 4: // Delivered
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 5: // Cancelled
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
+  // Get status text
+  const getStatusText = (status: number) => {
+    switch (status) {
+      case 1: return 'Pending';
+      case 2: return 'Processing';
+      case 3: return 'Shipped';
+      case 4: return 'Delivered';
+      case 5: return 'Cancelled';
+      default: return 'Unknown';
+    }
+  };
+
+  const handleOrderUpdate = async (updatedOrder: OrderType) => {
+    // Update the order in the orders list
+    setOrders(orders.map(order => 
+      order.id === updatedOrder.id ? updatedOrder : order
+    ));
+    
+    // Refresh orders data from the server to get the latest updates
+    try {
+      setOrdersLoading(true);
+      const orderData = await orderService.getOrders();
+      setOrders(orderData);
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh orders data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setOrdersLoading(false);
+    }
   };
 
   const renderTabContent = () => {
@@ -197,7 +308,11 @@ const ProfilePage = () => {
       case 'addresses':
         return (
           <div className="space-y-6">
-            {showAddressForm ? (
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+              </div>
+            ) : showAddressForm ? (
               <AddressForm
                 address={editingAddress || undefined}
                 onSubmit={handleAddressSubmit}
@@ -216,16 +331,24 @@ const ProfilePage = () => {
                   Add New Address
                 </Button>
 
-                <div className="grid gap-4">
-                  {addresses.map((address) => (
-                    <AddressCard
-                      key={address.id}
-                      address={address}
-                      onEdit={handleEditAddress}
-                      onDelete={handleDeleteAddress}
-                    />
-                  ))}
-                </div>
+                {addresses.length === 0 ? (
+                  <div className="mt-6 text-center py-8 border border-dashed rounded-lg border-gray-300 dark:border-gray-700">
+                    <MapPin size={32} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-500 mb-4">You don't have any saved addresses yet.</p>
+                    <p className="text-sm text-gray-500">Add an address to make checkout easier.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {addresses.map((address) => (
+                      <AddressCard
+                        key={address.id}
+                        address={address}
+                        onEdit={handleEditAddress}
+                        onDelete={handleDeleteAddress}
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -234,40 +357,49 @@ const ProfilePage = () => {
       case 'orders':
         return (
           <div>
-            <div className="mb-6 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {orders.map((order) => (
-                  <div key={order.id} className="p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <p className="font-medium">Order #{order.id}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Placed on {order.date}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">${order.total.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {order.items.length} items
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        View Order
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+            {ordersLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
               </div>
-            </div>
+            ) : orders.length === 0 ? (
+              <div className="mt-6 text-center py-8 border border-dashed rounded-lg border-gray-300 dark:border-gray-700">
+                <Package size={32} className="mx-auto text-gray-400 mb-2" />
+                <p className="text-gray-500 mb-4">You don't have any orders yet.</p>
+                <p className="text-sm text-gray-500">Start shopping to see your orders here.</p>
+              </div>
+            ) : (
+              <div className="mb-6 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {orders.map((order) => (
+                    <div key={order.id} className="p-6">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                          <p className="font-medium">Order #{order.order_number}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Placed on {order.created_at ? formatDate(order.created_at.toString()) : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeColor(order.status)}`}>
+                            {getStatusText(order.status)}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatPrice(order.total)}</p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          View Order
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
       
@@ -484,9 +616,8 @@ const ProfilePage = () => {
         <OrderDetailsModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onAddReview={(itemId, rating, comment) => 
-            handleAddReview(selectedOrder.id, itemId, rating, comment)
-          }
+          isOpen={!!selectedOrder}
+          onOrderUpdate={handleOrderUpdate}
         />
       )}
     </div>

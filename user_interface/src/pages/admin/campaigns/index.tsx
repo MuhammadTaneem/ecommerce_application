@@ -16,10 +16,9 @@ import {
   AlertDialogTitle,
 } from '../../../components/ui/AlertDialog';
 
-interface FormDataType extends Omit<CampaignType, 'id'> {
-  image_1_file?: File | null;
-  image_2_file?: File | null;
-  image_3_file?: File | null;
+interface FormDataType extends Omit<CampaignType, 'id' | 'image'> {
+  image: string | File | null;
+  image_file?: File | null;
 }
 
 export default function CampaignsPage() {
@@ -34,14 +33,10 @@ export default function CampaignsPage() {
   const [formData, setFormData] = useState<FormDataType>({
         name: '',
         description: '',
-    image_1: '',
-    image_2: '',
-    image_3: '',
-    image_1_file: null,
-    image_2_file: null,
-    image_3_file: null,
-    startDate: new Date().toISOString(),
-    endDate: new Date().toISOString(),
+        image: null,
+        image_file: null,
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
         is_published: false
     });
 
@@ -69,7 +64,7 @@ export default function CampaignsPage() {
     }
     };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image_1_file' | 'image_2_file' | 'image_3_file') => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -82,20 +77,31 @@ export default function CampaignsPage() {
       }
 
       // Store the file object
-        setFormData(prev => ({
-            ...prev,
-        [field]: file,
+      setFormData(prev => ({
+        ...prev,
+        image_file: file,
         // Also store preview
-        [field.replace('_file', '')]: URL.createObjectURL(file)
-            }));
-        }
-    };
+        image: URL.createObjectURL(file)
+      }));
+    }
+  };
 
   const formatDateForInput = (dateString: string | Date | undefined): string => {
     if (!dateString) return new Date().toISOString().split('T')[0];
     try {
+      // Handle strings like "2025-07-02T18:04:48.917000+06:00" or ISO dates
       const date = new Date(dateString);
-      return isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0];
+      
+      // Check if it's a valid date
+      if (isNaN(date.getTime())) {
+        return new Date().toISOString().split('T')[0];
+      }
+      
+      // Format as YYYY-MM-DD for input[type="date"]
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     } catch {
       return new Date().toISOString().split('T')[0];
     }
@@ -110,17 +116,27 @@ export default function CampaignsPage() {
 
   const handleEdit = (campaign: CampaignType) => {
     setSelectedCampaign(campaign);
+    
+    // Convert API dates (start_date, end_date) to our format (startDate, endDate)
+    let startDate = campaign.startDate;
+    let endDate = campaign.endDate;
+    
+    // Check if there are alternate property names from API (start_date, end_date)
+    if (!startDate && (campaign as any).start_date) {
+      startDate = (campaign as any).start_date;
+    }
+    
+    if (!endDate && (campaign as any).end_date) {
+      endDate = (campaign as any).end_date;
+    }
+    
     setFormData({
       name: campaign.name,
       description: campaign.description,
-      image_1: campaign.image_1,
-      image_2: campaign.image_2,
-      image_3: campaign.image_3,
-      image_1_file: null,
-      image_2_file: null,
-      image_3_file: null,
-      startDate: campaign.startDate || new Date().toISOString(),
-      endDate: campaign.endDate || new Date().toISOString(),
+      image: campaign.image,
+      image_file: null,
+      startDate: startDate || new Date().toISOString(),
+      endDate: endDate || new Date().toISOString(),
       is_published: campaign.is_published
     });
     setIsModalOpen(true);
@@ -141,30 +157,15 @@ export default function CampaignsPage() {
       submitFormData.append('end_date', formData.endDate);
       submitFormData.append('is_published', String(formData.is_published));
 
-      // Handle file uploads
-      const fileInputs = document.querySelectorAll('input[type="file"]');
-      fileInputs.forEach((input: Element) => {
-        const fileInput = input as HTMLInputElement;
-        if (fileInput.files && fileInput.files[0]) {
-          const fieldName = fileInput.getAttribute('name');
-          if (fieldName) {
-            submitFormData.append(fieldName, fileInput.files[0]);
-        }
-        }
-      });
+      // Handle file upload
+      if (formData.image_file) {
+        submitFormData.append('image', formData.image_file);
+      }
 
 
-      // If editing and no new files are selected, append existing image URLs
-      if (selectedCampaign) {
-        if (!submitFormData.has('image_1') && selectedCampaign.image_1) {
-          submitFormData.append('image_1', selectedCampaign.image_1);
-        }
-        if (!submitFormData.has('image_2') && selectedCampaign.image_2) {
-          submitFormData.append('image_2', selectedCampaign.image_2);
-        }
-        if (!submitFormData.has('image_3') && selectedCampaign.image_3) {
-          submitFormData.append('image_3', selectedCampaign.image_3);
-        }
+      // If editing and no new file is selected, append existing image URL
+      if (selectedCampaign && !formData.image_file && selectedCampaign.image) {
+        submitFormData.append('image', selectedCampaign.image.toString());
       }
 
       if (selectedCampaign) {
@@ -186,12 +187,8 @@ export default function CampaignsPage() {
       setFormData({
         name: '',
         description: '',
-        image_1: '',
-        image_2: '',
-        image_3: '',
-        image_1_file: null,
-        image_2_file: null,
-        image_3_file: null,
+        image: null,
+        image_file: null,
         startDate: new Date().toISOString(),
         endDate: new Date().toISOString(),
         is_published: false
@@ -206,6 +203,52 @@ export default function CampaignsPage() {
       });
     }
     };
+
+  const handlePublishToggle = async (campaign: CampaignType) => {
+    try {
+      setIsLoading(true);
+      
+      // Create form data with the toggled publish state
+      const formData = new FormData();
+      formData.append('name', campaign.name);
+      formData.append('description', campaign.description);
+      
+      // Use appropriate field names for dates
+      const startDate = campaign.startDate || (campaign as any).start_date;
+      const endDate = campaign.endDate || (campaign as any).end_date;
+      
+      formData.append('start_date', startDate);
+      formData.append('end_date', endDate);
+      
+      // Toggle the published state
+      formData.append('is_published', String(!campaign.is_published));
+      
+      // If image exists, include it
+      if (campaign.image) {
+        formData.append('image', campaign.image.toString());
+      }
+      
+      // Update the campaign
+      await campaignService.updateCampaign(campaign.id, formData);
+      
+      toast({
+        title: campaign.is_published ? "Campaign Unpublished" : "Campaign Published",
+        description: `Campaign has been ${campaign.is_published ? 'unpublished' : 'published'} successfully`,
+      });
+      
+      // Refresh the campaigns list
+      fetchCampaigns();
+    } catch (err) {
+      console.error('Error toggling campaign publish status:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update campaign status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     setCampaignToDelete(id);
@@ -237,32 +280,44 @@ export default function CampaignsPage() {
   const openModal = (campaign?: CampaignType) => {
     if (campaign) {
       setSelectedCampaign(campaign);
+      
+      // Convert API dates (start_date, end_date) to our format (startDate, endDate)
+      let startDate = campaign.startDate;
+      let endDate = campaign.endDate;
+      
+      // Check if there are alternate property names from API (start_date, end_date)
+      if (!startDate && (campaign as any).start_date) {
+        startDate = (campaign as any).start_date;
+      }
+      
+      if (!endDate && (campaign as any).end_date) {
+        endDate = (campaign as any).end_date;
+      }
+      
       setFormData({
         name: campaign.name,
         description: campaign.description,
-        image_1: campaign.image_1,
-        image_2: campaign.image_2,
-        image_3: campaign.image_3,
-        image_1_file: null,
-        image_2_file: null,
-        image_3_file: null,
-        startDate: campaign.startDate || new Date().toISOString(),
-        endDate: campaign.endDate || new Date().toISOString(),
+        image: campaign.image,
+        image_file: null,
+        startDate: startDate || new Date().toISOString(),
+        endDate: endDate || new Date().toISOString(),
         is_published: campaign.is_published
       });
-        } else {
+    } else {
       setSelectedCampaign(null);
+      
+      // Set default dates
+      const today = new Date();
+      const nextWeek = new Date();
+      nextWeek.setDate(today.getDate() + 7);
+      
       setFormData({
         name: '',
         description: '',
-        image_1: '',
-        image_2: '',
-        image_3: '',
-        image_1_file: null,
-        image_2_file: null,
-        image_3_file: null,
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
+        image: null,
+        image_file: null,
+        startDate: today.toISOString(),
+        endDate: nextWeek.toISOString(),
         is_published: false
       });
     }
@@ -314,7 +369,7 @@ export default function CampaignsPage() {
                   Name
                                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    Status
+                                    Published
                                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Period
@@ -330,9 +385,9 @@ export default function CampaignsPage() {
                   <tr key={campaign.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                        {campaign.image_1 && (
+                        {campaign.image && (
                                                     <img
-                            src={campaign.image_1} 
+                            src={typeof campaign.image === 'string' ? campaign.image : URL.createObjectURL(campaign.image as File)} 
                             alt="" 
                             className="h-10 w-10 rounded-lg object-cover mr-3"
                                                     />
@@ -348,16 +403,38 @@ export default function CampaignsPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${
-                                                campaign.is_published
-                          ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400'
-                                            }`}>
-                                                {campaign.is_published ? 'Published' : 'Draft'}
-                                            </span>
+                      <div className="flex items-center">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handlePublishToggle(campaign);
+                          }}
+                          disabled={isLoading}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                            campaign.is_published ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                          }`}
+                          aria-pressed={campaign.is_published}
+                          aria-label={campaign.is_published ? 'Unpublish campaign' : 'Publish campaign'}
+                        >
+                          <span 
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              campaign.is_published ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {campaign.is_published ? 'Yes' : 'No'}
+                        </span>
+                      </div>
                                         </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}
+                      {campaign.startDate ? new Date(campaign.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 
+                       (campaign as any).start_date ? new Date((campaign as any).start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'} 
+                      <br className="md:hidden" />
+                      <span className="md:inline-block md:mx-1">-</span> 
+                      {campaign.endDate ? new Date(campaign.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 
+                       (campaign as any).end_date ? new Date((campaign as any).end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-4">
@@ -473,40 +550,36 @@ export default function CampaignsPage() {
 
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Campaign Images
+                        Campaign Image
                       </label>
-                      <div className="grid gap-6 md:grid-cols-3">
-                        {[1, 2, 3].map((num) => (
-                          <div key={num}>
-                            <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
-                              <Input
-                                                        type="file"
-                                name={`image_${num}`}
-                                onChange={(e) => handleImageChange(e, `image_${num}_file` as any)}
-                                                        accept="image/*"
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      <div>
+                        <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                          <Input
+                            type="file"
+                            name="image"
+                            onChange={(e) => handleImageChange(e)}
+                            accept="image/*"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div className="text-center">
+                            {formData.image ? (
+                              <img 
+                                src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image} 
+                                alt="Preview" 
+                                className="w-full h-32 object-cover rounded-lg"
                               />
-                              <div className="text-center">
-                                {formData[`image_${num}` as keyof typeof formData] ? (
-                                  <img 
-                                    src={formData[`image_${num}` as keyof typeof formData] as string} 
-                                    alt={`Preview ${num}`} 
-                                    className="w-full h-32 object-cover rounded-lg"
-                                  />
-                                ) : (
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    <div className="flex justify-center">
-                                      <Plus className="h-8 w-8" />
-                                            </div>
-                                    <p>Upload Image {num}</p>
-                                        </div>
-                                    )}
+                            ) : (
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                <div className="flex justify-center">
+                                  <Plus className="h-8 w-8" />
                                 </div>
-                            </div>
-                                </div>
-                        ))}
-                                </div>
-                            </div>
+                                <p>Upload Image</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="col-span-2">
                       <label className="flex items-center space-x-2 cursor-pointer">
@@ -571,16 +644,14 @@ export default function CampaignsPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Images</h3>
-                <div className="mt-2 grid grid-cols-3 gap-4">
-                  {selectedCampaign.image_1 && (
-                    <img src={selectedCampaign.image_1} alt="Campaign 1" className="h-32 w-full object-cover rounded" />
-                  )}
-                  {selectedCampaign.image_2 && (
-                    <img src={selectedCampaign.image_2} alt="Campaign 2" className="h-32 w-full object-cover rounded" />
-                  )}
-                  {selectedCampaign.image_3 && (
-                    <img src={selectedCampaign.image_3} alt="Campaign 3" className="h-32 w-full object-cover rounded" />
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Image</h3>
+                <div className="mt-2">
+                  {selectedCampaign.image && (
+                    <img 
+                      src={typeof selectedCampaign.image === 'string' ? selectedCampaign.image : URL.createObjectURL(selectedCampaign.image as File)}
+                      alt="Campaign"
+                      className="h-48 w-full object-cover rounded"
+                    />
                   )}
                 </div>
               </div>
@@ -588,7 +659,18 @@ export default function CampaignsPage() {
               <div>
                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Campaign Period</h3>
                 <p className="mt-1 text-gray-900 dark:text-white">
-                  {new Date(selectedCampaign.startDate).toLocaleDateString()} - {new Date(selectedCampaign.endDate).toLocaleDateString()}
+                  <span className="font-medium">From:</span> {selectedCampaign.startDate ? 
+                    new Date(selectedCampaign.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 
+                    (selectedCampaign as any).start_date ? 
+                    new Date((selectedCampaign as any).start_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 
+                    'N/A'}
+                </p>
+                <p className="mt-1 text-gray-900 dark:text-white">
+                  <span className="font-medium">To:</span> {selectedCampaign.endDate ? 
+                    new Date(selectedCampaign.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 
+                    (selectedCampaign as any).end_date ? 
+                    new Date((selectedCampaign as any).end_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 
+                    'N/A'}
                 </p>
               </div>
 

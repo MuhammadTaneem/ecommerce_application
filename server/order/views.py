@@ -177,8 +177,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
-        if order.status == OrderStatusChoices.PENDING:
-            order.status = OrderStatusChoices.CANCELED
+        if order.status == OrderStatusChoices.PENDING or order.status == OrderStatusChoices.CANCELLED:
+            order.status = OrderStatusChoices.CANCELLED
             order.save()
             return Response({'status': 'Order cancelled'})
         return Response(

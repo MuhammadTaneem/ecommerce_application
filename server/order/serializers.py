@@ -9,15 +9,20 @@ from .models import Cart, CartItem, Order, OrderItem, Voucher
 
 from rest_framework import serializers
 from .models import Product, SKU, CartItem
-
+from products.serializers import ProductSerializer, SKUSerializer
 
 class CartItemSerializer(serializers.ModelSerializer):
     unit_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    name = serializers.CharField(source='product.name', read_only=True)
+    thumbnail = serializers.CharField(source='product.thumbnail', read_only=True)
+
+
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'sku', 'quantity', 'unit_price', 'subtotal']
+        fields = ['id', 'product','name','thumbnail','sku', 'quantity', 'unit_price', 'subtotal']
+
 
     def validate(self, attrs):
         # Get the instance if this is an update operation

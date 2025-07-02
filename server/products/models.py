@@ -108,6 +108,7 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
 
+
     @property
     def get_price(self):
         return self.discount_price if self.discount_price else self.base_price

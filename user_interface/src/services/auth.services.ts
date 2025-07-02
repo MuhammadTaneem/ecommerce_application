@@ -122,6 +122,16 @@ class AuthService {
     }
     return false;
   }
+
+  async getAddresses(): Promise<any> {
+    try {
+      const response = await apiClient.get('auth/addresses/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      throw error;
+    }
+  }
 }
 
 // 📦 Export a singleton instance

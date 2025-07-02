@@ -17,13 +17,15 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
     close,
     removeItem,
     updateItemQuantity,
+    loading
   } = useCart();
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: string | number) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(price);
+    }).format(numPrice);
   };
 
   // Prevent scrolling when cart is open
@@ -68,7 +70,11 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
               </button>
             </div>
             
-            {items.length === 0 ? (
+            {loading ? (
+              <div className="mt-20 flex justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+              </div>
+            ) : items.length === 0 ? (
               <div className="mt-20 flex flex-col items-center justify-center text-center">
                 <ShoppingBag size={64} className="text-gray-300 dark:text-gray-600" />
                 <h3 className="mt-4 text-lg font-medium">Your cart is empty</h3>
@@ -89,7 +95,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                     <AnimatePresence initial={false}>
                       {items.map((item) => (
                         <motion.li
-                          key={item.productId}
+                          key={item.id}
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
@@ -99,7 +105,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                           <div className="flex items-center">
                             <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
                               <img
-                                src={item.image}
+                                src={item.thumbnail || '/placeholder-image.jpg'}
                                 alt={item.name}
                                 className="h-full w-full object-cover object-center"
                               />
@@ -110,7 +116,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                                 <div className="flex justify-between text-base font-medium">
                                   <h3 className="line-clamp-1">
                                     <Link
-                                      to={`/product/${item.productId}`}
+                                      to={`/product/${item.product}`}
                                       className="hover:text-primary-600 dark:hover:text-primary-400"
                                       onClick={close}
                                     >
@@ -118,7 +124,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                                     </Link>
                                   </h3>
                                   <p className="ml-4">
-                                    {formatPrice(item.price)}
+                                    {formatPrice(item.subtotal)}
                                   </p>
                                 </div>
                               </div>
@@ -127,7 +133,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                                 <div className="flex items-center border rounded-md">
                                   <button
                                     onClick={() => updateItemQuantity(
-                                      item.productId,
+                                      item.id,
                                       Math.max(1, item.quantity - 1)
                                     )}
                                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -140,7 +146,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                                   </span>
                                   <button
                                     onClick={() => updateItemQuantity(
-                                      item.productId,
+                                      item.id,
                                       item.quantity + 1
                                     )}
                                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -152,7 +158,7 @@ const ShoppingCart = ({ isOpen }: ShoppingCartProps) => {
                                 
                                 <button
                                   type="button"
-                                  onClick={() => removeItem(item.productId)}
+                                  onClick={() => removeItem(item.id)}
                                   className="text-gray-500 hover:text-red-500 dark:text-gray-400"
                                   aria-label="Remove item"
                                 >

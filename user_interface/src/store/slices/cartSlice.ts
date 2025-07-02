@@ -15,6 +15,19 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
+    setCart: (state, action: PayloadAction<any>) => {
+      // Handle different response formats from the API
+      if (action.payload && action.payload.items) {
+        state.items = action.payload.items;
+      } else if (Array.isArray(action.payload)) {
+        state.items = action.payload;
+      } else if (action.payload) {
+        // If it's a single cart object with items property
+        state.items = action.payload.items || [];
+      } else {
+        state.items = [];
+      }
+    },
     addToCart: (state, action: PayloadAction<CartItemType>) => {
       const existingItem = state.items.find(
         (item) => item.id === action.payload.id
@@ -31,10 +44,10 @@ const cartSlice = createSlice({
     },
     updateQuantity: (
       state,
-      action: PayloadAction<{ productId: number; quantity: number }>
+      action: PayloadAction<{ itemId: number; quantity: number }>
     ) => {
       const item = state.items.find(
-        (item) => item.id === action.payload.productId
+        (item) => item.id === action.payload.itemId
       );
       if (item) {
         item.quantity = action.payload.quantity;
@@ -56,6 +69,7 @@ const cartSlice = createSlice({
 });
 
 export const {
+  setCart,
   addToCart,
   removeFromCart,
   updateQuantity,

@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Address } from '../../types';
+import { AddressType } from '../../types';
 
 const addressSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -18,7 +18,7 @@ const addressSchema = z.object({
 type AddressFormData = z.infer<typeof addressSchema>;
 
 interface AddressFormProps {
-  address?: Address;
+  address?: AddressType;
   onSubmit: (data: AddressFormData) => Promise<void>;
   onCancel: () => void;
 }

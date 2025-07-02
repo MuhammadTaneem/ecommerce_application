@@ -1,10 +1,10 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { Address } from '../../types';
+import { AddressType } from '../../types';
 import Button from '../ui/Button';
 
 interface AddressCardProps {
-  address: Address;
-  onEdit: (address: Address) => void;
+  address: AddressType;
+  onEdit: (address: AddressType) => void;
   onDelete: (id: number) => void;
 }
 
@@ -21,16 +21,21 @@ const AddressCard = ({ address, onEdit, onDelete }: AddressCardProps) => {
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {address.address_line1}
-            {address.address_line2 && <>, {address.address_line2}</>}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {address.area}, {address.city}
-          </p>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {address.phone_number}
-          </p>
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Address:</span> {address.address_line1}
+              {address.address_line2 && <>, {address.address_line2}</>}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Area:</span> {address.area}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">City:</span> {address.city}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">Phone:</span> {address.phone_number}
+            </p>
+          </div>
         </div>
 
         <div className="flex space-x-2">

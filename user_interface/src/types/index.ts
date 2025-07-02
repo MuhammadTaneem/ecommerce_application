@@ -7,6 +7,8 @@ export interface AddressType {
   area: string;
   phone_number: string;
   is_default: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CategoryType {
@@ -93,6 +95,8 @@ export interface VoucherType {
 export type CartItemType = {
   id: number;
   product: number;
+  name: string;
+  thumbnail: string;
   sku: number;
   quantity: number;
   unit_price: string;
@@ -113,9 +117,7 @@ export interface CampaignType {
   id: number;
   name: string;
   description: string;
-  image_1: string|File| null; // URL or base64 encoded image
-  image_2: string|File| null; 
-  image_3: string|File| null; 
+  image: string|File| null;
   startDate: string;
   endDate: string;
   is_published: boolean;
@@ -138,18 +140,20 @@ export interface OrderType {
   total: string;
   voucher: number | null;
   notes: string|null;
-  created_at: Date; // ISO date string
+  created_at?: Date; // ISO date string, make optional
   updated_at: string;
-};
+  items?: OrderItemType[]; // Add items for order details
+}
 
 
 export interface OrderItemType {
   id?: string|number;
   product_name: string;
   quantity: number;
-  unit_price: number;
-  total_price: number;
+  unit_price: string | number;
+  total_price: string | number;
   image?: string;
+  product?: number;
 }
 
 export interface BrandType {
@@ -187,3 +191,5 @@ export interface ContextDataType {
   payment_status: KeyValuePair[];
   voucher_type: KeyValuePair[];
 }
+
+export type PaymentMethod = 'cash' | 'mobile' | 'card';

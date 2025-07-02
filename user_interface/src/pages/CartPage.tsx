@@ -11,14 +11,32 @@ const CartPage = () => {
     totalPrice,
     removeItem,
     updateItemQuantity,
+    loading
   } = useCart();
 
-  const formatPrice = (price: number) => {
+  // const formatPrice = (price: string | number) => {
+  //   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+  //   return new Intl.NumberFormat('en-US', {
+  //     style: 'currency',
+  //     currency: 'USD',
+  //   }).format(numPrice);
+  // };
+  const formatPrice = (price: string | number) => {
+    console.log(price);
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(price);
+    }).format(numPrice);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -66,11 +84,11 @@ const CartPage = () => {
               
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {items.map((item) => (
-                  <div key={item.productId} className="py-6 first:pt-0 last:pb-0">
+                  <div key={item.id} className="py-6 first:pt-0 last:pb-0">
                     <div className="flex items-center">
                       <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
                         <img
-                          src={item.image}
+                          src={item.thumbnail || '/placeholder-image.jpg'}
                           alt={item.name}
                           className="h-full w-full object-cover object-center"
                         />
@@ -81,18 +99,18 @@ const CartPage = () => {
                           <div className="flex justify-between">
                             <h3 className="text-base font-medium">
                               <Link
-                                to={`/product/${item.productId}`}
+                                to={`/product/${item.product}`}
                                 className="hover:text-primary-600 dark:hover:text-primary-400"
                               >
                                 {item.name}
                               </Link>
                             </h3>
                             <p className="text-base font-medium">
-                              {formatPrice(item.price * item.quantity)}
+                              {formatPrice(item.subtotal)}
                             </p>
                           </div>
                           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {formatPrice(item.price)} each
+                            {formatPrice(item.unit_price)} 
                           </p>
                         </div>
                         
@@ -101,7 +119,7 @@ const CartPage = () => {
                             <button
                               onClick={() =>
                                 updateItemQuantity(
-                                  item.productId,
+                                  item.id,
                                   Math.max(1, item.quantity - 1)
                                 )
                               }
@@ -116,7 +134,7 @@ const CartPage = () => {
                             <button
                               onClick={() =>
                                 updateItemQuantity(
-                                  item.productId,
+                                  item.id,
                                   item.quantity + 1
                                 )
                               }
@@ -128,7 +146,7 @@ const CartPage = () => {
                           </div>
                           
                           <button
-                            onClick={() => removeItem(item.productId)}
+                            onClick={() => removeItem(item.id)}
                             className="text-gray-500 hover:text-red-500 dark:text-gray-400"
                             aria-label="Remove item"
                           >

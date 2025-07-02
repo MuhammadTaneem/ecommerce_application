@@ -14,6 +14,19 @@ class CampaignService {
     }
   }
 
+  async getDashboardCampaign(): Promise<CampaignType | null> {
+    try {
+      const response = await apiClient.get<CampaignType | null>(`${this.baseUrl}dashboard/`);
+      // If the API returns null or a campaign object
+      return response.data ? response.data : null;
+    } catch (error) {
+      console.error('Error fetching user campaign:', error);
+      throw error;
+    }
+  }
+
+  
+
   async getCampaignById(id: number): Promise<CampaignType> {
     try {
       const response = await apiClient.get<CampaignType>(`${this.baseUrl}${id}/`);
@@ -44,7 +57,7 @@ class CampaignService {
     }
   }
 
-  async updateCampaign(id: number, data: CampaignType): Promise<CampaignType> {
+  async updateCampaign(id: number, data: FormData | Partial<CampaignType>): Promise<CampaignType> {
 
     console.log("updatting campain");
     console.log(data);

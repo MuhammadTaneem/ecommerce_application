@@ -6,9 +6,11 @@ import { useCart } from '../../hooks/useCart.ts';
 import ProductReviews from '../../components/shop/ProductReviews.tsx';
 import { SKUType, ProductType, VariantType, VariantValueType, KeyValuePair } from '../../types/index.ts';
 import productService from '../../services/productService.ts';
+import orderService from '../../services/order.services.ts';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { fetchContextData } from '../../store/slices/contextSlice';
+import { useToast } from '../../hooks/use-toast.ts';
 
 // Dummy review data
 const dummyReviews = [
@@ -61,12 +63,14 @@ interface ActualProductType extends Omit<ProductType, 'skus'> {
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItem, updateCart } = useCart();
+  const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<ActualProductType | null>(null);
   const [selectedSku, setSelectedSku] = useState<ActualSKU | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'details' | 'info' | 'reviews'>('details');
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,17 +139,17 @@ const ProductDetailPage = () => {
     const selectedVariantTypeIds = Object.keys(variants);
     
     // Find a SKU that matches all selected variants
-    const matchingSku = selectedProduct.skus.find(sku => {
+      const matchingSku = selectedProduct.skus.find(sku => {
       // Skip SKUs without variants_dict
-      if (!sku.variants_dict) return false;
-      
-      // Check if all selected variants match this SKU
+        if (!sku.variants_dict) return false;
+        
+        // Check if all selected variants match this SKU
       for (const [typeId, valueId] of Object.entries(variants)) {
         // If this variant type exists in the SKU but doesn't match the selected value
         if (sku.variants_dict[typeId]?.toString() !== valueId) {
-          return false;
+            return false;
+          }
         }
-      }
       
       // If we need all variant types to be selected (complete match)
       // Check if the number of variant types in the SKU matches the number of selected types
@@ -219,38 +223,96 @@ const ProductDetailPage = () => {
     );
   }
   
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     // If product has variants, require a SKU selection
     if (selectedProduct.has_variants && !selectedSku) {
       // Show error or alert that user needs to select all variants
-      alert("Please select all product options");
+      toast({
+        title: "Selection Required",
+        description: "Please select all product options",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Create a formatted variants object with human-readable names
-    const formattedVariants: Record<string, string> = {};
-    if (selectedProduct.has_variants && selectedSku && selectedSku.variants_dict) {
-      Object.entries(selectedSku.variants_dict).forEach(([typeId, valueId]) => {
-        const typeName = getVariantTypeName(typeId);
-        const valueName = getVariantValueName(typeId, valueId.toString());
-        formattedVariants[typeName] = valueName;
+    // Check stock quantity based on whether product has variants
+    const currentStockQuantity = selectedProduct.has_variants 
+      ? (selectedSku ? selectedSku.stock_quantity : 0) 
+      : selectedProduct.stock_quantity;
+    
+    // Prevent adding to cart if out of stock
+    if (currentStockQuantity <= 0) {
+      toast({
+        title: "Out of Stock",
+        description: "This product is out of stock",
+        variant: "destructive"
       });
+      return;
     }
     
-    // Use the selected SKU price and stock if available, otherwise use product price
-    const productToAdd = {
-      ...selectedProduct,
-      price: selectedSku 
-        ? parseFloat(selectedSku.discount_price || selectedSku.price) 
-        : parseFloat(selectedProduct.discount_price || selectedProduct.base_price),
-      sku: selectedSku ? selectedSku.sku_code : null,
-      selectedVariants: formattedVariants, // Use formatted variants with human-readable names
-      image: selectedProduct.images && selectedProduct.images.length > 0 
-        ? selectedProduct.images[0].image 
-        : selectedProduct.thumbnail
-    };
+    // Check if requested quantity exceeds available stock
+    if (quantity > currentStockQuantity) {
+      toast({
+        title: "Limited Stock",
+        description: `Sorry, only ${currentStockQuantity} items available in stock`,
+        variant: "destructive"
+      });
+      setQuantity(currentStockQuantity); // Adjust quantity to max available
+      return;
+    }
     
-    addItem(productToAdd, quantity);
+    try {
+      setIsAddingToCart(true);
+      
+      // Create cart item data for API
+      const cartItemData: {
+        product: number;
+        quantity: number;
+        sku?: number;
+      } = {
+        product: selectedProduct.id,
+        quantity: quantity
+      };
+      
+      // Add SKU ID if product has variants
+      if (selectedProduct.has_variants && selectedSku) {
+        cartItemData.sku = selectedSku.id;
+      }
+      
+      // Call the backend API to add the item to cart
+      await orderService.addCartItem(cartItemData);
+      
+      // Refresh the cart data
+      const cartData = await orderService.getCart();
+      updateCart(cartData);
+      
+      // Create a formatted variants object with human-readable names for display
+      const formattedVariants: Record<string, string> = {};
+      if (selectedProduct.has_variants && selectedSku && selectedSku.variants_dict) {
+        Object.entries(selectedSku.variants_dict).forEach(([typeId, valueId]) => {
+          const typeName = getVariantTypeName(typeId);
+          const valueName = getVariantValueName(typeId, valueId.toString());
+          formattedVariants[typeName] = valueName;
+        });
+      }
+      
+      // Show success message
+      toast({
+        title: "Added to Cart",
+        description: `${selectedProduct.name} has been added to your cart`,
+        variant: "default"
+      });
+      
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
   
   const formatPrice = (price: string | number) => {
@@ -418,23 +480,23 @@ const ProductDetailPage = () => {
                   return (
                     <div key={variantTypeId}>
                       <p className="mb-2 font-medium">{getVariantTypeName(variantTypeId)}</p>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {valueIds.map((valueId) => {
                           // Get the variant value from context data
                           const variantValue = getVariantValue(variantTypeId, valueId);
                           
                           return (
-                            <button
+                        <button
                               key={`${variantTypeId}-${valueId}`}
                               onClick={() => handleVariantChange(variantTypeId, valueId)}
-                              className={`rounded-md border px-3 py-1 text-sm ${
+                          className={`rounded-md border px-3 py-1 text-sm ${
                                 selectedVariants[variantTypeId] === valueId
-                                  ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300'
-                                  : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
-                              }`}
-                            >
+                              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300'
+                              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                          }`}
+                        >
                               {variantValue ? variantValue.value : valueId}
-                            </button>
+                        </button>
                           );
                         })}
                       </div>
@@ -477,14 +539,19 @@ const ProductDetailPage = () => {
               <Button
                 onClick={handleAddToCart}
                 className="flex-1"
-                disabled={selectedProduct.has_variants ? (!selectedSku || !inStock) : !inStock}
+                disabled={
+                  isAddingToCart || 
+                  (selectedProduct.has_variants ? (!selectedSku || !inStock) : !inStock)
+                }
               >
                 <ShoppingCart size={16} className="mr-2" />
-                {selectedProduct.has_variants 
-                  ? (selectedSku 
-                      ? (inStock ? 'Add to Cart' : 'Out of Stock') 
-                      : 'Select Options')
-                  : (inStock ? 'Add to Cart' : 'Out of Stock')}
+                {isAddingToCart ? 'Adding...' : (
+                  selectedProduct.has_variants 
+                    ? (selectedSku 
+                        ? (inStock ? 'Add to Cart' : 'Out of Stock') 
+                        : 'Select Options')
+                    : (inStock ? 'Add to Cart' : 'Out of Stock')
+                )}
               </Button>
               <Button variant="outline" aria-label="Add to wishlist">
                 <Heart size={16} />
