@@ -39,7 +39,7 @@ export interface SKUType {
   price: string;
   discount_price: string;
   stock_quantity: number;
-  variants_dict: Record<string, string>;
+  variants_dict: KeyValuePair[];
   variants: number[];
 }
 

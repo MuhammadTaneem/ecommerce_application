@@ -4,8 +4,11 @@ import { ShoppingCart, Heart, Share2, ArrowLeft, Info, MessageSquare, FileText }
 import Button from '../../components/ui/Button.tsx';
 import { useCart } from '../../hooks/useCart.ts';
 import ProductReviews from '../../components/shop/ProductReviews.tsx';
-import { SKUType, ProductType } from '../../types/index.ts';
+import { SKUType, ProductType, VariantType, VariantValueType, KeyValuePair } from '../../types/index.ts';
 import productService from '../../services/productService.ts';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { fetchContextData } from '../../store/slices/contextSlice';
 
 // Dummy review data
 const dummyReviews = [
@@ -45,18 +48,39 @@ const dummyReviews = [
   }
 ];
 
+// Define an interface for the actual SKU variant_dict structure from API
+interface ActualSKU extends Omit<SKUType, 'variants_dict'> {
+  variants_dict: Record<string, string | number>;
+}
+
+// Define a modified product type that uses the actual SKU structure
+interface ActualProductType extends Omit<ProductType, 'skus'> {
+  skus: ActualSKU[];
+}
+
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
-  const [selectedSku, setSelectedSku] = useState<SKUType | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ActualProductType | null>(null);
+  const [selectedSku, setSelectedSku] = useState<ActualSKU | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'details' | 'info' | 'reviews'>('details');
   
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get context data from Redux store
+  const dispatch = useDispatch();
+  const contextData = useSelector((state: RootState) => state.context.contextData);
+
+  useEffect(() => {
+    // Fetch context data if not available
+    if (!contextData) {
+      dispatch(fetchContextData() as any);
+    }
+  }, [contextData, dispatch]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -68,7 +92,11 @@ const ProductDetailPage = () => {
         const response = await productService.getProductById(n_id);
 
         if (response) {
-          setSelectedProduct(response);
+          // Cast the response to our actual product type with correct SKU structure
+          setSelectedProduct(response as unknown as ActualProductType);
+          // Reset selected variants when product changes
+          setSelectedVariants({});
+          setSelectedSku(null);
         } else {
           throw new Error('Failed to fetch product');
         }
@@ -86,50 +114,101 @@ const ProductDetailPage = () => {
   }, [id]);
   
   // Handle variant selection
-  const handleVariantChange = (variantType: string, value: string) => {
-    const newSelectedVariants = { ...selectedVariants, [variantType]: value };
+  const handleVariantChange = (variantTypeId: string, valueId: string) => {
+    const newSelectedVariants = { ...selectedVariants, [variantTypeId]: valueId };
     setSelectedVariants(newSelectedVariants);
     
     // Find matching SKU based on selected variants
-    if (selectedProduct?.skus) {
-      const matchingSku = selectedProduct.skus.find(sku => {
-        if (!sku.variants_dict) return false;
-        
-        // Check if all selected variants match this SKU
-        for (const [key, val] of Object.entries(newSelectedVariants)) {
-          if (sku.variants_dict[key] !== val) {
-            return false;
-          }
-        }
-        return true;
-      });
-      
-      if (matchingSku) {
-        setSelectedSku(matchingSku);
-      }
+    if (selectedProduct?.skus && selectedProduct.has_variants) {
+      findMatchingSku(newSelectedVariants);
     }
   };
   
-  // Get unique variant types and values
-  const getVariantOptions = () => {
-    if (!selectedProduct?.skus || selectedProduct.skus.length === 0) return {};
+  // Find SKU that matches the selected variants
+  const findMatchingSku = (variants: Record<string, string>) => {
+    if (!selectedProduct?.skus || selectedProduct.skus.length === 0) {
+      setSelectedSku(null);
+      return;
+    }
     
-    const variantOptions: Record<string, string[]> = {};
+    // Get all variant type IDs that have been selected
+    const selectedVariantTypeIds = Object.keys(variants);
+    
+    // Find a SKU that matches all selected variants
+    const matchingSku = selectedProduct.skus.find(sku => {
+      // Skip SKUs without variants_dict
+      if (!sku.variants_dict) return false;
+      
+      // Check if all selected variants match this SKU
+      for (const [typeId, valueId] of Object.entries(variants)) {
+        // If this variant type exists in the SKU but doesn't match the selected value
+        if (sku.variants_dict[typeId]?.toString() !== valueId) {
+          return false;
+        }
+      }
+      
+      // If we need all variant types to be selected (complete match)
+      // Check if the number of variant types in the SKU matches the number of selected types
+      const skuVariantTypeIds = Object.keys(sku.variants_dict);
+      return skuVariantTypeIds.length === selectedVariantTypeIds.length;
+    });
+    
+    setSelectedSku(matchingSku || null);
+  };
+  
+  // Get unique variant types and values for this product
+  const getVariantOptions = () => {
+    if (!selectedProduct?.skus || selectedProduct.skus.length === 0 || !selectedProduct.has_variants) {
+      return {};
+    }
+    
+    // Collect all variant types and their possible values from all SKUs
+    const variantOptions: Record<string, Set<string>> = {};
     
     selectedProduct.skus.forEach(sku => {
       if (sku.variants_dict) {
-        Object.entries(sku.variants_dict).forEach(([type, value]) => {
-          if (!variantOptions[type]) {
-            variantOptions[type] = [];
+        Object.entries(sku.variants_dict).forEach(([typeId, valueId]) => {
+          if (!variantOptions[typeId]) {
+            variantOptions[typeId] = new Set();
           }
-          if (!variantOptions[type].includes(value)) {
-            variantOptions[type].push(value);
-          }
+          variantOptions[typeId].add(valueId.toString());
         });
       }
     });
     
-    return variantOptions;
+    // Convert Sets to arrays
+    const result: Record<string, string[]> = {};
+    Object.entries(variantOptions).forEach(([typeId, valueSet]) => {
+      result[typeId] = Array.from(valueSet);
+    });
+    
+    return result;
+  };
+  
+  // Get variant type object from context data
+  const getVariantType = (variantTypeId: string): VariantType | undefined => {
+    if (!contextData?.variants) return undefined;
+    return contextData.variants.find(v => v.id.toString() === variantTypeId);
+  };
+  
+  // Get variant value object from context data
+  const getVariantValue = (variantTypeId: string, valueId: string): VariantValueType | undefined => {
+    const variantType = getVariantType(variantTypeId);
+    if (!variantType) return undefined;
+    
+    return variantType.values.find(v => v.id.toString() === valueId);
+  };
+  
+  // Get variant type name from context data
+  const getVariantTypeName = (variantTypeId: string): string => {
+    const variantType = getVariantType(variantTypeId);
+    return variantType ? variantType.name : variantTypeId;
+  };
+  
+  // Get variant value name from context data
+  const getVariantValueName = (variantTypeId: string, valueId: string): string => {
+    const variantValue = getVariantValue(variantTypeId, valueId);
+    return variantValue ? variantValue.value : valueId;
   };
   
   if (loading || !selectedProduct) {
@@ -141,12 +220,31 @@ const ProductDetailPage = () => {
   }
   
   const handleAddToCart = () => {
-    // If product has variants, use the selected SKU price
+    // If product has variants, require a SKU selection
+    if (selectedProduct.has_variants && !selectedSku) {
+      // Show error or alert that user needs to select all variants
+      alert("Please select all product options");
+      return;
+    }
+    
+    // Create a formatted variants object with human-readable names
+    const formattedVariants: Record<string, string> = {};
+    if (selectedProduct.has_variants && selectedSku && selectedSku.variants_dict) {
+      Object.entries(selectedSku.variants_dict).forEach(([typeId, valueId]) => {
+        const typeName = getVariantTypeName(typeId);
+        const valueName = getVariantValueName(typeId, valueId.toString());
+        formattedVariants[typeName] = valueName;
+      });
+    }
+    
+    // Use the selected SKU price and stock if available, otherwise use product price
     const productToAdd = {
       ...selectedProduct,
-      price: selectedSku ? parseFloat(selectedSku.discount_price || selectedSku.price) : parseFloat(selectedProduct.discount_price || selectedProduct.base_price),
+      price: selectedSku 
+        ? parseFloat(selectedSku.discount_price || selectedSku.price) 
+        : parseFloat(selectedProduct.discount_price || selectedProduct.base_price),
       sku: selectedSku ? selectedSku.sku_code : null,
-      selectedVariants: selectedVariants,
+      selectedVariants: formattedVariants, // Use formatted variants with human-readable names
       image: selectedProduct.images && selectedProduct.images.length > 0 
         ? selectedProduct.images[0].image 
         : selectedProduct.thumbnail
@@ -173,9 +271,14 @@ const ProductDetailPage = () => {
     : (selectedProduct.discount_price ? parseFloat(selectedProduct.base_price) : null);
   
   // Check if product or selected SKU is in stock
-  const inStock = selectedSku 
-    ? selectedSku.stock_quantity > 0 
+  const inStock = selectedProduct.has_variants
+    ? (selectedSku ? selectedSku.stock_quantity > 0 : false) 
     : selectedProduct.stock_quantity > 0;
+  
+  // Get current stock quantity
+  const currentStock = selectedSku 
+    ? selectedSku.stock_quantity 
+    : selectedProduct.stock_quantity;
   
   // Get variant options
   const variantOptions = getVariantOptions();
@@ -254,7 +357,11 @@ const ProductDetailPage = () => {
               
               {/* Stock status */}
               <p className={`mt-1 text-sm ${inStock ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {inStock ? `In Stock (${selectedSku ? selectedSku.stock_quantity : selectedProduct.stock_quantity})` : 'Out of Stock'}
+                {selectedProduct.has_variants 
+                  ? (selectedSku 
+                      ? (inStock ? `In Stock (${currentStock})` : 'Out of Stock') 
+                      : 'Select options to check availability')
+                  : (inStock ? `In Stock (${currentStock})` : 'Out of Stock')}
               </p>
             </div>
             
@@ -277,29 +384,63 @@ const ProductDetailPage = () => {
               </div>
             )}
             
-            {/* Variants */}
-            {Object.keys(variantOptions).length > 0 && (
-              <div className="mb-6 space-y-4">
-                {Object.entries(variantOptions).map(([variantType, values]) => (
-                  <div key={variantType}>
-                    <p className="mb-2 font-medium">{variantType}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {values.map((value) => (
-                        <button
-                          key={`${variantType}-${value}`}
-                          onClick={() => handleVariantChange(variantType, value)}
-                          className={`rounded-md border px-3 py-1 text-sm ${
-                            selectedVariants[variantType] === value
-                              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300'
-                              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
-                          }`}
-                        >
-                          {value}
-                        </button>
-                      ))}
+            {/* Selected Variants Summary - only show when there's an issue with selection */}
+            {selectedProduct.has_variants && Object.keys(selectedVariants).length > 0 && 
+              // Only show when either no matching SKU found or selected SKU is out of stock
+              (!selectedSku || (selectedSku && selectedSku.stock_quantity <= 0)) && (
+              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-medium mb-2">
+                  {!selectedSku ? 'No matching option available:' : 'Selected option is out of stock:'}
+                </h4>
+                <div className="space-y-1">
+                  {Object.entries(selectedVariants).map(([typeId, valueId]) => (
+                    <div key={typeId} className="flex text-sm">
+                      <span className="font-medium mr-2">{getVariantTypeName(typeId)}:</span>
+                      <span className="text-gray-600 dark:text-gray-400">{getVariantValueName(typeId, valueId)}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+                  {!selectedSku 
+                    ? 'This combination is not available.' 
+                    : 'This combination is currently out of stock.'}
+                </p>
+              </div>
+            )}
+            
+            {/* Variants - only show if product has variants */}
+            {selectedProduct.has_variants && Object.keys(variantOptions).length > 0 && (
+              <div className="mb-6 space-y-4">
+                {Object.entries(variantOptions).map(([variantTypeId, valueIds]) => {
+                  // Get the variant type from context data
+                  const variantType = getVariantType(variantTypeId);
+                  
+                  return (
+                    <div key={variantTypeId}>
+                      <p className="mb-2 font-medium">{getVariantTypeName(variantTypeId)}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {valueIds.map((valueId) => {
+                          // Get the variant value from context data
+                          const variantValue = getVariantValue(variantTypeId, valueId);
+                          
+                          return (
+                            <button
+                              key={`${variantTypeId}-${valueId}`}
+                              onClick={() => handleVariantChange(variantTypeId, valueId)}
+                              className={`rounded-md border px-3 py-1 text-sm ${
+                                selectedVariants[variantTypeId] === valueId
+                                  ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-900/20 dark:text-primary-300'
+                                  : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                              }`}
+                            >
+                              {variantValue ? variantValue.value : valueId}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
             
@@ -336,10 +477,14 @@ const ProductDetailPage = () => {
               <Button
                 onClick={handleAddToCart}
                 className="flex-1"
-                disabled={!inStock}
+                disabled={selectedProduct.has_variants ? (!selectedSku || !inStock) : !inStock}
               >
                 <ShoppingCart size={16} className="mr-2" />
-                {inStock ? 'Add to Cart' : 'Out of Stock'}
+                {selectedProduct.has_variants 
+                  ? (selectedSku 
+                      ? (inStock ? 'Add to Cart' : 'Out of Stock') 
+                      : 'Select Options')
+                  : (inStock ? 'Add to Cart' : 'Out of Stock')}
               </Button>
               <Button variant="outline" aria-label="Add to wishlist">
                 <Heart size={16} />
