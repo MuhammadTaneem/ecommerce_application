@@ -240,7 +240,7 @@ const KeyValuePairs = ({
                         <div className="flex-1 grid grid-cols-2 gap-3">
                             <div>
                                 <label
-                                    className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Key</label>
+                                    className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Title</label>
                                 <input
                                     type="text"
                                     value={pair.key}
