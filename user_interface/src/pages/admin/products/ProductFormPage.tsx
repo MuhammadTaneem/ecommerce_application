@@ -45,8 +45,8 @@ const ProductFormSchema = z.object({
     key_features: z.array(KeyValuePairSchema).refine(
         (pairs) => {
             return pairs.every(pair => 
-                (pair.key.trim() === '' && pair.value.trim() === '') || 
-                (pair.key.trim() !== '' && pair.value.trim() !== '')
+                (pair.key === '' && pair.value === '') || 
+                (pair.key !== '' && pair.value !== '')
             );
         },
         {
@@ -57,8 +57,8 @@ const ProductFormSchema = z.object({
     description: z.array(KeyValuePairSchema).refine(
         (pairs) => {
             return pairs.every(pair => 
-                (pair.key.trim() === '' && pair.value.trim() === '') || 
-                (pair.key.trim() !== '' && pair.value.trim() !== '')
+                (pair.key === '' && pair.value === '') || 
+                (pair.key !== '' && pair.value !== '')
             );
         },
         {
@@ -69,8 +69,8 @@ const ProductFormSchema = z.object({
     additional_info: z.array(KeyValuePairSchema).refine(
         (pairs) => {
             return pairs.every(pair => 
-                (pair.key.trim() === '' && pair.value.trim() === '') || 
-                (pair.key.trim() !== '' && pair.value.trim() !== '')
+                (pair.key === '' && pair.value === '') || 
+                (pair.key !== '' && pair.value !== '')
             );
         },
         {
@@ -201,7 +201,7 @@ const KeyValuePairs = ({
 
     const updatePair = (index: number, field: 'key' | 'value', value: string) => {
         const updatedData = [...data];
-        updatedData[index] = {...updatedData[index], [field]: value.trim()};
+        updatedData[index] = {...updatedData[index], [field]: value};
         onChange(updatedData);
     };
 
@@ -613,9 +613,9 @@ export default function ProductFormPage() {
                 discount_price: form.discount_price,
                 category: form.category ? parseInt(form.category) : undefined,
                 brand: form.brand || undefined,
-                key_features: form.key_features.filter(pair => pair.key.trim() && pair.value.trim()),
-                description: form.description.filter(pair => pair.key.trim() && pair.value.trim()),
-                additional_info: form.additional_info.filter(pair => pair.key.trim() && pair.value.trim()),
+                key_features: form.key_features.filter(pair => pair.key !== '' && pair.value !== ''),
+                description: form.description.filter(pair => pair.key !== '' && pair.value !== ''),
+                additional_info: form.additional_info.filter(pair => pair.key !== '' && pair.value !== ''),
             };
             let res;
             if (editMode && productId) {
