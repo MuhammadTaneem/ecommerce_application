@@ -1,97 +1,115 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, User, Mail, Phone, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import authService from '../../services/auth.services';
 
-// In a real app, these would come from an API
-const sampleCustomers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1234567890',
-    orders: 12,
-    total_spent: 1245.50,
-    status: 'Active',
-    created_at: '2023-01-15',
-    avatar: 'https://randomuser.me/api/portraits/men/1.jpg'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '+1987654321',
-    orders: 8,
-    total_spent: 875.25,
-    status: 'Active',
-    created_at: '2023-02-20',
-    avatar: 'https://randomuser.me/api/portraits/women/2.jpg'
-  },
-  {
-    id: 3,
-    name: 'Robert Johnson',
-    email: 'robert@example.com',
-    phone: '+1122334455',
-    orders: 5,
-    total_spent: 430.75,
-    status: 'Active',
-    created_at: '2023-03-10',
-    avatar: 'https://randomuser.me/api/portraits/men/3.jpg'
-  },
-  {
-    id: 4,
-    name: 'Emily Davis',
-    email: 'emily@example.com',
-    phone: '+1555666777',
-    orders: 3,
-    total_spent: 215.30,
-    status: 'Inactive',
-    created_at: '2023-04-05',
-    avatar: 'https://randomuser.me/api/portraits/women/4.jpg'
-  },
-  {
-    id: 5,
-    name: 'Michael Wilson',
-    email: 'michael@example.com',
-    phone: '+1777888999',
-    orders: 7,
-    total_spent: 650.80,
-    status: 'Active',
-    created_at: '2023-02-28',
-    avatar: 'https://randomuser.me/api/portraits/men/5.jpg'
-  },
-  {
-    id: 6,
-    name: 'Sarah Brown',
-    email: 'sarah@example.com',
-    phone: '+1444555666',
-    orders: 4,
-    total_spent: 320.45,
-    status: 'Active',
-    created_at: '2023-05-12',
-    avatar: 'https://randomuser.me/api/portraits/women/6.jpg'
-  }
-];
+interface Customer {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  is_active: boolean;
+  created_at: string;
+  avatar: string | null;
+  // Additional fields that might be used in the UI
+  orders?: number;
+  total_spent?: number;
+}
+
+interface CustomerResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Customer[];
+}
+
+interface SearchParams {
+  search?: string;
+  email?: string;
+  phone?: string;
+  role_id?: string | number;
+}
 
 const CustomersPage = () => {
-  const [customers, setCustomers] = useState(sampleCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
+  const [phoneFilter, setPhoneFilter] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
-  const [currentCustomer, setCurrentCustomer] = useState<any>(null);
+  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pageOptions] = useState([5, 10, 25, 50]);
+  const [pageInput, setPageInput] = useState('1');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Filter customers based on search term and status
+  useEffect(() => {
+    fetchCustomers();
+  }, [currentPage, limit]);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      
+      const searchParams: SearchParams = {};
+      
+      // Only add search parameters if they're not empty
+      if (searchTerm) {
+        searchParams.search = searchTerm;
+      }
+      
+      if (emailFilter) {
+        searchParams.email = emailFilter;
+      }
+      
+      if (phoneFilter) {
+        searchParams.phone = phoneFilter;
+      }
+      
+      const response = await authService.getCustomers(currentPage, limit, searchParams);
+      setCustomers(response.results);
+      setTotalCount(response.count);
+    } catch (error) {
+      console.error('Failed to fetch customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle search and filter submission
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCurrentPage(1); // Reset to first page when searching
+    setPageInput('1');
+    fetchCustomers();
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setEmailFilter('');
+    setPhoneFilter('');
+    setSelectedStatus('All');
+    setCurrentPage(1);
+    setPageInput('1');
+    fetchCustomers();
+  };
+
+  // Filter customers based on status (active/inactive)
+  // This is done client-side since the API doesn't support filtering by status
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = 
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'All' || 
+      (selectedStatus === 'Active' && customer.is_active) ||
+      (selectedStatus === 'Inactive' && !customer.is_active);
     
-    const matchesStatus = selectedStatus === 'All' || customer.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
-  const handleViewCustomer = (customer: any) => {
+  const handleViewCustomer = (customer: Customer) => {
     setCurrentCustomer(customer);
     setShowCustomerDetails(true);
   };
@@ -101,6 +119,37 @@ const CustomersPage = () => {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      setPageInput((currentPage - 1).toString());
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage * limit < totalCount) {
+      setCurrentPage(currentPage + 1);
+      setPageInput((currentPage + 1).toString());
+    }
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const pageNumber = parseInt(pageInput, 10);
+      const maxPage = Math.ceil(totalCount / limit);
+      
+      if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= maxPage) {
+        setCurrentPage(pageNumber);
+      } else {
+        setPageInput(currentPage.toString());
+      }
+    }
   };
 
   return (
@@ -117,44 +166,108 @@ const CustomersPage = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder="Search customers..."
-            className="input pr-10 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={() => setSearchTerm('')}
-            >
-              <X size={16} />
-            </button>
-          )}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <Search size={18} />
+      <form onSubmit={handleSearch} className="mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search by name..."
+              className="input pr-10 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setSearchTerm('')}
+              >
+                <X size={16} />
+              </button>
+            )}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search size={18} />
+            </div>
           </div>
+          
+          <select
+            className="input flex-shrink-0 sm:w-40"
+            value={selectedStatus}
+            onChange={(e) => {
+              setSelectedStatus(e.target.value);
+              setCurrentPage(1);
+              setPageInput('1');
+            }}
+          >
+            <option value="All">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="flex-shrink-0"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            <Filter size={16} className="mr-2" />
+            {showAdvancedFilters ? 'Hide Filters' : 'More Filters'}
+          </Button>
+
+          <Button 
+            type="submit" 
+            variant="primary" 
+            className="flex-shrink-0"
+          >
+            <Search size={16} className="mr-2" />
+            Search
+          </Button>
         </div>
-        
-        <select
-          className="input flex-shrink-0 sm:w-40"
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <option value="All">All Status</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-        
-        <Button variant="outline" className="flex-shrink-0">
-          <Filter size={16} className="mr-2" />
-          More Filters
-        </Button>
-      </div>
+
+        {/* Advanced Filters */}
+        {showAdvancedFilters && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <label htmlFor="email-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email
+              </label>
+              <input
+                id="email-filter"
+                type="text"
+                placeholder="Filter by email..."
+                className="input w-full"
+                value={emailFilter}
+                onChange={(e) => setEmailFilter(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="phone-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Phone
+              </label>
+              <input
+                id="phone-filter"
+                type="text"
+                placeholder="Filter by phone..."
+                className="input w-full"
+                value={phoneFilter}
+                onChange={(e) => setPhoneFilter(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-end">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full"
+                onClick={clearFilters}
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          </div>
+        )}
+      </form>
 
       {/* Customers Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -169,12 +282,6 @@ const CustomersPage = () => {
                   Contact
                 </th>
                 <th className="py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Orders
-                </th>
-                <th className="py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Total Spent
-                </th>
-                <th className="py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -186,97 +293,186 @@ const CustomersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="py-4 px-6">
-                    <div className="flex items-center">
-                      <img
-                        src={customer.avatar}
-                        alt={customer.name}
-                        className="h-10 w-10 rounded-full object-cover mr-3"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-white">
-                          {customer.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          ID: #{customer.id}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                        <Mail size={14} className="mr-1" />
-                        {customer.email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-1">
-                        <Phone size={14} className="mr-1" />
-                        {customer.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300">
-                    {customer.orders}
-                  </td>
-                  <td className="py-4 px-6 text-sm font-medium text-gray-800 dark:text-white">
-                    {formatCurrency(customer.total_spent)}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        customer.status === 'Active'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300">
-                    {customer.created_at}
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center space-x-3">
-                      <button
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        onClick={() => handleViewCustomer(customer)}
-                      >
-                        View
-                      </button>
-                      <button
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      >
-                        Edit
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-4 px-6 text-center">
+                    Loading...
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center">
+                        {customer.avatar ? (
+                          <img
+                            src={customer.avatar}
+                            alt={`${customer.first_name} ${customer.last_name}`}
+                            className="h-10 w-10 rounded-full object-cover mr-3"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center mr-3">
+                            <User size={20} className="text-gray-500 dark:text-gray-400" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-white">
+                            {customer.first_name} {customer.last_name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: #{customer.id}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div>
+                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                          <Mail size={14} className="mr-1" />
+                          {customer.email}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-1">
+                          <Phone size={14} className="mr-1" />
+                          {customer.phone}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          customer.is_active
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {customer.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300">
+                      {new Date(customer.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center space-x-3">
+                        <button
+                          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          onClick={() => handleViewCustomer(customer)}
+                        >
+                          View
+                        </button>
+                        <button
+                          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {filteredCustomers.length === 0 && (
+        {!loading && filteredCustomers.length === 0 && (
           <div className="py-8 text-center">
             <p className="text-gray-500 dark:text-gray-400">No customers found</p>
           </div>
         )}
 
         {/* Pagination */}
-        <div className="py-4 px-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Showing <span className="font-medium">{filteredCustomers.length}</span> of{' '}
-            <span className="font-medium">{customers.length}</span> customers
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" disabled>
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" disabled>
-              Next
-            </Button>
+        <div className="py-4 px-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
+            <select
+              className="input w-16 py-1"
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setCurrentPage(1); // Reset to first page when changing limit
+                setPageInput('1');
+                fetchCustomers();
+              }}
+            >
+              {pageOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            <span className="text-sm text-gray-600 dark:text-gray-400">entries</span>
+          </div>
+          
+          <div className="flex items-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mr-4">
+              Showing <span className="font-medium">{filteredCustomers.length}</span> of{' '}
+              <span className="font-medium">{totalCount}</span> customers
+            </p>
+            
+            <div className="flex items-center">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage === 1}
+                onClick={() => {
+                  handlePreviousPage();
+                  fetchCustomers();
+                }}
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center mx-2">
+                {Array.from({ length: Math.min(5, Math.ceil(totalCount / limit)) }, (_, i) => {
+                  const pageNum = i + 1;
+                  const isCurrentPage = pageNum === currentPage;
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => {
+                        setCurrentPage(pageNum);
+                        setPageInput(pageNum.toString());
+                        fetchCustomers();
+                      }}
+                      className={`w-8 h-8 flex items-center justify-center rounded-md mx-1 ${
+                        isCurrentPage 
+                          ? 'bg-primary text-white' 
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {Math.ceil(totalCount / limit) > 5 && (
+                  <>
+                    <span className="mx-1 text-gray-500 dark:text-gray-400">...</span>
+                    <div className="flex items-center ml-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Go to:</span>
+                      <input
+                        type="text"
+                        className="input w-14 py-1 px-2"
+                        value={pageInput}
+                        onChange={handlePageInputChange}
+                        onKeyDown={handlePageInputKeyDown}
+                        aria-label="Go to page"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage * limit >= totalCount}
+                onClick={() => {
+                  handleNextPage();
+                  fetchCustomers();
+                }}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -298,20 +494,26 @@ const CustomersPage = () => {
             </div>
             
             <div className="flex items-center mb-6">
-              <img
-                src={currentCustomer.avatar}
-                alt={currentCustomer.name}
-                className="h-20 w-20 rounded-full object-cover mr-4"
-              />
+              {currentCustomer.avatar ? (
+                <img
+                  src={currentCustomer.avatar}
+                  alt={`${currentCustomer.first_name} ${currentCustomer.last_name}`}
+                  className="h-20 w-20 rounded-full object-cover mr-4"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center mr-4">
+                  <User size={40} className="text-gray-500 dark:text-gray-400" />
+                </div>
+              )}
               <div>
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                  {currentCustomer.name}
+                  {currentCustomer.first_name} {currentCustomer.last_name}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   Customer ID: #{currentCustomer.id}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Joined: {currentCustomer.created_at}
+                  Joined: {new Date(currentCustomer.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -327,63 +529,14 @@ const CustomersPage = () => {
                 </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Order Information</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Total Orders: <span className="font-medium">{currentCustomer.orders}</span>
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Total Spent: <span className="font-medium">{formatCurrency(currentCustomer.total_spent)}</span>
-                </p>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Account Information</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   Status: <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                    currentCustomer.status === 'Active'
+                    currentCustomer.is_active
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                  }`}>{currentCustomer.status}</span>
+                  }`}>{currentCustomer.is_active ? 'Active' : 'Inactive'}</span>
                 </p>
-              </div>
-            </div>
-            
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-6">
-              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Recent Orders</h4>
-              <div className="space-y-3">
-                {/* In a real app, this would show actual order history */}
-                <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">Order #12345</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">2023-08-15</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">$125.00</p>
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      Delivered
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">Order #12344</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">2023-07-22</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">$89.50</p>
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      Delivered
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">Order #12343</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">2023-06-10</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-800 dark:text-white">$45.25</p>
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      Delivered
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
             

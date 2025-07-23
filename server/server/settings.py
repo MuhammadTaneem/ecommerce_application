@@ -159,6 +159,7 @@ SITE_ID = 1
 AUTH_USER_MODEL = 'core.User'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10,  # This sets the default `limit`
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'core.Utiilties.authentication.TAuthJWTAuthentication',
     ),

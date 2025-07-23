@@ -16,7 +16,7 @@ interface DataTableProps<T> {
     cell: (item: T) => React.ReactNode;
     className?: string;
   }[];
-  data: T[];
+  data: T[] | null | undefined;
   className?: string;
   loading?: boolean;
   emptyMessage?: string;
@@ -39,6 +39,9 @@ function DataTable<T>({
   getRowId = (item: any) => item.id,
   maxHeight = "400px"
 }: DataTableProps<T>) {
+  // Ensure data is an array, even if null or undefined is passed
+  const safeData = Array.isArray(data) ? data : [];
+  
   return (
     <div className={cn(
       "overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700",
@@ -81,7 +84,7 @@ function DataTable<T>({
                   ))}
                 </TableRow>
               ))
-            ) : data?.length === 0 ? (
+            ) : safeData.length === 0 ? (
               // Empty state
               <TableRow>
                 <TableCell 
@@ -93,7 +96,7 @@ function DataTable<T>({
               </TableRow>
             ) : (
               // Data rows with optional expansion
-              data?.map((item, index) => {
+              safeData.map((item, index) => {
                 const rowId = getRowId(item);
                 const isExpanded = expandedRows ? expandedRows[rowId] : false;
                 

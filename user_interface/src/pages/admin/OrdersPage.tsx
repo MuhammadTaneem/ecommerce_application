@@ -40,12 +40,14 @@ const OrdersPage = () => {
   }, [contextData, contextError]);
 
   const fetchOrders = async () => {
-    // console.log(contextData);
     try {
       setIsLoading(true);
       const data = await orderService.getOrders();
-      setOrders(data);
+      // Ensure we're setting an empty array if data is null or undefined
+      setOrders(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      setOrders([]);
       toast({
         title: 'Error',
         description: 'Failed to fetch orders.',
@@ -58,7 +60,6 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
-    console.log(contextData);
   }, []);
   // useEffect(() => {
   //   if (orders.length > 0) {
@@ -138,14 +139,19 @@ const OrdersPage = () => {
       id: 'date',
       header: 'DATE',
       cell: (order: OrderType) => {
-        const date = new Date(order.created_at);
+        // Ensure we have a valid date string before creating a Date object
+        const dateStr = order.created_at || '';
+        const date = new Date(dateStr);
         return (
           <div className="text-gray-500 dark:text-gray-400">
-            {date.toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
+            {date instanceof Date && !isNaN(date.getTime()) 
+              ? date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : 'Invalid date'
+            }
           </div>
         );
       },
@@ -154,13 +160,18 @@ const OrdersPage = () => {
       id: 'time',
       header: 'TIME',
       cell: (order: OrderType) => {
-        const time = new Date(order.created_at);
+        // Ensure we have a valid date string before creating a Date object
+        const dateStr = order.created_at || '';
+        const time = new Date(dateStr);
         return (
           <div className="text-gray-500 dark:text-gray-400">
-            {time.toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {time instanceof Date && !isNaN(time.getTime())
+              ? time.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Invalid time'
+            }
           </div>
         );
       },
@@ -170,13 +181,13 @@ const OrdersPage = () => {
       header: 'STATUS',
       cell: (order: OrderType) => {
         const currentStatus = contextData?.order_status?.find(
-          status => status.key === order.status
+          status => status.key === order.status?.toString()
         )?.value || `Status ${order.status}`;
 
         return (
           <div className="relative inline-block">
             <select
-              value={order.status}
+              value={order.status?.toString()}
               onChange={(e) => handleStatusChange(order.id as number, Number(e.target.value))}
               className={`appearance-none inline-flex items-center gap-x-1.5 rounded-md px-3 py-1.5 text-xs font-medium ring-1 ring-inset cursor-pointer hover:bg-opacity-80 focus:outline-none focus:ring-2 ${getStatusColor(currentStatus)}`}
               style={{ paddingRight: '2rem' }}
@@ -205,7 +216,7 @@ const OrdersPage = () => {
       header: 'PAYMENT',
       cell: (order: OrderType) => {
         const paymentStatus = contextData?.payment_status?.find(
-          status => status.key === order.payment_status
+          status => status.key === order.payment_status?.toString()
         )?.value || `Status ${order.payment_status}`;
 
         return (

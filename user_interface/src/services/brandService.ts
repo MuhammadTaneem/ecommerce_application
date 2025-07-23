@@ -6,10 +6,12 @@ const brandService = {
   async getAllBrands(): Promise<BrandType[]> {
     try {
       const response = await apiClient.get('/brands/');
-      return response.data;
+      // Ensure we always return an array, even if response.data is null or undefined
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Error fetching brands:', error);
-      throw error;
+      // Return empty array instead of throwing error
+      return [];
     }
   },
 

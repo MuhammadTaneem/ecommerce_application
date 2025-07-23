@@ -172,34 +172,42 @@ export default function BrandsPage() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {brands.map((brand) => (
-              <tr key={brand.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {brand.name}
-                </td>
-                <td className="px-6 py-4 text-gray-900 dark:text-gray-200">
-                  {brand.description}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => openModal(brand)}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      title="Edit brand"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(brand.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      title="Delete brand"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+            {Array.isArray(brands) && brands.length > 0 ? (
+              brands.map((brand) => (
+                <tr key={brand.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {brand.name}
+                  </td>
+                  <td className="px-6 py-4 text-gray-900 dark:text-gray-200">
+                    {brand.description}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => openModal(brand)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        title="Edit brand"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(brand.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        title="Delete brand"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  No brands found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

@@ -75,7 +75,8 @@ export default function VouchersPage() {
   };
 
   const getDiscountTypeLabel = (key: number) => {
-    const discountType = discountTypes.find(type => type.key === key);
+    if (!Array.isArray(discountTypes)) return '';
+    const discountType = discountTypes.find(type => Number(type.key) === key);
     return discountType ? discountType.value : '';
   };
 
@@ -252,48 +253,56 @@ export default function VouchersPage() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {vouchers.map((voucher) => (
-              <tr key={voucher.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {voucher.code}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {getDiscountTypeLabel(voucher.discount_type)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {voucher.discount_value}
-                  {voucher.discount_type === 1 ? '%' : ''}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {new Date(voucher.valid_to).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => openViewModal(voucher.id)}
-                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
-                      title="View details"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      onClick={() => openModal(voucher)}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      title="Edit voucher"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(voucher.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      title="Delete voucher"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+            {Array.isArray(vouchers) && vouchers.length > 0 ? (
+              vouchers.map((voucher) => (
+                <tr key={voucher.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {voucher.code}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {getDiscountTypeLabel(voucher.discount_type)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {voucher.discount_value}
+                    {Number(voucher.discount_type) === 1 ? '%' : ''}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {new Date(voucher.valid_to).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => openViewModal(voucher.id)}
+                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                        title="View details"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => openModal(voucher)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        title="Edit voucher"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(voucher.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        title="Delete voucher"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  No vouchers found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -340,7 +349,7 @@ export default function VouchersPage() {
                     className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   >
-                    {discountTypes.map((type) => (
+                    {Array.isArray(discountTypes) && discountTypes.map((type) => (
                       <option key={type.key} value={type.key}>
                         {type.value}
                       </option>
@@ -473,7 +482,7 @@ export default function VouchersPage() {
                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Discount Value</h3>
                 <p className="mt-1 text-gray-900 dark:text-white">
                   {selectedVoucher.discount_value}
-                  {selectedVoucher.discount_type === 1 ? '%' : ''}
+                  {Number(selectedVoucher.discount_type) === 1 ? '%' : ''}
                 </p>
               </div>
               <div>

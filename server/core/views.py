@@ -279,10 +279,10 @@ def list_users(request):
     search = request.query_params.get('search')
 
     if email:
-        queryset = queryset.filter(email__iexact=email)
+        queryset = queryset.filter(email__icontains=email)
 
     if phone:
-        queryset = queryset.filter(phone__iexact=phone)
+        queryset = queryset.filter(phone__icontains=phone)
 
     if role_id:
         queryset = queryset.filter(role_id=role_id)

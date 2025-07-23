@@ -140,10 +140,12 @@ export default function VariantsPage() {
       setSelectedVariant(variant);
       setFormData({
         name: variant.name,
-        values: variant.values.map(v => ({
-          id: v.id,
-          value: v.value
-        }))
+        values: Array.isArray(variant.values) 
+          ? variant.values.map(v => ({
+              id: v.id,
+              value: v.value
+            }))
+          : [{ value: '' }]
       });
     } else {
       setSelectedVariant(null);
@@ -211,43 +213,51 @@ export default function VariantsPage() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {variants.map((variant) => (
-              <tr key={variant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {variant.name}
-                </td>
-                <td className="px-6 py-4 text-gray-900 dark:text-gray-200">
-                  <div className="flex flex-wrap gap-2">
-                    {variant.values.map((value) => (
-                      <span
-                        key={value.id}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+            {Array.isArray(variants) && variants.length > 0 ? (
+              variants.map((variant) => (
+                <tr key={variant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {variant.name}
+                  </td>
+                  <td className="px-6 py-4 text-gray-900 dark:text-gray-200">
+                    <div className="flex flex-wrap gap-2">
+                      {Array.isArray(variant.values) && variant.values.map((value) => (
+                        <span
+                          key={value.id}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                        >
+                          {value.value}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => openModal(variant)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        title="Edit variant"
                       >
-                        {value.value}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => openModal(variant)}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      title="Edit variant"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(variant.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      title="Delete variant"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(variant.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        title="Delete variant"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  No variants found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

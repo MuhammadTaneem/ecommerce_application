@@ -140,7 +140,7 @@ export interface OrderType {
   total: string;
   voucher: number | null;
   notes: string|null;
-  created_at?: Date; // ISO date string, make optional
+  created_at?: string; // ISO date string, make optional
   updated_at: string;
   items?: OrderItemType[]; // Add items for order details
 }

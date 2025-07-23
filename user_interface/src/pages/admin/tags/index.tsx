@@ -175,37 +175,45 @@ export default function TagsPage() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {tags.map((tag) => (
-              <tr key={tag.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {tag.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
-                  {tag.slug}
-                </td>
-                <td className="px-6 py-4 text-gray-900 dark:text-gray-200">
-                  {tag.description || '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => openModal(tag)}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      title="Edit tag"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(tag.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      title="Delete tag"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+            {Array.isArray(tags) && tags.length > 0 ? (
+              tags.map((tag) => (
+                <tr key={tag.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {tag.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-200">
+                    {tag.slug}
+                  </td>
+                  <td className="px-6 py-4 text-gray-900 dark:text-gray-200">
+                    {tag.description || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => openModal(tag)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        title="Edit tag"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(tag.id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        title="Delete tag"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  No tags found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

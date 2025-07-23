@@ -39,6 +39,13 @@ interface RegisterData {
   user_type?: string;
 }
 
+interface SearchParams {
+  search?: string;
+  email?: string;
+  phone?: string;
+  role_id?: string | number;
+}
+
 class AuthService {
   async login(data: LoginData) {
     const response = await apiClient.post<LoginResponse>('auth/login/', data);
@@ -129,6 +136,35 @@ class AuthService {
       return response.data;
     } catch (error) {
       console.error('Error fetching addresses:', error);
+      throw error;
+    }
+  }
+
+  async getCustomers(page = 1, limit = 10, searchParams: SearchParams = {}) {
+    try {
+      let queryParams = `page=${page}&limit=${limit}`;
+      
+      // Add search parameters to the query string
+      if (searchParams.search) {
+        queryParams += `&search=${encodeURIComponent(searchParams.search)}`;
+      }
+      
+      if (searchParams.email) {
+        queryParams += `&email=${encodeURIComponent(searchParams.email)}`;
+      }
+      
+      if (searchParams.phone) {
+        queryParams += `&phone=${encodeURIComponent(searchParams.phone)}`;
+      }
+      
+      if (searchParams.role_id) {
+        queryParams += `&role_id=${encodeURIComponent(searchParams.role_id.toString())}`;
+      }
+      
+      const response = await apiClient.get(`auth/list/?${queryParams}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching customers:', error);
       throw error;
     }
   }

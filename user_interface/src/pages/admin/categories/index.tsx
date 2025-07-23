@@ -194,9 +194,13 @@ export default function CategoriesPage() {
   };
 
   // Filter top-level categories
-  const topLevelCategories = categories.filter(cat => cat.parent === null);
+  const topLevelCategories = Array.isArray(categories) 
+    ? categories.filter(cat => cat.parent === null) 
+    : [];
 
-  const foundCategory = categoryToDelete ? categories.find(c => c.id === categoryToDelete) : null;
+  const foundCategory = categoryToDelete 
+    ? (Array.isArray(categories) ? categories.find(c => c.id === categoryToDelete) : null) 
+    : null;
   const hasSubcategories = foundCategory && Array.isArray(foundCategory.subcategories) && foundCategory.subcategories.length > 0;
 
   // Helper function to check if one category is a descendant of another
@@ -313,7 +317,7 @@ export default function CategoriesPage() {
                     className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="">None (Top Level)</option>
-                    {flattenCategoriesWithLevel(categories).map(({ category, level }) => (
+                    {Array.isArray(categories) && flattenCategoriesWithLevel(categories).map(({ category, level }) => (
                       <option 
                         key={category.id} 
                         value={category.id}
@@ -388,7 +392,7 @@ export default function CategoriesPage() {
               <div>
                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Parent Category</h3>
                 <p className="mt-1.5 text-base text-gray-900 dark:text-gray-200">
-                  {selectedCategory.parent 
+                  {selectedCategory.parent && Array.isArray(categories)
                     ? categories.find(c => c.id === selectedCategory.parent)?.label 
                     : 'None (Top Level Category)'}
                 </p>

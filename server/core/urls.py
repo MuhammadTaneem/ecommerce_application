@@ -15,7 +15,8 @@ from core.views import (
     AddressViewSet,
     RoleViewSet,
     user_role_update,
-    user_permissions_view
+    user_permissions_view,
+    list_users
 
 )
 
@@ -46,8 +47,10 @@ urlpatterns = [
 
     # user management
 
-    path('user_role', user_role_update, name='user_role'),
-    path('user_permissions', user_permissions_view, name='user_permissions'),
+    path('user_role/', user_role_update, name='user_role'),
+    path('user_permissions/', user_permissions_view, name='user_permissions'),
+
+    path('list/', list_users, name='list'),
 
     # Include DRF ViewSets
     path('', include(router.urls)),
